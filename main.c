@@ -73,8 +73,11 @@ typedef struct state
   // Number of external ko threats available. Negative numbers signify that the opponent has ko threats.
   int ko_threats;
 
-  // Flag to indicate if the button is available. Awarded to the first player to make a passing move. Worth ½ points of area score.
-  bool button;
+  // Indicate the owner of the button. Awarded to the first player to make a passing move. Worth ½ points of area score.
+  // -1: opponent has button
+  //  0: button not awarded yet
+  // +1: player has button
+  int button;
 } state;
 
 // Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the non-functional 64th bit.
@@ -203,23 +206,188 @@ void print_state(const state *s, bool white_to_play) {
   }
 }
 
+// Return a rectangle of stones
+stones_t rectangle(const int width, const int height) {
+  stones_t r = 0;
+  for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      r |= 1ULL << (i * H_SHIFT + j * V_SHIFT);
+    }
+  }
+  return r;
+}
+
+// Return a single stone at the given coordinates
+stones_t single(int x, int y) {
+  return 1ULL << (x * H_SHIFT + y * V_SHIFT);
+}
+
+// Return the zero bit board corresponding to a pass
+stones_t pass() {
+  return 0ULL;
+}
+
+// Return the number of stones in the bit board
+int popcount(const stones_t stones) {
+  return __builtin_popcountll(stones);
+}
+
+// Return the bit board indicating the liberties of `stones` that lie in `empty` space
+stones_t liberties(const stones_t stones, const stones_t empty) {
+  return (
+    ((stones & WEST_BLOCK) << H_SHIFT) |
+    ((stones >> H_SHIFT) & WEST_BLOCK) |
+    (stones << V_SHIFT) |
+    (stones >> V_SHIFT)
+  ) & ~stones & empty;
+}
+
+// Flood fill `target` starting from `source` and return the contiguous chain of stones
+stones_t flood(register stones_t source, const register stones_t target) {
+  source &= target;
+  register stones_t temp;
+  do {
+    temp = source;
+    source |= (
+      ((source & WEST_BLOCK) << H_SHIFT) |
+      ((source >> H_SHIFT) & WEST_BLOCK) |
+      (source << V_SHIFT) |
+      (source >> V_SHIFT)
+    ) & target;
+  } while (temp != source);
+  return source;
+}
+
+// Make a single move in a game state
+// @param s: current game state
+// @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
+// @returns: A flag indicating if the move was legal
+bool make_move(state *s, const stones_t move) {
+  stones_t old_player = s->player;
+  // Handle pass
+  if (!move) {
+    // Award button if still available
+    if (s->button == 0) {
+      s->button = 1;
+    }
+    // Clear ko w/o incrementing passes
+    if (s->ko){
+      s->ko = 0;
+    }
+    // Count regular passes
+    else {
+      s->passes++;
+    }
+    // Swap players
+    s->player = s->opponent;
+    s->opponent = old_player;
+    s->ko_threats = -s->ko_threats;
+    s->button = -s->button;
+    return true;
+  }
+
+  // Handle regular move
+  stones_t old_opponent = s->opponent;
+  stones_t old_ko = s->ko;
+  int old_ko_threats = s->ko_threats;
+  if (move & s->ko) {
+    // Illegal ko move
+    if (s->ko_threats <= 0) {
+      return false;
+    }
+    // Legal ko move by playing an external threat first
+    s->ko_threats--;
+  }
+
+  // Check if move inside empty logical area
+  if (move & (s->player | s->opponent | ~s->logical_area)) {
+      return false;
+  }
+
+  s->player |= move;
+  s->ko = 0;
+
+  // Opponent's stones killed
+  stones_t kill = 0;
+
+  // Potential liberties for opponent's stones (visual non-logical liberties count as permanent)
+  stones_t empty = s->visual_area & ~s->player; 
+
+  // Lol, macro abuse
+  #define KILL_CHAIN \
+  if (!liberties(chain, empty) && !(chain & s->immortal)) {\
+    kill |= chain;\
+    s->opponent ^= chain;\
+  }
+  stones_t chain = flood(move >> V_SHIFT, s->opponent);
+  KILL_CHAIN
+  chain = flood(move << V_SHIFT, s->opponent);
+  KILL_CHAIN
+  chain = flood((move >> H_SHIFT) & WEST_BLOCK, s->opponent);
+  KILL_CHAIN
+  chain = flood((move & WEST_BLOCK) << H_SHIFT, s->opponent);
+  KILL_CHAIN
+
+  // Bit magic to check if a single stone was killed and the played stone was left in atari
+  if (
+    (kill & (kill - 1ULL)) == 0 &&
+    liberties(move, s->logical_area & ~s->opponent) == kill
+   ) {
+    s->ko = kill;
+  }
+
+  // Check legality
+  chain = flood(move, s->player);
+  if (!liberties(chain, s->visual_area & ~s->opponent) && !(chain & s->immortal)) {
+    // Oops! Revert state
+    s->player = old_player;
+    s->opponent = old_opponent;
+    s->ko = old_ko;
+    s->ko_threats = old_ko_threats;
+    return false;
+  }
+
+  // Swap players
+  s->passes = 0;
+  old_player = s->player;
+  s->player = s->opponent;
+  s->opponent = old_player;
+  s->ko_threats = -s->ko_threats;
+  s->button = -s->button;
+  return true;
+}
+
 int main() {
   printf("Hello, World!\n");
 
   print_stones(NORTH_WALL);
 
   state s;
-  s.visual_area = 1 | 2 | 4;
-  s.logical_area = 1 | 2;
+  s.visual_area = rectangle(3, 2);
+  s.logical_area = s.visual_area;
   s.player = 0;
-  s.opponent = 1;
+  s.opponent = 0;
   s.ko = 0;
   s.target = 0;
   s.immortal = 0;
   s.passes = 0;
   s.ko_threats = 0;
-  s.button = true;
+  s.button = 0;
 
+  print_state(&s, false);
+
+  make_move(&s, single(0, 0));
+  print_state(&s, true);
+
+  make_move(&s, single(1, 0));
+  print_state(&s, false);
+
+  make_move(&s, pass());
+  print_state(&s, true);
+
+  make_move(&s, single(0, 1));
   print_state(&s, false);
 
   printf("thx bye\n");
