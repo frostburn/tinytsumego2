@@ -1,0 +1,14 @@
+ADD_LIBRARY(
+  tinytsumego2
+  stones.c
+)
+INSTALL(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/tinytsumego2
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.h"
+)
+INSTALL(
+  TARGETS tinytsumego2
+  ARCHIVE
+  DESTINATION lib
+)

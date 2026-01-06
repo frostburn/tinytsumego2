@@ -6,8 +6,9 @@ Successor to [tinytsumego](https://github.com/frostburn/tinytsumego).
 
 ## Compilation
 
-CMake coming up. For now just compile everything directly.
-
 ```bash
-gcc main.c
+mkdir build; cd build
+cmake ..
+make
+make test
 ```

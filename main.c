@@ -1,48 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-/*
- * Tsumego (go problems) are arranged inside a 9x7 goban (playing area).
- * Stones (playing pieces) are represented as bit boards (unsigned integers).
- * Every bit (power of two) signifies the presence or absence of a stone.
- */
-#define WIDTH (9)
-#define HEIGHT (7)
-#define STATE_SIZE (WIDTH * HEIGHT)
-
-// Bit shifts associated with "physical" shifts of stones on the goban
-#define H_SHIFT (1ULL)
-#define V_SHIFT (WIDTH)
-#define D_SHIFT (WIDTH - 1ULL)
-
-// Bit boards associated with goban geometry
-#define NORTH_WALL ((1ULL << WIDTH) - 1ULL)
-#define WEST_WALL (0x40201008040201ULL)
-#define WEST_BLOCK (0X3FDFEFF7FBFDFEFF)
-
-// Horizontal strips
-#define H0 (NORTH_WALL)
-#define H1 (H0 << V_SHIFT)
-#define H2 (H1 << V_SHIFT)
-#define H3 (H2 << V_SHIFT)
-#define H4 (H3 << V_SHIFT)
-#define H5 (H4 << V_SHIFT)
-#define H6 (H5 << V_SHIFT)
-
-// Vertical strips
-#define V0 (WEST_WALL)
-#define V1 (V0 << H_SHIFT)
-#define V2 (V1 << H_SHIFT)
-#define V3 (V2 << H_SHIFT)
-#define V4 (V3 << H_SHIFT)
-#define V5 (V4 << H_SHIFT)
-#define V6 (V5 << H_SHIFT)
-#define V7 (V6 << H_SHIFT)
-#define V8 (V7 << H_SHIFT)
-
-// 63 bits of stones (1 bit wasted)
-typedef unsigned long long int stones_t;
-
 // Game state
 typedef struct state
 {
@@ -91,36 +49,6 @@ typedef enum move_result
   KO_THREAT_AND_RETAKE,
   TAKE_TARGET
 } move_result;
-
-// Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the non-functional 64th bit.
-void print_stones(const stones_t stones) {
-  // Column headers
-  printf(" ");
-  for (int i = 0; i < WIDTH; i++) {
-      printf(" %c", 'A' + i);
-  }
-  printf("\n");
-
-  for (int i = 0; i < 64; i++) {
-    // Row headers. Zero indexed from top to bottom
-    if (i % V_SHIFT == 0) {
-      printf("%d", i / V_SHIFT);
-    }
-
-    // Stone indicators
-    if ((1ULL << i) & stones) {
-      printf(" @");
-    }
-    else {
-      printf(" .");
-    }
-
-    if (i % V_SHIFT == V_SHIFT - 1){
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
 
 // Print a game state with ANSI colors
 void print_state(const state *s, bool white_to_play) {
@@ -216,60 +144,6 @@ void print_state(const state *s, bool white_to_play) {
   else {
     printf("Black to play\n");
   }
-}
-
-// Return a rectangle of stones
-stones_t rectangle(const int width, const int height) {
-  stones_t r = 0;
-  for (int i = 0; i < width; ++i)
-  {
-    for (int j = 0; j < height; ++j)
-    {
-      r |= 1ULL << (i * H_SHIFT + j * V_SHIFT);
-    }
-  }
-  return r;
-}
-
-// Return a single stone at the given coordinates
-stones_t single(int x, int y) {
-  return 1ULL << (x * H_SHIFT + y * V_SHIFT);
-}
-
-// Return the zero bit board corresponding to a pass
-stones_t pass() {
-  return 0ULL;
-}
-
-// Return the number of stones in the bit board
-int popcount(const stones_t stones) {
-  return __builtin_popcountll(stones);
-}
-
-// Return the bit board indicating the liberties of `stones` that lie in `empty` space
-stones_t liberties(const stones_t stones, const stones_t empty) {
-  return (
-    ((stones & WEST_BLOCK) << H_SHIFT) |
-    ((stones >> H_SHIFT) & WEST_BLOCK) |
-    (stones << V_SHIFT) |
-    (stones >> V_SHIFT)
-  ) & ~stones & empty;
-}
-
-// Flood fill `target` starting from `source` and return the contiguous chain of stones
-stones_t flood(register stones_t source, const register stones_t target) {
-  source &= target;
-  register stones_t temp;
-  do {
-    temp = source;
-    source |= (
-      ((source & WEST_BLOCK) << H_SHIFT) |
-      ((source >> H_SHIFT) & WEST_BLOCK) |
-      (source << V_SHIFT) |
-      (source >> V_SHIFT)
-    ) & target;
-  } while (temp != source);
-  return source;
 }
 
 // Make a single move in a game state

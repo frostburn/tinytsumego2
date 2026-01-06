@@ -1,0 +1,62 @@
+/*
+ * Tsumego (go problems) are arranged inside a 9x7 goban (playing area).
+ * Stones (playing pieces) are represented as bit boards (unsigned integers).
+ * Every bit (power of two) signifies the presence or absence of a stone.
+ */
+#define WIDTH (9)
+#define HEIGHT (7)
+#define STATE_SIZE (WIDTH * HEIGHT)
+
+// Bit shifts associated with "physical" shifts of stones on the goban
+#define H_SHIFT (1ULL)
+#define V_SHIFT (WIDTH)
+#define D_SHIFT (WIDTH - 1ULL)
+
+// Bit boards associated with goban geometry
+#define NORTH_WALL ((1ULL << WIDTH) - 1ULL)
+#define WEST_WALL (0x40201008040201ULL)
+#define WEST_BLOCK (0X3FDFEFF7FBFDFEFF)
+
+// Horizontal strips
+#define H0 (NORTH_WALL)
+#define H1 (H0 << V_SHIFT)
+#define H2 (H1 << V_SHIFT)
+#define H3 (H2 << V_SHIFT)
+#define H4 (H3 << V_SHIFT)
+#define H5 (H4 << V_SHIFT)
+#define H6 (H5 << V_SHIFT)
+
+// Vertical strips
+#define V0 (WEST_WALL)
+#define V1 (V0 << H_SHIFT)
+#define V2 (V1 << H_SHIFT)
+#define V3 (V2 << H_SHIFT)
+#define V4 (V3 << H_SHIFT)
+#define V5 (V4 << H_SHIFT)
+#define V6 (V5 << H_SHIFT)
+#define V7 (V6 << H_SHIFT)
+#define V8 (V7 << H_SHIFT)
+
+// 64 bits of stones (1 bit outside the 9x7 rectangle)
+typedef unsigned long long int stones_t;
+
+// Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the non-functional 64th bit.
+void print_stones(const stones_t stones);
+
+// Return a rectangle of stones
+stones_t rectangle(const int width, const int height);
+
+// Return a single stone at the given coordinates
+stones_t single(int x, int y);
+
+// Return the zero bit board corresponding to a passing move
+stones_t pass();
+
+// Return the number of stones in the bit board
+int popcount(const stones_t stones);
+
+// Return the bit board indicating the liberties of `stones` that lie in `empty` space
+stones_t liberties(const stones_t stones, const stones_t empty);
+
+// Flood fill `target` starting from `source` and return the contiguous chain of stones
+stones_t flood(register stones_t source, register const stones_t target);

@@ -1,6 +1,11 @@
 {
   "cSpell.words": [
+    "ENDFOREACH",
     "goban",
-    "Tsumego"
+    "OPENMP",
+    "popcountll",
+    "tinytsumego",
+    "Tsumego",
+    "Wextra"
   ]
 }
