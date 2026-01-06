@@ -67,7 +67,7 @@ typedef struct state
   // Stones that cannot be captured even if they run out of liberties.
   stones_t immortal;
 
-  // Number of consecutive passes made.
+  // Number of consecutive passes made. Clearing a ko or taking the button doesn't qualify.
   int passes;
 
   // Number of external ko threats available. Negative numbers signify that the opponent has ko threats.
@@ -79,6 +79,18 @@ typedef struct state
   // +1: player has button
   int button;
 } state;
+
+// Result of making a move
+typedef enum move_result
+{
+  ILLEGAL,
+  CLEAR_KO,
+  TAKE_BUTTON,
+  PASS,
+  NORMAL,
+  KO_THREAT_AND_RETAKE,
+  TAKE_TARGET
+} move_result;
 
 // Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the non-functional 64th bit.
 void print_stones(const stones_t stones) {
@@ -264,28 +276,32 @@ stones_t flood(register stones_t source, const register stones_t target) {
 // @param s: current game state
 // @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
 // @returns: A flag indicating if the move was legal
-bool make_move(state *s, const stones_t move) {
+move_result make_move(state *s, const stones_t move) {
+  move_result result = NORMAL;
   stones_t old_player = s->player;
   // Handle pass
   if (!move) {
     // Award button if still available
     if (s->button == 0) {
       s->button = 1;
+      result = TAKE_BUTTON;
     }
     // Clear ko w/o incrementing passes
     if (s->ko){
       s->ko = 0;
+      result = CLEAR_KO;
     }
-    // Count regular passes
-    else {
+    // Only count regular passes
+    else if (result != TAKE_BUTTON) {
       s->passes++;
+      result = PASS;
     }
     // Swap players
     s->player = s->opponent;
     s->opponent = old_player;
     s->ko_threats = -s->ko_threats;
     s->button = -s->button;
-    return true;
+    return result;
   }
 
   // Handle regular move
@@ -295,15 +311,16 @@ bool make_move(state *s, const stones_t move) {
   if (move & s->ko) {
     // Illegal ko move
     if (s->ko_threats <= 0) {
-      return false;
+      return ILLEGAL;
     }
     // Legal ko move by playing an external threat first
     s->ko_threats--;
+    result = KO_THREAT_AND_RETAKE;
   }
 
   // Check if move inside empty logical area
   if (move & (s->player | s->opponent | ~s->logical_area)) {
-      return false;
+      return ILLEGAL;
   }
 
   s->player |= move;
@@ -346,7 +363,17 @@ bool make_move(state *s, const stones_t move) {
     s->opponent = old_opponent;
     s->ko = old_ko;
     s->ko_threats = old_ko_threats;
-    return false;
+    return ILLEGAL;
+  }
+
+  // Expand immortal areas
+  if (chain & s->immortal) {
+    s->immortal |= chain;
+  }
+
+  // Expand target areas
+  if (chain & s->target) {
+    s->target |= chain;
   }
 
   // Swap players
@@ -356,7 +383,12 @@ bool make_move(state *s, const stones_t move) {
   s->opponent = old_player;
   s->ko_threats = -s->ko_threats;
   s->button = -s->button;
-  return true;
+
+  if (kill & s->target) {
+    return TAKE_TARGET;
+  }
+
+  return result;
 }
 
 int main() {
