@@ -63,14 +63,15 @@ state get_tsumego(char *name) {
     return s;
   }
 
-  // . . . @
-  // . @ @ @
-  // @ @ @ @
+  // . . . @ 0 0
+  // . @ @ @ 0 0
+  // @ @ @ @ 0 0
 
-  s.visual_area = rectangle(4, 3);
+  s.visual_area = rectangle(6, 3);
   s.logical_area = rectangle(3, 1) | single(0, 1);
-  s.player = 0;
-  s.opponent = s.visual_area ^ s.logical_area;
+  s.player = rectangle(2, 3) << 4;
+  s.opponent = rectangle(4, 3) ^ s.logical_area;
+  s.immortal = s.player;
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner") == 0) {
@@ -79,6 +80,21 @@ state get_tsumego(char *name) {
 
   s.ko_threats = -1;
   if (strcmp(name, "Bent Four in the Corner (1 ko threat)") == 0) {
+    return s;
+  }
+
+  s.ko_threats = 0;
+  s.logical_area ^= single(4, 0);
+  s.player ^= single(4, 0);
+  s.immortal = s.player;
+  if (strcmp(name, "Bent Four in the Corner (1 liberty)") == 0) {
+    return s;
+  }
+
+  s.logical_area ^= single(4, 1);
+  s.player ^= single(4, 1);
+  s.immortal = s.player;
+  if (strcmp(name, "Bent Four in the Corner (2 liberties)") == 0) {
     return s;
   }
 
@@ -92,9 +108,41 @@ state get_tsumego(char *name) {
   s.player = 0;
   s.opponent = s.visual_area ^ s.logical_area;
   s.target = s.opponent;
+  s.immortal = 0;
   s.ko_threats = 0;
 
   if (strcmp(name, "Bulky Five") == 0) {
+    return s;
+  }
+
+  // . . . @ 0 0
+  // . . . @ 0 0
+  // @ @ @ @ 0 0
+
+  s.visual_area = rectangle(6, 3);
+  s.logical_area = rectangle(3, 2);
+  s.player = rectangle(2, 3) << 4;
+  s.opponent = rectangle(4, 3) ^ s.logical_area;
+  s.target = s.opponent;
+  s.immortal = s.player;
+  s.ko_threats = -1;
+
+  if (strcmp(name, "Rectangle Six") == 0) {
+    return s;
+  }
+
+  s.logical_area ^= single(4, 0);
+  s.player ^= single(4, 0);
+  s.immortal = s.player;
+  s.ko_threats = 0;
+  if (strcmp(name, "Rectangle Six (1 liberty)") == 0) {
+    return s;
+  }
+
+  s.logical_area ^= single(4, 1);
+  s.player ^= single(4, 1);
+  s.immortal = s.player;
+  if (strcmp(name, "Rectangle Six (2 liberties)") == 0) {
     return s;
   }
 
