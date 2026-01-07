@@ -279,3 +279,9 @@ size_t keyspace_size(state *root) {
   }
   return result;
 }
+
+int chinese_liberty_score(const state *s) {
+  stones_t player_controlled = s->player | liberties(s->player, s->visual_area & ~s->opponent);
+  stones_t opponent_controlled = s->opponent | liberties(s->opponent, s->visual_area & ~s->player);
+  return popcount(player_controlled) - popcount(opponent_controlled);
+}

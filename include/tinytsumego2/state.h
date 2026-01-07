@@ -70,3 +70,6 @@ size_t to_key(state *root, state *child);
 
 // Return the size of the key space of the given root state
 size_t keyspace_size(state *root);
+
+// Count the difference between the number of player's stones and liberties and opponent's stones and liberties
+int chinese_liberty_score(const state *s);

@@ -21,6 +21,13 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  s.player = s.opponent;
+  s.opponent = 0;
+
+  if (strcmp(name, "Straight Three Defense") == 0) {
+    return s;
+  }
+
   // Invalidate state if no matching entry found
   s.visual_area = 0;
   return s;

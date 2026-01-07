@@ -3,10 +3,28 @@
 #include <stdio.h>
 #include "tsumego.c"
 
-// Large value for capturing the target stones
-#define TARGET_SCORE (10000)
-
 // #define PRINT_EXPANSION
+
+// Large value for capturing the target stones
+#define TARGET_SCORE (1000)
+
+// The maximum regular score (and then some)
+#define BIG_SCORE (WIDTH * HEIGHT + 10)
+
+float score(state *s) {
+  return (
+    chinese_liberty_score(s) +
+    s->button * 0.5 +
+    s->ko_threats * 0.0625
+  );
+}
+
+float delay_capture(float my_score) {
+  if (my_score < -BIG_SCORE) {
+    return my_score + 0.25;
+  }
+  return my_score;
+}
 
 // Score range for a given game state. States with loops may not converge to a single score.
 typedef struct value {
@@ -15,7 +33,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Straight Three");
+  state root = get_tsumego("Straight Three Defense");
   const size_t size = keyspace_size(&root);
 
   value* values = malloc(size * sizeof(value));
@@ -98,19 +116,19 @@ int main() {
         state child = states[i];
         const move_result r = make_move(&child, moves[j]);
         if (r == SECOND_PASS) {
-          // TODO: Implement Chinese-like scoring
-          low = fmax(low, 0);
-          high = fmax(high, 0);
+          float child_score = score(&child);
+          low = fmax(low, -child_score);
+          high = fmax(high, -child_score);
         }
         else if (r == TAKE_TARGET) {
-          low = fmax(low, TARGET_SCORE);
-          high = fmax(high, TARGET_SCORE);
+          float child_score = score(&child) - TARGET_SCORE;
+          low = fmax(low, -child_score);
+          high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
-          // TODO: Implement delay tactics if loss of target stones is inevitable
           const size_t child_key = to_key(&root, &child);
           const value child_value = values[child_key];
-          low = fmax(low, -child_value.high);
-          high = fmax(high, -child_value.low);
+          low = fmax(low, -delay_capture(child_value.high));
+          high = fmax(high, -delay_capture(child_value.low));
         }
       }
       if (values[i].low != low || values[i].high != high) {
@@ -144,7 +162,7 @@ int main() {
         const size_t child_key = to_key(&root, &child);
         const value child_value = values[child_key];
 
-        if (-child_value.high == low) {
+        if (-delay_capture(child_value.high) == low) {
           s = child;
           low = child_value.low;
           high = child_value.high;
