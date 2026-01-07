@@ -33,7 +33,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Hat Four Defense");
+  state root = get_tsumego("Bulky Five");
   const size_t size = keyspace_size(&root);
 
   value* values = malloc(size * sizeof(value));
@@ -166,6 +166,9 @@ int main() {
           s = child;
           low = child_value.low;
           high = child_value.high;
+          if (r == KO_THREAT_AND_RETAKE) {
+            printf("Ko threat made and answered...\n");
+          }
           print_state(&s);
           break;
         }

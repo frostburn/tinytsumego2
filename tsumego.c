@@ -63,6 +63,41 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  // . . . @
+  // . @ @ @
+  // @ @ @ @
+
+  s.visual_area = rectangle(4, 3);
+  s.logical_area = rectangle(3, 1) | single(0, 1);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+
+  if (strcmp(name, "Bent Four in the Corner") == 0) {
+    return s;
+  }
+
+  s.ko_threats = -1;
+  if (strcmp(name, "Bent Four in the Corner (1 ko threat)") == 0) {
+    return s;
+  }
+
+  // @ @ @ @ @
+  // @ . . . @
+  // @ . . @ @
+  // @ @ @ @ @
+
+  s.visual_area = rectangle(5, 4);
+  s.logical_area = (rectangle(2, 2) << (1 + WIDTH)) | single(3, 1);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+  s.ko_threats = 0;
+
+  if (strcmp(name, "Bulky Five") == 0) {
+    return s;
+  }
+
   // Invalidate state if no matching entry found
   s.visual_area = 0;
   return s;
