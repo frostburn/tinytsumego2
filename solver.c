@@ -33,7 +33,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Straight Three Defense");
+  state root = get_tsumego("Hat Four Defense");
   const size_t size = keyspace_size(&root);
 
   value* values = malloc(size * sizeof(value));

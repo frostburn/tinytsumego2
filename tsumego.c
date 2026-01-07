@@ -5,6 +5,8 @@
 state get_tsumego(char *name) {
   state s;
 
+  // . . . @
+  // @ @ @ @
   s.visual_area = rectangle(4, 2);
   s.logical_area = rectangle(3, 1);
   s.player = 0;
@@ -25,6 +27,39 @@ state get_tsumego(char *name) {
   s.opponent = 0;
 
   if (strcmp(name, "Straight Three Defense") == 0) {
+    return s;
+  }
+
+  // . . . . @
+  // @ @ @ @ @
+  s.visual_area = rectangle(5, 2);
+  s.logical_area = rectangle(4, 1);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+
+  if (strcmp(name, "Straight Four") == 0) {
+    return s;
+  }
+
+  // . . . @
+  // @ . @ @
+  // @ @ @ @
+
+  s.visual_area = rectangle(4, 3);
+  s.logical_area = rectangle(3, 1) | single(1, 1);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+
+  if (strcmp(name, "Hat Four") == 0) {
+    return s;
+  }
+
+  s.player = s.opponent;
+  s.opponent = 0;
+
+  if (strcmp(name, "Hat Four Defense") == 0) {
     return s;
   }
 
