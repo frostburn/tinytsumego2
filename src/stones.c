@@ -54,6 +54,10 @@ int popcount(const stones_t stones) {
   return __builtin_popcountll(stones);
 }
 
+int clz(const stones_t stones) {
+  return __builtin_clzll(stones);
+}
+
 stones_t liberties(const stones_t stones, const stones_t empty) {
   return (
     ((stones & WEST_BLOCK) << H_SHIFT) |

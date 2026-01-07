@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include "tinytsumego2/stones.h"
 
 // Game state
@@ -36,6 +37,9 @@ typedef struct state
   //  0: button not awarded yet
   // +1: player has button
   int button;
+
+  // Indicate which color "player" refers to.
+  bool white_to_play;
 } state;
 
 // Result of making a move
@@ -51,10 +55,17 @@ typedef enum move_result
 } move_result;
 
 // Print a game state with ANSI colors
-void print_state(const state *s, bool white_to_play);
+void print_state(const state *s);
 
 // Make a single move in a game state
 // @param s: current game state
 // @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
 // @returns: A flag indicating if the move was legal
 move_result make_move(state *s, const stones_t move);
+
+// Return the unique index identifying a child state of a root state
+// Only a single pass is allowed. Do not index leaf nodes of the tree!
+size_t to_key(state *root, state *child);
+
+// Return the size of the key space of the given root state
+size_t keyspace_size(state *root);

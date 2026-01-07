@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "tinytsumego2/state.h"
 
-void print_state(const state *s, bool white_to_play) {
+void print_state(const state *s) {
   stones_t black, white;
-  if (white_to_play) {
+  if (s->white_to_play) {
     white = s->player;
     black = s->opponent;
   }
@@ -93,7 +93,7 @@ void print_state(const state *s, bool white_to_play) {
     }
   }
   printf("passes = %d ko_threats = %d button = %d\n", s->passes, s->ko_threats, s->button);
-  if (white_to_play) {
+  if (s->white_to_play) {
     printf("White to play\n");
   }
   else {
@@ -126,6 +126,7 @@ move_result make_move(state *s, const stones_t move) {
     s->opponent = old_player;
     s->ko_threats = -s->ko_threats;
     s->button = -s->button;
+    s->white_to_play = !s->white_to_play;
     return result;
   }
 
@@ -208,10 +209,68 @@ move_result make_move(state *s, const stones_t move) {
   s->opponent = old_player;
   s->ko_threats = -s->ko_threats;
   s->button = -s->button;
+  s->white_to_play = !s->white_to_play;
 
   if (kill & s->target) {
     return TAKE_TARGET;
   }
 
+  return result;
+}
+
+size_t to_key(state *root, state *child) {
+  size_t key = 0;
+  int j;
+
+  key = key * 2 + !!child->white_to_play;
+  key = key * 3 + child->button + 1;
+  key = key * (2 * abs(root->ko_threats) + 1) + child->ko_threats + abs(root->ko_threats);
+  key = key * 2 + child->passes;
+
+  stones_t effective_area = root->logical_area & ~(root->target | root->immortal);
+
+  // Index ko
+  key *= popcount(effective_area) + 1;
+  j = 0;
+  for (int i = 0; i < 64; ++i) {
+    const stones_t p = 1ULL << i;
+    if (p & root->logical_area) {
+      j++;
+      if (p & child->ko) {
+        key += j;
+        break;
+      }
+    }
+  }
+
+  // Encode stones in ternary
+  for (int i = 0; i < 64; ++i) {
+    const stones_t p = 1ULL << i;
+    if (p & effective_area) {
+      key *= 3;
+      if (p & child->player) {
+        key += 1;
+      } else if (p & child->opponent) {
+        key += 2;
+      }
+    }
+  }
+
+  return key;
+}
+
+size_t keyspace_size(state *root) {
+  const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal));
+  size_t result = (
+    2 * // Player to play
+    3 * // Button ownership
+    (2 * abs(root->ko_threats) + 1) * // Number and ownership of the remaining "external" ko threats
+    2 * // Passes
+    (num_moves + 1) // Location (or absence) of the illegal ko square
+  );
+  // Ternary encoding of stones
+  for (size_t i = 0; i < num_moves; ++i) {
+    result *= 3;
+  }
   return result;
 }

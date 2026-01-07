@@ -1,10 +1,10 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "tinytsumego2/state.h"
 
-void test_rectangle_six_no_liberties_capture_mainline() {
+state rectangle_six() {
   state s;
-  move_result r;
 
   s.visual_area = rectangle(4, 3);
   s.logical_area = s.visual_area;
@@ -16,96 +16,94 @@ void test_rectangle_six_no_liberties_capture_mainline() {
   s.passes = 0;
   s.ko_threats = -1;
   s.button = 0;
+  s.white_to_play = false;
 
-  print_state(&s, false);
+  return s;
+}
+
+void test_rectangle_six_no_liberties_capture_mainline() {
+  state s = rectangle_six();
+  move_result r;
+
+  print_state(&s);
 
   r = make_move(&s, single(1, 1));
   assert(r == NORMAL);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(1, 0));
   assert(r == NORMAL);
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(0, 1));
   assert(r == NORMAL);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(2, 1));
   assert(r == NORMAL);
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(2, 0));
   assert(r == TAKE_TARGET);
-  print_state(&s, true);
+  print_state(&s);
 }
 
 void test_rectangle_six_no_liberties_capture_refutation() {
-  state s;
+  state s = rectangle_six();
   move_result r;
 
-  s.visual_area = rectangle(4, 3);
-  s.logical_area = s.visual_area;
-  s.player = 0;
-  s.opponent = rectangle(4, 3) ^ rectangle(3, 2);
-  s.ko = 0;
-  s.target = s.opponent;
-  s.immortal = 0;
-  s.passes = 0;
-  s.ko_threats = -1;
-  s.button = 0;
-
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(1, 0));
   assert(r == NORMAL);
   assert(s.ko_threats == 1);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(1, 1));
   assert(r == NORMAL);
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(2, 0));
   assert(r == NORMAL);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(0, 0));
   assert(r == NORMAL);
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(0, 1));
   assert(r == NORMAL);
-  print_state(&s, true);
+  print_state(&s);
 
   // Legal ko move due to logical "external" threat
   r = make_move(&s, single(0, 0));
   assert(r == KO_THREAT_AND_RETAKE);
   assert(s.ko_threats == 0);
-  print_state(&s, false);
+  print_state(&s);
 
   // Illegal ko move
   r = make_move(&s, single(0, 1));
   assert(r == ILLEGAL);
+  assert(s.white_to_play == false);
   // Redo: Pass to clear ko and take button
   r = make_move(&s, pass());
   assert(r == CLEAR_KO);
   assert(s.passes == 0);
   assert(s.button == -1);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(2, 1));
   assert(r == NORMAL);
   assert(s.button == 1);
-  print_state(&s, false);
+  print_state(&s);
 
   r = make_move(&s, single(1, 0));
   assert(r == NORMAL);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, single(2, 0));
   assert(r == NORMAL);
-  print_state(&s, false);
+  print_state(&s);
 
   // Make sure there are no more moves left for Black
   for (int i = 0; i < 64; ++i) {
@@ -116,16 +114,39 @@ void test_rectangle_six_no_liberties_capture_refutation() {
   r = make_move(&s, pass());
   assert(r == PASS);
   assert(s.passes == 1);
-  print_state(&s, true);
+  print_state(&s);
 
   r = make_move(&s, pass());
   assert(r == PASS);
   assert(s.passes == 2);
-  print_state(&s, false);
+  print_state(&s);
+}
+
+void test_rectangle_six_keyspace() {
+  state root = rectangle_six();
+  size_t size = keyspace_size(&root);
+  assert(size == 183708);
+
+  size_t root_key = to_key(&root, &root);
+
+  state child = root;
+  make_move(&child, pass());
+  size_t child_key = to_key(&root, &child);
+
+  make_move(&child, single(1, 0));
+  size_t grandchild_key = to_key(&root, &child);
+
+  assert(root_key < size);
+  assert(child_key < size);
+  assert(grandchild_key < size);
+  assert(root_key != child_key);
+  assert(root_key != grandchild_key);
+  assert(child_key != grandchild_key);
 }
 
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
+  test_rectangle_six_keyspace();
   return EXIT_SUCCESS;
 }

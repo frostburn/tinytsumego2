@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "tinytsumego2/stones.h"
@@ -18,20 +19,21 @@ int main() {
   s.passes = 0;
   s.ko_threats = 0;
   s.button = 0;
+  s.white_to_play = false;
 
-  print_state(&s, false);
+  print_state(&s);
 
   make_move(&s, single(0, 0));
-  print_state(&s, true);
+  print_state(&s);
 
   make_move(&s, single(1, 0));
-  print_state(&s, false);
+  print_state(&s);
 
   make_move(&s, pass());
-  print_state(&s, true);
+  print_state(&s);
 
   make_move(&s, single(0, 1));
-  print_state(&s, false);
+  print_state(&s);
 
   printf("thx bye\n");
   return EXIT_SUCCESS;
