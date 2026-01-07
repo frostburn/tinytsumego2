@@ -3,10 +3,12 @@
     "clzll",
     "ENDFOREACH",
     "goban",
+    "negamax",
     "OPENMP",
     "popcountll",
     "tinytsumego",
     "Tsumego",
+    "tsumegos",
     "Wextra"
   ]
 }

@@ -119,7 +119,11 @@ move_result make_move(state *s, const stones_t move) {
     // Only count regular passes
     else if (result != TAKE_BUTTON) {
       s->passes++;
-      result = PASS;
+      if (s->passes == 1) {
+        result = PASS;
+      } else {
+        result = SECOND_PASS;
+      }
     }
     // Swap players
     s->player = s->opponent;
@@ -173,14 +177,6 @@ move_result make_move(state *s, const stones_t move) {
   chain = flood((move & WEST_BLOCK) << H_SHIFT, s->opponent);
   KILL_CHAIN
 
-  // Bit magic to check if a single stone was killed and the played stone was left in atari
-  if (
-    (kill & (kill - 1ULL)) == 0 &&
-    liberties(move, s->logical_area & ~s->opponent) == kill
-   ) {
-    s->ko = kill;
-  }
-
   // Check legality
   chain = flood(move, s->player);
   if (!liberties(chain, s->visual_area & ~s->opponent) && !(chain & s->immortal)) {
@@ -190,6 +186,15 @@ move_result make_move(state *s, const stones_t move) {
     s->ko = old_ko;
     s->ko_threats = old_ko_threats;
     return ILLEGAL;
+  }
+
+  // Bit magic to check if a single stone was killed and the played stone was left alone in atari
+  if (
+    (kill & (kill - 1ULL)) == 0ULL &&
+    (chain & (chain - 1ULL)) == 0ULL &&
+    liberties(chain, s->logical_area & ~s->opponent) == kill
+   ) {
+    s->ko = kill;
   }
 
   // Expand immortal areas

@@ -117,7 +117,7 @@ void test_rectangle_six_no_liberties_capture_refutation() {
   print_state(&s);
 
   r = make_move(&s, pass());
-  assert(r == PASS);
+  assert(r == SECOND_PASS);
   assert(s.passes == 2);
   print_state(&s);
 }

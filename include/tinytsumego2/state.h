@@ -49,6 +49,7 @@ typedef enum move_result
   CLEAR_KO,
   TAKE_BUTTON,
   PASS,
+  SECOND_PASS,
   NORMAL,
   KO_THREAT_AND_RETAKE,
   TAKE_TARGET
