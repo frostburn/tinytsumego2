@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "tinytsumego2/state.h"
 
 void print_state(const state *s, bool white_to_play) {
@@ -72,8 +73,13 @@ void print_state(const state *s, bool white_to_play) {
       printf(" *");
     }
     else if (p & s->visual_area) {
-      printf("\x1b[35m");
-      printf(" .");
+      if (p & s->target) {
+        printf("\x1b[34m");
+        printf(" ,");
+      } else {
+        printf("\x1b[35m");
+        printf(" .");
+      }
     }
     else if (p & s->logical_area) {
       printf("\x1b[35m");
