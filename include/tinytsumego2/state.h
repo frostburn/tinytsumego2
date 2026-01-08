@@ -26,6 +26,10 @@ typedef struct state
   // Stones that cannot be captured even if they run out of liberties.
   stones_t immortal;
 
+  // External liberties. Should be adjacent to the target. Always counts as empty space.
+  // Player/opponent flags indicate who can fill in the liberties. Fill order is normalized.
+  stones_t external;
+
   // Number of consecutive passes made. Clearing a ko or taking the button doesn't qualify.
   int passes;
 
@@ -50,8 +54,7 @@ typedef enum move_result
   TAKE_BUTTON,
   PASS,
   SECOND_PASS,
-  FILL_OWN_LIBERTY,
-  FILL_TARGET_LIBERTY,
+  FILL_EXTERNAL,
   NORMAL,
   KO_THREAT_AND_RETAKE,
   TAKE_TARGET

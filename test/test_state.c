@@ -163,6 +163,7 @@ void test_parse() {
       0ULL,
       33319616512ULL,
       2020018364536649728ULL,
+      0ULL,
       0,
       0,
       0,
@@ -183,15 +184,15 @@ void test_parse() {
 
 void test_external_liberties() {
   state s = parse_state("\
-    b . W x x x x x x\
-    b . W x x x x x x\
+    b - x x x x x x x\
+    b - x x x x x x x\
   ");
   move_result r = make_move(&s, single(1, 0));
   print_state(&s);
-  assert(r == FILL_OWN_LIBERTY);
+  assert(r == ILLEGAL);
 
   r = make_move(&s, single(1, 1));
-  assert(r == FILL_OWN_LIBERTY);
+  assert(r == ILLEGAL);
 
   r = make_move(&s, pass());
   print_state(&s);
@@ -201,10 +202,10 @@ void test_external_liberties() {
 
   r = make_move(&s, single(1, 0));
   print_state(&s);
-  assert(r == FILL_TARGET_LIBERTY);
+  assert(r == FILL_EXTERNAL);
 
   r = make_move(&alt, single(1, 1));
-  assert(r == FILL_TARGET_LIBERTY);
+  assert(r == FILL_EXTERNAL);
   assert(equals(&s, &alt));  // Make sure target liberties are filled in standard order
 
   r = make_move(&s, pass());

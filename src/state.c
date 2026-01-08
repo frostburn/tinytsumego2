@@ -51,6 +51,8 @@ void print_state(const state *s) {
       }
       else if (p & s->immortal) {
         printf(" B");
+      } else if (p & s->external) {
+        printf(" +");
       }
       else {
         printf(" @");
@@ -63,6 +65,8 @@ void print_state(const state *s) {
       }
       else if (p & s->immortal) {
         printf(" W");
+      } else if (p & s->external) {
+        printf(" -");
       }
       else {
         printf(" 0");
@@ -107,7 +111,7 @@ void print_state(const state *s) {
 
 void repr_state(const state *s) {
     printf(
-        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s}\n",
+        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s}\n",
         s->visual_area,
         s->logical_area,
         s->player,
@@ -115,6 +119,7 @@ void repr_state(const state *s) {
         s->ko,
         s->target,
         s->immortal,
+        s->external,
         s->passes,
         s->ko_threats,
         s->button,
@@ -131,6 +136,7 @@ state parse_state(const char *visuals) {
   s.ko = 0;
   s.target = 0;
   s.immortal = 0;
+  s.external = 0;
   s.passes = 0;
   s.ko_threats = 0;
   s.button = 0;
@@ -175,6 +181,13 @@ state parse_state(const char *visuals) {
         s.immortal |= p;
         p <<= 1;
         break;
+      case '+':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        s.player |= p;
+        s.external |= p;
+        p <<= 1;
+        break;
       case '0':
         s.visual_area |= p;
         s.logical_area |= p;
@@ -191,6 +204,13 @@ state parse_state(const char *visuals) {
         s.visual_area |= p;
         s.opponent |= p;
         s.immortal |= p;
+        p <<= 1;
+        break;
+      case '-':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        s.opponent |= p;
+        s.external |= p;
         p <<= 1;
         break;
     }
@@ -247,22 +267,17 @@ move_result make_move(state *s, stones_t move) {
   }
 
   // Abort if move outside empty logical area
-  if (move & (s->player | s->opponent | ~s->logical_area)) {
+  stones_t empty = s->logical_area & ~(s->player ^ s->external) & ~s->opponent;
+  if (move & ~empty) {
     return ILLEGAL;
   }
 
-  // We already checked for empty space so external liberty indication can be sloppy
-  stones_t external_liberties = liberties(s->player & s->target, cross(s->opponent & s->immortal));
-  // Don't fill own liberties
-  if (move & external_liberties) {
-    return FILL_OWN_LIBERTY;
-  }
-
-  external_liberties = liberties(s->opponent & s->target, cross(s->player & s->immortal));
-  if (move & external_liberties) {
-    // Normalize move placement inside the group of external liberties. Can't be sloppy anymore.
-    move = 1ULL << ctz(flood(move, external_liberties & ~s->player & s->logical_area));
-    result = FILL_TARGET_LIBERTY;
+  if (move & s->external) {
+    // Normalize move placement inside the group of external liberties.
+    move = 1ULL << ctz(flood(move, s->external));
+    s->immortal |= move;
+    s->external ^= move;
+    result = FILL_EXTERNAL;
   }
 
   s->player |= move;
@@ -272,7 +287,7 @@ move_result make_move(state *s, stones_t move) {
   stones_t kill = 0;
 
   // Potential liberties for opponent's stones (visual non-logical liberties count as permanent)
-  stones_t empty = s->visual_area & ~s->player; 
+  empty = s->visual_area & ~(s->player ^ s->external);
 
   // Lol, macro abuse
   #define KILL_CHAIN \
@@ -290,8 +305,8 @@ move_result make_move(state *s, stones_t move) {
   KILL_CHAIN
 
   // Check legality
-  chain = flood(move, s->player);
-  if (!liberties(chain, s->visual_area & ~s->opponent) && !(chain & s->immortal)) {
+  chain = flood(move, s->player & ~s->external);
+  if (!liberties(chain, s->visual_area & ~(s->opponent ^ s->external)) && !(chain & s->immortal)) {
     // Oops! Revert state
     s->player = old_player;
     s->opponent = old_opponent;

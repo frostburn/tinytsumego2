@@ -132,16 +132,16 @@ state get_tsumego(char *name) {
   }
 
   s.logical_area ^= single(4, 0);
-  s.player ^= single(4, 0);
-  s.immortal = s.player;
+  s.immortal ^= single(4, 0);
+  s.external ^= single(4, 0);
   s.ko_threats = 0;
   if (strcmp(name, "Rectangle Six (1 liberty)") == 0) {
     return s;
   }
 
   s.logical_area ^= single(4, 1);
-  s.player ^= single(4, 1);
-  s.immortal = s.player;
+  s.immortal ^= single(4, 1);
+  s.external ^= single(4, 1);
   if (strcmp(name, "Rectangle Six (2 liberties)") == 0) {
     return s;
   }

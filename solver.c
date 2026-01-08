@@ -61,7 +61,7 @@ int main() {
     for (int j = 0; j < num_moves; ++j) {
       state child = states[num_expanded];
       const move_result r = make_move(&child, moves[j]);
-      if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET || r == FILL_OWN_LIBERTY)) {
+      if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
         // Linear search. TODO: Improve lookup during expansion
         bool novel = true;
         for (size_t i = 0; i < num_states; ++i) {
@@ -122,7 +122,7 @@ int main() {
           float child_score = score(&child) - TARGET_SCORE;
           low = fmax(low, -child_score);
           high = fmax(high, -child_score);
-        } else if (r != ILLEGAL && r != FILL_OWN_LIBERTY) {
+        } else if (r != ILLEGAL) {
           offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
           const value child_value = values[offset - states];
           low = fmax(low, -delay_capture(child_value.high));
@@ -161,7 +161,7 @@ int main() {
           continue;
         }
       }
-      if (r != ILLEGAL && r != FILL_OWN_LIBERTY) {
+      if (r != ILLEGAL) {
         offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
         const value child_value = values[offset - states];
 
