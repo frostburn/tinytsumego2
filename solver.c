@@ -33,20 +33,14 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Rectangle Six (2 liberties)");
-  const size_t size = keyspace_size(&root);
+  state root = get_tsumego("Straight Three");
 
-  value* values = malloc(size * sizeof(value));
-  state* states = malloc(size * sizeof(state));
-
-  // Initialize solution space to unknowns
-  for (size_t i = 0; i < size; ++i) {
-    values[i] = (value) {NAN, NAN};
-    states[i].logical_area = 0;
-  }
+  size_t num_states = 1;
+  size_t states_capacity = 1;
+  state* states = malloc(states_capacity * sizeof(state));
+  states[0] = root;
 
   print_state(&root);
-  printf("Key space size = %zu\n", size);
 
   int num_moves = popcount(root.logical_area) + 1;
   stones_t* moves = malloc(num_moves * sizeof(stones_t));
@@ -60,54 +54,52 @@ int main() {
   }
   moves[j] = pass();
 
-  const size_t root_key = to_key(&root, &root);
-  values[root_key] = (value) {0, 0}; // temp value
-  states[root_key] = root;
+  size_t num_expanded = 0;
 
-  size_t count = 1;
-  bool did_expand = true;
-
-  while (did_expand) {
-    did_expand = false;
-
-    for (size_t i = 0; i < size; ++i) {
-      if (values[i].low != 0 && values[i].high != 0) {
-        continue;
-      }
-      values[i] = (value) {-INFINITY, INFINITY};
-      for (int j = 0; j < num_moves; ++j) {
-        state child = states[i];
-        const move_result r = make_move(&child, moves[j]);
-        if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
-          const size_t child_key = to_key(&root, &child);
-
-          // Only overwrite empty entries
-          if (states[child_key].logical_area != 0) {
-            continue;
+  while (num_expanded < num_states) {
+    for (int j = 0; j < num_moves; ++j) {
+      state child = states[num_expanded];
+      const move_result r = make_move(&child, moves[j]);
+      if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
+        bool novel = true;
+        for (size_t i = 0; i < num_states; ++i) {
+          if (equals(states + i, &child)) {
+            novel = false;
+            break;
           }
-
-          values[child_key] = (value) {0, 0}; // Mark for expansion
-          states[child_key] = child;
-          count++;
-          did_expand = true;
-          #ifdef PRINT_EXPANSION
-            print_state(&child);
-          #endif
         }
+        if (!novel) {
+          continue;
+        }
+        num_states++;
+        if (num_states > states_capacity) {
+          states_capacity <<= 1;
+          states = realloc(states, states_capacity * sizeof(state));
+        }
+        states[num_states - 1] = child;
+        #ifdef PRINT_EXPANSION
+          print_state(&child);
+        #endif
       }
     }
+    num_expanded++;
   }
 
-  printf("Solution space size = %zu\n", count);
+  printf("Solution space size = %zu\n", num_states);
+
+  states_capacity = num_states;
+  states = realloc(states, states_capacity * sizeof(state));
+  value *values = malloc(num_states * sizeof(value));
+
+  // Initialize to unkown ranges
+  for (size_t i = 0; i < num_states; ++i) {
+    values[i] = (value){-INFINITY, INFINITY};
+  }
 
   bool did_update = true;
   while (did_update) {
     did_update = false;
-    for (size_t i = 0; i < size; ++i) {
-      if (states[i].logical_area == 0) {
-        continue;
-      }
-
+    for (size_t i = 0; i < num_states; ++i) {
       // Perform negamax
       float low = -INFINITY;
       float high = -INFINITY;
@@ -125,8 +117,14 @@ int main() {
           low = fmax(low, -child_score);
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
-          const size_t child_key = to_key(&root, &child);
-          const value child_value = values[child_key];
+          // Linear search. TODO: Convert to dictionary lookup
+          size_t k = 0;
+          for (;k < num_states; ++k) {
+            if (equals(states + k, &child)) {
+              break;
+            }
+          }
+          const value child_value = values[k];
           low = fmax(low, -delay_capture(child_value.high));
           high = fmax(high, -delay_capture(child_value.low));
         }
@@ -139,8 +137,8 @@ int main() {
   }
 
   state s = root;
-  float low = values[root_key].low;
-  float high = values[root_key].high;
+  float low = values[0].low;
+  float high = values[0].high;
 
   printf("Low = %f, high = %f\n", low, high);
 
@@ -154,13 +152,22 @@ int main() {
         goto cleanup;
       }
       if (r == SECOND_PASS) {
-        print_state(&child);
-        printf("Game over\n");
-        goto cleanup;
+        if (-score(&child) == low) {
+          print_state(&child);
+          printf("Game over\n");
+          goto cleanup;
+        } else {
+          continue;
+        }
       }
       if (r != ILLEGAL) {
-        const size_t child_key = to_key(&root, &child);
-        const value child_value = values[child_key];
+        size_t k = 0;
+        for (;k < num_states; ++k) {
+          if (equals(states + k, &child)) {
+            break;
+          }
+        }
+        const value child_value = values[k];
 
         if (-delay_capture(child_value.high) == low) {
           s = child;
