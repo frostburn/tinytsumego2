@@ -437,6 +437,9 @@ bool equals(const state *a, const state *b) {
   if (a->immortal != b->immortal) {
     return false;
   }
+  if (a->external != b->external) {
+    return false;
+  }
   if (a->passes != b->passes) {
     return false;
   }
@@ -473,6 +476,13 @@ int compare(const void *a_, const void *b_) {
         return -1;
     }
     if (a->ko > b->ko) {
+        return 1;
+    }
+
+    if (a->external < b->external) {
+        return -1;
+    }
+    if (a->external > b->external) {
         return 1;
     }
 

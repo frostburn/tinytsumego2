@@ -66,3 +66,9 @@ stones_t flood(register stones_t source, register const stones_t target);
 
 // Expand `stones` in a "cross" pattern
 stones_t cross(const stones_t stones);
+
+// Indicate the column of a single stone: 'A' through 'I' or 'p' for pass()
+char column_of(const stones_t stone);
+
+// Indicate the row of a single stone: '0' through '6' or 's' for pass()
+char row_of(const stones_t stone);

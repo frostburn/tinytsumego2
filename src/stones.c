@@ -91,3 +91,17 @@ stones_t cross(const stones_t stones) {
     stones
   );
 }
+
+char column_of(const stones_t stone) {
+  if (!stone) {
+    return 'p';
+  }
+  return 'A' + (ctz(stone) % WIDTH);
+}
+
+char row_of(const stones_t stone) {
+  if (!stone) {
+    return 's';
+  }
+  return '0' + (ctz(stone) / WIDTH);
+}

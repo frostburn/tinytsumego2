@@ -34,7 +34,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Rectangle Six (2 liberties)");
+  state root = get_tsumego("Rectangle Six (1 liberty)");
 
   size_t num_states = 1;
   size_t states_capacity = 1;
@@ -119,7 +119,7 @@ int main() {
           high = fmax(high, -child_score);
         }
         else if (r == TAKE_TARGET) {
-          float child_score = score(&child) - TARGET_SCORE;
+          float child_score = -TARGET_SCORE;
           low = fmax(low, -child_score);
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
@@ -148,11 +148,24 @@ int main() {
       state child = s;
       const move_result r = make_move(&child, moves[j]);
       if (r == TAKE_TARGET) {
+        printf("%c%c: takes target\n",  column_of(moves[j]), row_of(moves[j]));
+      } else if (r == SECOND_PASS) {
+        printf("%c%c: game over (%f)\n",  column_of(moves[j]), row_of(moves[j]), score(&child));
+      } else if (r != ILLEGAL) {
+        offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
+        const value child_value = values[offset - states];
+        printf("%c%c: %f, %f\n",  column_of(moves[j]), row_of(moves[j]), child_value.low, child_value.high);
+      }
+    }
+
+    for (int j = 0; j < num_moves; ++j) {
+      state child = s;
+      const move_result r = make_move(&child, moves[j]);
+      if (r == TAKE_TARGET) {
         print_state(&child);
         printf("Target captured\n");
         goto cleanup;
-      }
-      if (r == SECOND_PASS) {
+      } else if (r == SECOND_PASS) {
         if (-score(&child) == low) {
           print_state(&child);
           printf("Game over\n");
@@ -160,8 +173,7 @@ int main() {
         } else {
           continue;
         }
-      }
-      if (r != ILLEGAL) {
+      } else if (r != ILLEGAL) {
         offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
         const value child_value = values[offset - states];
 

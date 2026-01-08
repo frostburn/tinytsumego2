@@ -133,8 +133,15 @@ state get_tsumego(char *name) {
 
   s.logical_area ^= single(4, 0);
   s.immortal ^= single(4, 0);
-  s.external ^= single(4, 0);
+  s.player ^= single(4, 0);
   s.ko_threats = 0;
+  if (strcmp(name, "Rectangle Six (1 physical liberty)") == 0) {
+    return s;
+  }
+
+  s.player ^= single(4, 0);
+  s.external ^= single(4, 0);
+
   if (strcmp(name, "Rectangle Six (1 liberty)") == 0) {
     return s;
   }
@@ -144,6 +151,18 @@ state get_tsumego(char *name) {
   s.external ^= single(4, 1);
   if (strcmp(name, "Rectangle Six (2 liberties)") == 0) {
     return s;
+  }
+
+  if (strcmp(name, "Problem A") == 0) {
+    return parse_state("\
+      , , B B B B B , , \
+      B B B w w w w B , \
+      . w w . . . w B , \
+      . w . w . . w B , \
+      B B w w . B B , , \
+      , B B B B , , , , \
+      , , , , , , , , , \
+    ");
   }
 
   // Invalidate state if no matching entry found
