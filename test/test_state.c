@@ -181,10 +181,46 @@ void test_parse() {
     print_stones(s.immortal);
 }
 
+void test_external_liberties() {
+  state s = parse_state("\
+    b . W x x x x x x\
+    b . W x x x x x x\
+  ");
+  move_result r = make_move(&s, single(1, 0));
+  print_state(&s);
+  assert(r == FILL_OWN_LIBERTY);
+
+  r = make_move(&s, single(1, 1));
+  assert(r == FILL_OWN_LIBERTY);
+
+  r = make_move(&s, pass());
+  print_state(&s);
+  assert(r == TAKE_BUTTON);
+
+  state alt = s;
+
+  r = make_move(&s, single(1, 0));
+  print_state(&s);
+  assert(r == FILL_TARGET_LIBERTY);
+
+  r = make_move(&alt, single(1, 1));
+  assert(r == FILL_TARGET_LIBERTY);
+  assert(equals(&s, &alt));  // Make sure target liberties are filled in standard order
+
+  r = make_move(&s, pass());
+  print_state(&s);
+  assert(r == PASS);
+
+  r = make_move(&s, single(1, 1));
+  print_state(&s);
+  assert(r == TAKE_TARGET);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
   test_rectangle_six_keyspace();
   test_parse();
+  test_external_liberties();
   return EXIT_SUCCESS;
 }

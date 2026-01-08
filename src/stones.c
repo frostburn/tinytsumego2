@@ -54,8 +54,8 @@ int popcount(const stones_t stones) {
   return __builtin_popcountll(stones);
 }
 
-int clz(const stones_t stones) {
-  return __builtin_clzll(stones);
+int ctz(const stones_t stones) {
+  return __builtin_ctzll(stones);
 }
 
 stones_t liberties(const stones_t stones, const stones_t empty) {
@@ -80,4 +80,14 @@ stones_t flood(register stones_t source, register const stones_t target) {
     ) & target;
   } while (temp != source);
   return source;
+}
+
+stones_t cross(const stones_t stones) {
+  return (
+    ((stones & WEST_BLOCK) << H_SHIFT) |
+    ((stones >> H_SHIFT) & WEST_BLOCK) |
+    (stones << V_SHIFT) |
+    (stones >> V_SHIFT) |
+    stones
+  );
 }

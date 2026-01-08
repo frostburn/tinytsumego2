@@ -199,7 +199,7 @@ state parse_state(const char *visuals) {
   return s;
 }
 
-move_result make_move(state *s, const stones_t move) {
+move_result make_move(state *s, stones_t move) {
   move_result result = NORMAL;
   stones_t old_player = s->player;
   // Handle pass
@@ -246,9 +246,23 @@ move_result make_move(state *s, const stones_t move) {
     result = KO_THREAT_AND_RETAKE;
   }
 
-  // Check if move inside empty logical area
+  // Abort if move outside empty logical area
   if (move & (s->player | s->opponent | ~s->logical_area)) {
-      return ILLEGAL;
+    return ILLEGAL;
+  }
+
+  // We already checked for empty space so external liberty indication can be sloppy
+  stones_t external_liberties = liberties(s->player & s->target, cross(s->opponent & s->immortal));
+  // Don't fill own liberties
+  if (move & external_liberties) {
+    return FILL_OWN_LIBERTY;
+  }
+
+  external_liberties = liberties(s->opponent & s->target, cross(s->player & s->immortal));
+  if (move & external_liberties) {
+    // Normalize move placement inside the group of external liberties. Can't be sloppy anymore.
+    move = 1ULL << ctz(flood(move, external_liberties & ~s->player & s->logical_area));
+    result = FILL_TARGET_LIBERTY;
   }
 
   s->player |= move;
@@ -358,6 +372,8 @@ size_t to_key(state *root, state *child) {
       }
     }
   }
+
+  // TODO: Make external liberty counting more lightweight
 
   return key;
 }

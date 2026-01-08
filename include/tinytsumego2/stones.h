@@ -55,8 +55,14 @@ stones_t pass();
 // Return the number of stones in the bit board
 int popcount(const stones_t stones);
 
+// Count empty spaces before the first stone in the bit board
+int ctz(const stones_t stones);
+
 // Return the bit board indicating the liberties of `stones` that lie in `empty` space
 stones_t liberties(const stones_t stones, const stones_t empty);
 
 // Flood fill `target` starting from `source` and return the contiguous chain of stones
 stones_t flood(register stones_t source, register const stones_t target);
+
+// Expand `stones` in a "cross" pattern
+stones_t cross(const stones_t stones);
