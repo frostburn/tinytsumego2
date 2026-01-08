@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "tsumego.c"
 
+// #define DEBUG
 // #define PRINT_EXPANSION
 
 // Large value for capturing the target stones
@@ -34,13 +35,18 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Rectangle Eight");
+  state root = get_tsumego("Square Nine");
 
   size_t num_states = 1;
   size_t states_capacity = 1;
   size_t num_sorted = 0;
   state* states = malloc(states_capacity * sizeof(state));
   states[0] = root;
+
+  size_t queue_length = 1;
+  size_t queue_capacity = 1;
+  state* expansion_queue = malloc(queue_capacity * sizeof(state));
+  expansion_queue[0] = root;
 
   print_state(&root);
 
@@ -59,12 +65,13 @@ int main() {
   size_t num_expanded = 0;
 
   while (num_expanded < num_states) {
+    state parent = expansion_queue[--queue_length];
     #ifdef PRINT_EXPANSION
       printf("now expanding\n");
-      print_state(states + num_expanded);
+      print_state(parent);
     #endif
     for (int j = 0; j < num_moves; ++j) {
-      state child = states[num_expanded];
+      state child = parent;
       const move_result r = make_move(&child, moves[j]);
       if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
         // Binary search the sorted head
@@ -86,15 +93,30 @@ int main() {
         num_states++;
         if (num_states > states_capacity) {
           num_sorted = states_capacity;
-          if (num_sorted > num_expanded) {
-            // Don't touch unexpanded nodes yet
-            num_sorted = num_expanded;
-          }
           qsort((void*) states, num_sorted, sizeof(state), compare);
           states_capacity <<= 1;
           states = realloc(states, states_capacity * sizeof(state));
+          #ifdef DEBUG
+            printf("Capacity expanded to %zu\n", states_capacity);
+          #endif
+        } else if (2 * num_states > 3 * num_sorted) {
+          num_sorted = states_capacity - (states_capacity >> 2);
+          qsort((void*) states, num_sorted, sizeof(state), compare);
+          #ifdef DEBUG
+            printf("Re-sorting at %zu\n", num_sorted);
+          #endif
         }
         states[num_states - 1] = child;
+
+        queue_length++;
+        if (queue_length > queue_capacity) {
+          queue_capacity <<= 1;
+          expansion_queue = realloc(expansion_queue, queue_capacity * sizeof(state));
+          #ifdef DEBUG
+            printf("Queue capacity expanded to %zu\n", queue_capacity);
+          #endif
+        }
+        expansion_queue[queue_length - 1] = child;
         #ifdef PRINT_EXPANSION
           printf("child\n");
           print_state(&child);
@@ -103,6 +125,8 @@ int main() {
     }
     num_expanded++;
   }
+
+  free(expansion_queue);
 
   printf("Solution space size = %zu\n", num_states);
 
@@ -123,6 +147,10 @@ int main() {
   while (did_update) {
     did_update = false;
     for (size_t i = 0; i < num_states; ++i) {
+      // Don't evaluate if the range cannot be tightened
+      if (values[i].low == values[i].high) {
+        continue;
+      }
       // Perform negamax
       float low = -INFINITY;
       float high = -INFINITY;
