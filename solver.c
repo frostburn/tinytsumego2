@@ -34,10 +34,11 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Rectangle Six (1 liberty)");
+  state root = get_tsumego("Rectangle Eight");
 
   size_t num_states = 1;
   size_t states_capacity = 1;
+  size_t num_sorted = 0;
   state* states = malloc(states_capacity * sizeof(state));
   states[0] = root;
 
@@ -58,14 +59,23 @@ int main() {
   size_t num_expanded = 0;
 
   while (num_expanded < num_states) {
+    #ifdef PRINT_EXPANSION
+      printf("now expanding\n");
+      print_state(states + num_expanded);
+    #endif
     for (int j = 0; j < num_moves; ++j) {
       state child = states[num_expanded];
       const move_result r = make_move(&child, moves[j]);
       if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
-        // Linear search. TODO: Improve lookup during expansion
+        // Binary search the sorted head
+        void *existing = bsearch((void*) &child, (void*) states, num_sorted, sizeof(state), compare);
+        if (existing) {
+          continue;
+        }
+        // Search tail linearly
         bool novel = true;
-        for (size_t i = 0; i < num_states; ++i) {
-          if (equals(states + i, &child)) {
+        for (size_t i = num_sorted; i < num_states; ++i) {
+          if (compare((void*) (states + i), (void*) &child) == 0) {
             novel = false;
             break;
           }
@@ -75,11 +85,18 @@ int main() {
         }
         num_states++;
         if (num_states > states_capacity) {
+          num_sorted = states_capacity;
+          if (num_sorted > num_expanded) {
+            // Don't touch unexpanded nodes yet
+            num_sorted = num_expanded;
+          }
+          qsort((void*) states, num_sorted, sizeof(state), compare);
           states_capacity <<= 1;
           states = realloc(states, states_capacity * sizeof(state));
         }
         states[num_states - 1] = child;
         #ifdef PRINT_EXPANSION
+          printf("child\n");
           print_state(&child);
         #endif
       }

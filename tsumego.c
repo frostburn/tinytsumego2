@@ -14,6 +14,7 @@ state get_tsumego(char *name) {
   s.ko = 0;
   s.target = s.opponent;
   s.immortal = 0;
+  s.external = 0;
   s.passes = 0;
   s.ko_threats = 0;
   s.button = 0;
@@ -27,6 +28,18 @@ state get_tsumego(char *name) {
   s.opponent = 0;
 
   if (strcmp(name, "Straight Three Defense") == 0) {
+    return s;
+  }
+
+  // . . @
+  // @ @ @
+  s.visual_area = rectangle(3, 2);
+  s.logical_area = rectangle(2, 1);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+
+  if (strcmp(name, "Straight Two") == 0) {
     return s;
   }
 
@@ -163,6 +176,47 @@ state get_tsumego(char *name) {
       , B B B B , , , , \
       , , , , , , , , , \
     ");
+  }
+
+  // . . . . @ 0
+  // . . . . @ 0
+  // @ @ @ @ @ 0
+
+  s.visual_area = rectangle(6, 3);
+  s.logical_area = rectangle(4, 2);
+  s.player = rectangle(1, 3) << 5;
+  s.opponent = rectangle(5, 3) ^ s.logical_area;
+  s.target = s.opponent;
+  s.immortal = s.player;
+  s.external = 0;
+  s.ko_threats = 0;
+
+  if (strcmp(name, "Rectangle Eight") == 0) {
+    return s;
+  }
+
+  s.ko_threats = -1;
+  if (strcmp(name, "Rectangle Eight (defender has threats)") == 0) {
+    return s;
+  }
+
+  // . . . . .
+  // . . . @ 0
+  // . . . @ 0
+  // . @ @ @ 0
+  // . 0 0 0 0
+
+  s.visual_area = rectangle(5, 5);
+  s.logical_area = rectangle(3, 3) | rectangle(5, 1) | rectangle(1, 5);
+  s.opponent = rectangle(4, 4) & ~s.logical_area;
+  s.player = rectangle(5, 5) & ~s.opponent & ~s.logical_area;
+  s.target = s.opponent;
+  s.immortal = s.player;
+  s.ko_threats = 0;
+  s.button = 1;
+
+  if (strcmp(name, "Carpenter's Square") == 0) {
+    return s;
   }
 
   // Invalidate state if no matching entry found
