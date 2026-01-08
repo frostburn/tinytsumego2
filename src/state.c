@@ -420,3 +420,58 @@ bool equals(const state *a, const state *b) {
   }
   return true;
 }
+
+int compare(const void *a_, const void *b_) {
+    state *a = (state*) a_;
+    state *b = (state*) b_;
+    if (a->player < b->player) {
+        return -1;
+    }
+    if (a->player > b->player) {
+        return 1;
+    }
+
+    if (a->opponent < b->opponent) {
+        return -1;
+    }
+    if (a->opponent > b->opponent) {
+        return 1;
+    }
+
+    if (a->ko < b->ko) {
+        return -1;
+    }
+    if (a->ko > b->ko) {
+        return 1;
+    }
+
+    if (a->passes < b->passes) {
+        return -1;
+    }
+    if (a->passes > b->passes) {
+        return 1;
+    }
+
+    if (a->ko_threats < b->ko_threats) {
+        return -1;
+    }
+    if (a->ko_threats > b->ko_threats) {
+        return 1;
+    }
+
+    if (a->button < b->button) {
+        return -1;
+    }
+    if (a->button > b->button) {
+        return 1;
+    }
+
+    if (a->white_to_play < b->white_to_play) {
+        return -1;
+    }
+    if (a->white_to_play > b->white_to_play) {
+        return 1;
+    }
+
+    return 0;
+}

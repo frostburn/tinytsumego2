@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "tsumego.c"
 
@@ -33,7 +34,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Straight Three");
+  state root = get_tsumego("Rectangle Six (1 liberty)");
 
   size_t num_states = 1;
   size_t states_capacity = 1;
@@ -61,6 +62,7 @@ int main() {
       state child = states[num_expanded];
       const move_result r = make_move(&child, moves[j]);
       if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
+        // Linear search. TODO: Improve lookup during expansion
         bool novel = true;
         for (size_t i = 0; i < num_states; ++i) {
           if (equals(states + i, &child)) {
@@ -89,6 +91,9 @@ int main() {
 
   states_capacity = num_states;
   states = realloc(states, states_capacity * sizeof(state));
+
+  qsort((void*) states, num_states, sizeof(state), compare);
+
   value *values = malloc(num_states * sizeof(value));
 
   // Initialize to unkown ranges
@@ -96,6 +101,7 @@ int main() {
     values[i] = (value){-INFINITY, INFINITY};
   }
 
+  state *offset;
   bool did_update = true;
   while (did_update) {
     did_update = false;
@@ -117,14 +123,8 @@ int main() {
           low = fmax(low, -child_score);
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
-          // Linear search. TODO: Convert to dictionary lookup
-          size_t k = 0;
-          for (;k < num_states; ++k) {
-            if (equals(states + k, &child)) {
-              break;
-            }
-          }
-          const value child_value = values[k];
+          offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
+          const value child_value = values[offset - states];
           low = fmax(low, -delay_capture(child_value.high));
           high = fmax(high, -delay_capture(child_value.low));
         }
@@ -136,12 +136,13 @@ int main() {
     }
   }
 
-  state s = root;
-  float low = values[0].low;
-  float high = values[0].high;
+  offset = (state*) bsearch((void*) &root, (void*) states, num_states, sizeof(state), compare);
+  float low = values[offset - states].low;
+  float high = values[offset - states].high;
 
   printf("Low = %f, high = %f\n", low, high);
 
+  state s = root;
   while (true) {
     for (int j = 0; j < num_moves; ++j) {
       state child = s;
@@ -161,13 +162,8 @@ int main() {
         }
       }
       if (r != ILLEGAL) {
-        size_t k = 0;
-        for (;k < num_states; ++k) {
-          if (equals(states + k, &child)) {
-            break;
-          }
-        }
-        const value child_value = values[k];
+        offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
+        const value child_value = values[offset - states];
 
         if (-delay_capture(child_value.high) == low) {
           s = child;

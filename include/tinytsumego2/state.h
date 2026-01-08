@@ -92,3 +92,6 @@ int chinese_liberty_score(const state *s);
 
 // Return true if two game states are the same. False otherwise.
 bool equals(const state *a, const state *b);
+
+// Compare two child states of a common root state. Compatible with qsort.
+int compare(const void *a_, const void *b_);
