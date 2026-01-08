@@ -58,6 +58,22 @@ typedef enum move_result
 // Print a game state with ANSI colors
 void print_state(const state *s);
 
+// Print the representation string of a game state
+void repr_state(const state *s);
+
+// Parse a game state from a string
+// . Empty playable space
+// , Empty unplayable space
+// * Empty space temporarily unavailable due to a ko
+// x Void used to pad lines to full 9 squares
+// @ Black stone
+// b Target black stone
+// B Immortal black stone
+// 0 White stone
+// w Target white stone
+// W Immortal white stone
+state parse_state(const char *visuals);
+
 // Make a single move in a game state
 // @param s: current game state
 // @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
@@ -73,3 +89,6 @@ size_t keyspace_size(state *root);
 
 // Count the difference between the number of player's stones and liberties and opponent's stones and liberties
 int chinese_liberty_score(const state *s);
+
+// Return true if two game states are the same. False otherwise.
+bool equals(const state *a, const state *b);

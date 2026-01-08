@@ -104,7 +104,7 @@ state get_tsumego(char *name) {
   // @ @ @ @ @
 
   s.visual_area = rectangle(5, 4);
-  s.logical_area = (rectangle(2, 2) << (1 + WIDTH)) | single(3, 1);
+  s.logical_area = (rectangle(2, 2) << (1 + V_SHIFT)) | single(3, 1);
   s.player = 0;
   s.opponent = s.visual_area ^ s.logical_area;
   s.target = s.opponent;

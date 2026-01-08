@@ -144,9 +144,47 @@ void test_rectangle_six_keyspace() {
   assert(child_key != grandchild_key);
 }
 
+void test_parse() {
+    char *visuals = "\
+      , , , , , , . . . \
+      , , W W W W W b . \
+      , B B B B B W b . \
+      , . . w w w b b 0 \
+      , . . . @ @ W W . \
+      , , W . . . W , , \
+      , , , . W W W , , \
+    ";
+
+    const state expected = (state) {
+      9223372036854775807ULL,
+      146107400938717632ULL,
+      3324354560000ULL,
+      2020018406396327936ULL,
+      0ULL,
+      33319616512ULL,
+      2020018364536649728ULL,
+      0,
+      0,
+      0,
+      false
+    };
+
+    state s = parse_state(visuals);
+    print_state(&s);
+    repr_state(&s);
+    assert(equals(&s, &expected));
+    print_stones(s.visual_area);
+    print_stones(s.logical_area);
+    print_stones(s.player);
+    print_stones(s.opponent);
+    print_stones(s.target);
+    print_stones(s.immortal);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
   test_rectangle_six_keyspace();
+  test_parse();
   return EXIT_SUCCESS;
 }

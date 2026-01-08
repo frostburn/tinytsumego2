@@ -75,10 +75,14 @@ void print_state(const state *s) {
     else if (p & s->visual_area) {
       if (p & s->target) {
         printf("\x1b[34m");
-        printf(" ,");
+        printf(" !");
       } else {
         printf("\x1b[35m");
-        printf(" .");
+        if (p & s->logical_area) {
+          printf(" .");
+        } else {
+          printf(" ,");
+        }
       }
     }
     else if (p & s->logical_area) {
@@ -99,6 +103,100 @@ void print_state(const state *s) {
   else {
     printf("Black to play\n");
   }
+}
+
+void repr_state(const state *s) {
+    printf(
+        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s}\n",
+        s->visual_area,
+        s->logical_area,
+        s->player,
+        s->opponent,
+        s->ko,
+        s->target,
+        s->immortal,
+        s->passes,
+        s->ko_threats,
+        s->button,
+        s->white_to_play ? "true" : "false"
+    );
+}
+
+state parse_state(const char *visuals) {
+  state s;
+  s.visual_area = 0;
+  s.logical_area = 0;
+  s.player = 0;
+  s.opponent = 0;
+  s.ko = 0;
+  s.target = 0;
+  s.immortal = 0;
+  s.passes = 0;
+  s.ko_threats = 0;
+  s.button = 0;
+  s.white_to_play = false;
+
+  stones_t p = 1ULL;
+  while (*visuals) {
+    switch (*visuals) {
+      case 'x':
+        p <<= 1;
+        break;
+      case '.':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        p <<= 1;
+        break;
+      case ',':
+        s.visual_area |= p;
+        p <<= 1;
+        break;
+      case '*':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        s.ko |= p;
+        p <<= 1;
+        break;
+      case '@':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        s.player |= p;
+        p <<= 1;
+        break;
+      case 'b':
+        s.visual_area |= p;
+        s.player |= p;
+        s.target |= p;
+        p <<= 1;
+        break;
+      case 'B':
+        s.visual_area |= p;
+        s.player |= p;
+        s.immortal |= p;
+        p <<= 1;
+        break;
+      case '0':
+        s.visual_area |= p;
+        s.logical_area |= p;
+        s.opponent |= p;
+        p <<= 1;
+        break;
+      case 'w':
+        s.visual_area |= p;
+        s.opponent |= p;
+        s.target |= p;
+        p <<= 1;
+        break;
+      case 'W':
+        s.visual_area |= p;
+        s.opponent |= p;
+        s.immortal |= p;
+        p <<= 1;
+        break;
+    }
+    visuals++;
+  }
+  return s;
 }
 
 move_result make_move(state *s, const stones_t move) {
@@ -284,4 +382,41 @@ int chinese_liberty_score(const state *s) {
   stones_t player_controlled = s->player | liberties(s->player, s->visual_area & ~s->opponent);
   stones_t opponent_controlled = s->opponent | liberties(s->opponent, s->visual_area & ~s->player);
   return popcount(player_controlled) - popcount(opponent_controlled);
+}
+
+bool equals(const state *a, const state *b) {
+  if (a->visual_area != b->visual_area) {
+    return false;
+  }
+  if (a->logical_area != b->logical_area) {
+    return false;
+  }
+  if (a->player != b->player) {
+    return false;
+  }
+  if (a->opponent != b->opponent) {
+    return false;
+  }
+  if (a->ko != b->ko) {
+    return false;
+  }
+  if (a->target != b->target) {
+    return false;
+  }
+  if (a->immortal != b->immortal) {
+    return false;
+  }
+  if (a->passes != b->passes) {
+    return false;
+  }
+  if (a->ko_threats != b->ko_threats) {
+    return false;
+  }
+  if (a->button != b->button) {
+    return false;
+  }
+  if (a->white_to_play != b->white_to_play) {
+    return false;
+  }
+  return true;
 }
