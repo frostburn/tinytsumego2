@@ -111,6 +111,27 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  // . 0 . @
+  // 0 @ @ @
+  // . @ @ @
+  // @ @ @ @
+
+  s.visual_area = rectangle(4, 4);
+  s.logical_area = rectangle(3, 1) | rectangle(1, 3);
+  s.player = single(1, 0) | single(0, 1);
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.immortal = 0;
+  s.target = s.opponent;
+
+  if (strcmp(name, "Bent Four in the Corner is Dead") == 0) {
+    return s;
+  }
+
+  s.ko_threats = -1;
+  if (strcmp(name, "Bent Four in the Corner is Dead (defender has threats)") == 0) {
+    return s;
+  }
+
   // @ @ @ @ @
   // @ . . . @
   // @ . . @ @
@@ -236,7 +257,7 @@ state get_tsumego(char *name) {
     return s;
   }
 
-  s.ko_threats = -1;
+  s.ko_threats = -2;
   if (strcmp(name, "Carpenter's Square (defender has threats)") == 0) {
     return s;
   }

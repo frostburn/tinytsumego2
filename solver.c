@@ -7,6 +7,11 @@
 // #define DEBUG
 // #define PRINT_EXPANSION
 
+// #define ATTACKER_PLAYS_HIGH
+// #define NO_CAPTURE_DELAY
+
+#define MAX_DEMONSTRATION (100)
+
 #define BLOOM_SIZE (262144)
 #define BLOOM_MASK (262143)
 #define BLOOM_SHIFT (21)
@@ -68,6 +73,9 @@ float score(state *s) {
 }
 
 float delay_capture(float my_score) {
+  #ifdef NO_CAPTURE_DELAY
+    return my_score;
+  #endif
   if (my_score < -BIG_SCORE) {
     return my_score + 0.25;
   }
@@ -81,7 +89,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Square Nine");
+  state root = get_tsumego("Bent Four in the Corner is Dead (defender has threats)");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
@@ -115,6 +123,10 @@ int main() {
   size_t num_true_negative = 0;
 
   size_t num_expanded = 0;
+
+  #ifdef DEBUG
+    bool first_time_resorting = true;
+  #endif
 
   while (num_expanded < num_states) {
     state parent = expansion_queue[--queue_length];
@@ -158,13 +170,22 @@ int main() {
           states_capacity <<= 1;
           states = realloc(states, states_capacity * sizeof(state));
           #ifdef DEBUG
+            if (!first_time_resorting) {
+              printf("\n");
+              first_time_resorting = true;
+            }
             printf("Capacity expanded to %zu\n", states_capacity);
           #endif
         } else if (num_states > num_sorted + MAX_TAIL_SIZE) {
           num_sorted = num_states;
           qsort((void*) states, num_sorted, sizeof(state), compare);
           #ifdef DEBUG
-            printf("Re-sorting at %zu\n", num_sorted);
+            if (first_time_resorting) {
+              printf("Re-sorting at %zu", num_sorted);
+            } else {
+              printf(", %zu", num_sorted);
+            }
+            first_time_resorting = false;
           #endif
         }
         states[num_states++] = child;
@@ -175,6 +196,10 @@ int main() {
           queue_capacity <<= 1;
           expansion_queue = realloc(expansion_queue, queue_capacity * sizeof(state));
           #ifdef DEBUG
+            if (!first_time_resorting) {
+              printf("\n");
+              first_time_resorting = true;
+            }
             printf("Queue capacity expanded to %zu\n", queue_capacity);
           #endif
         }
@@ -260,8 +285,13 @@ int main() {
 
   printf("Low = %f, high = %f\n", low, high);
 
+  bool low_to_play = true;
+  #ifdef ATTACKER_PLAYS_HIGH
+    low_to_play = false;
+  #endif
+
   state s = root;
-  while (true) {
+  for (int n = 0; n < MAX_DEMONSTRATION; ++n) {
     for (int j = 0; j < num_moves; ++j) {
       state child = s;
       const move_result r = make_move(&child, moves[j]);
@@ -284,7 +314,8 @@ int main() {
         printf("Target captured\n");
         goto cleanup;
       } else if (r == SECOND_PASS) {
-        if (-score(&child) == low) {
+        float target_score = low_to_play ? low : high;
+        if (-score(&child) == target_score) {
           print_state(&child);
           printf("Game over\n");
           goto cleanup;
@@ -295,8 +326,16 @@ int main() {
         offset = (state*) bsearch((void*) &child, (void*) states, num_states, sizeof(state), compare);
         const value child_value = values[offset - states];
 
-        if (-delay_capture(child_value.high) == low) {
+        bool good;
+        if (low_to_play) {
+          good = (-delay_capture(child_value.high) == low);
+        } else {
+          good = (-delay_capture(child_value.low) == high);
+        }
+
+        if (good) {
           s = child;
+          low_to_play = !low_to_play;
           low = child_value.low;
           high = child_value.high;
           if (r == KO_THREAT_AND_RETAKE) {
