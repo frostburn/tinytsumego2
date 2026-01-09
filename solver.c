@@ -19,7 +19,7 @@
 #define MAX_TAIL_SIZE (8192)
 
 // Large value for capturing the target stones
-#define TARGET_SCORE (1000)
+#define TARGET_CAPTURED_SCORE (1000)
 
 // The maximum regular score (and then some)
 #define BIG_SCORE (WIDTH * HEIGHT + 10)
@@ -64,6 +64,7 @@ bool bloom_test(unsigned char *bloom, stones_t a, stones_t b) {
   return bloom[b >> 3] & (1 << (b & 7));
 }
 
+// Chinese-like score with bonus for taking the button and saving up ko-threats
 float score(state *s) {
   return (
     chinese_liberty_score(s) +
@@ -72,6 +73,12 @@ float score(state *s) {
   );
 }
 
+// Big score for capturing the target. Stone score not included to reduce weird play. Button and ko threat bonuses are included
+float target_lost_score(state *s) {
+  return -TARGET_CAPTURED_SCORE + s->button * 0.5 + s->ko_threats * 0.0625;
+}
+
+// Incentivize delaying if the target stones cannot be saved
 float delay_capture(float my_score) {
   #ifdef NO_CAPTURE_DELAY
     return my_score;
@@ -89,7 +96,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("J+1 group with descent attack");
+  state root = get_tsumego("L+2 group with descent attack");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
@@ -262,7 +269,7 @@ int main() {
           high = fmax(high, -child_score);
         }
         else if (r == TAKE_TARGET) {
-          float child_score = -TARGET_SCORE;
+          float child_score = target_lost_score(&child);
           low = fmax(low, -child_score);
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
@@ -296,7 +303,7 @@ int main() {
       state child = s;
       const move_result r = make_move(&child, moves[j]);
       if (r == TAKE_TARGET) {
-        printf("%c%c: takes target\n",  column_of(moves[j]), row_of(moves[j]));
+        printf("%c%c: takes target (%f)\n",  column_of(moves[j]), row_of(moves[j]), target_lost_score(&child));
       } else if (r == SECOND_PASS) {
         printf("%c%c: game over (%f)\n",  column_of(moves[j]), row_of(moves[j]), score(&child));
       } else if (r != ILLEGAL) {
@@ -314,8 +321,8 @@ int main() {
         printf("Target captured\n");
         goto cleanup;
       } else if (r == SECOND_PASS) {
-        float target_score = low_to_play ? low : high;
-        if (-score(&child) == target_score) {
+        float good_score = low_to_play ? low : high;
+        if (-score(&child) == good_score) {
           print_state(&child);
           printf("Game over\n");
           goto cleanup;
