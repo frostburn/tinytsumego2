@@ -12,9 +12,9 @@
 
 #define MAX_DEMONSTRATION (100)
 
-#define BLOOM_SIZE (262144)
-#define BLOOM_MASK (262143)
-#define BLOOM_SHIFT (21)
+#define BLOOM_SIZE (2097152)
+#define BLOOM_MASK (2097151)
+#define BLOOM_SHIFT (24)
 
 #define MAX_TAIL_SIZE (8192)
 
@@ -30,13 +30,13 @@ void bloom_insert(unsigned char *bloom, stones_t a, stones_t b) {
   a >>= BLOOM_SHIFT;
   bloom[(a >> 3) & BLOOM_MASK] |= 1 << (a & 7);
   a >>= BLOOM_SHIFT;
-  bloom[(a >> 3) & BLOOM_MASK] |= 1 << (a & 7);
+  bloom[a >> 3] |= 1 << (a & 7);
 
   bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
   b >>= BLOOM_SHIFT;
   bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
   b >>= BLOOM_SHIFT;
-  bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
+  bloom[b >> 3] |= 1 << (b & 7);
 }
 
 // Test bloom filter membership `true` indicates likely membership in the set. `false` indicates that the element definitely isn't in the set.
@@ -49,7 +49,7 @@ bool bloom_test(unsigned char *bloom, stones_t a, stones_t b) {
     return false;
   }
   a >>= BLOOM_SHIFT;
-  if (!(bloom[(a >> 3) & BLOOM_MASK] & (1 << (a & 7)))) {
+  if (!(bloom[a >> 3] & (1 << (a & 7)))) {
     return false;
   }
 
@@ -61,7 +61,7 @@ bool bloom_test(unsigned char *bloom, stones_t a, stones_t b) {
     return false;
   }
   b >>= BLOOM_SHIFT;
-  return bloom[(b >> 3) & BLOOM_MASK] & (1 << (b & 7));
+  return bloom[b >> 3] & (1 << (b & 7));
 }
 
 float score(state *s) {
@@ -89,7 +89,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Second L+1 group defense");
+  state root = get_tsumego("J+1 group with descent attack");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 

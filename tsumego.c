@@ -3,6 +3,7 @@
 #include "tinytsumego2/state.h"
 
 state get_tsumego(char *name) {
+  stones_t temp;
   state s;
 
   // . . . @
@@ -262,7 +263,7 @@ state get_tsumego(char *name) {
     return s;
   }
 
-  if (strcmp(name, "L-group") == 0) {
+  if (strcmp(name, "L group") == 0) {
     return parse_state("\
       . . . . . x x x x \
       W W b . . x x x x \
@@ -275,8 +276,8 @@ state get_tsumego(char *name) {
 
   s = parse_state("   \
     . . . . . . x x x \
-    , W b b . . x x x \
-    W , W b . . x x x \
+    W W b b . . x x x \
+    , , W b . . x x x \
     , , W b b . x x x \
     , W , W W . x x x \
     , , , , W . x x x \
@@ -286,10 +287,10 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
   if (strcmp(name, "First L+1 group attack") == 0) {
-    stones_t temp = s.player;
-    s.player = s.opponent;
-    s.opponent = temp;
     return s;
   }
 
@@ -300,20 +301,99 @@ state get_tsumego(char *name) {
       , W b b . x x x x \
       W , W b . x x x x \
       , , , W . x x x x \
-      , , W , . x x x x \
+      , , , W . x x x x \
   ");
+  s.ko_threats = -1;
 
   if (strcmp(name, "Second L+1 group defense") == 0) {
     return s;
   }
 
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  s.ko_threats = 0;
   if (strcmp(name, "Second L+1 group attack") == 0) {
-    stones_t temp = s.player;
-    s.player = s.opponent;
-    s.opponent = temp;
     return s;
   }
 
+  s = parse_state("     \
+      W . . . . x x x x \
+      W b b . . x x x x \
+      , W b . . x x x x \
+      , W b b . x x x x \
+      W , W b . x x x x \
+      , , , W . x x x x \
+      , , , W . x x x x \
+  ");
+
+  if (strcmp(name, "L+2 group with descent defense") == 0) {
+    return s;
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  s.ko_threats = 1;
+  if (strcmp(name, "L+2 group with descent attack") == 0) {
+    return s;
+  }
+
+  s = parse_state("   \
+    . . . . . x x x x \
+    . . b W W x x x x \
+    . . b W , x x x x \
+    b . b W , x x x x \
+    . b W , , x x x x \
+    . W W , , x x x x \
+    . W , W , x x x x \
+  ");
+
+  if (strcmp(name, "Basic J group defense") == 0) {
+    return s;
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  if (strcmp(name, "Basic J group attack") == 0) {
+    return s;
+  }
+
+  s.logical_area ^= single(0, 3) ^ single(0, 4);
+  s.opponent ^= single(0, 3) ^ single(0, 4);
+  s.target = s.opponent;
+  if (strcmp(name, "Straight J group attack") == 0) {
+    return s;
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  if (strcmp(name, "Straight J group defense") == 0) {
+    return s;
+  }
+
+  s = parse_state("   \
+    . . . . . . x x x \
+    . . b b W W x x x \
+    . . b W , , x x x \
+    b . b W , , x x x \
+    . b W , , , x x x \
+    W W W , , , x x x \
+  ");
+
+  if (strcmp(name, "J+1 group with descent defense") == 0) {
+    return s;
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  s.ko_threats = -1;
+  if (strcmp(name, "J+1 group with descent attack") == 0) {
+    return s;
+  }
 
   // Invalidate state if no matching entry found
   s.visual_area = 0;
