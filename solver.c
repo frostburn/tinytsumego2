@@ -4,12 +4,14 @@
 #include <stdio.h>
 #include "tsumego.c"
 
-#define DEBUG
+// #define DEBUG
 // #define PRINT_EXPANSION
 
 #define BLOOM_SIZE (262144)
 #define BLOOM_MASK (262143)
 #define BLOOM_SHIFT (21)
+
+#define MAX_TAIL_SIZE (8192)
 
 // Large value for capturing the target stones
 #define TARGET_SCORE (1000)
@@ -79,7 +81,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Carpenter's Square");
+  state root = get_tsumego("Square Nine");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
@@ -150,8 +152,7 @@ int main() {
         } else {
           num_true_negative++;
         }
-        num_states++;
-        if (num_states > states_capacity) {
+        if (num_states >= states_capacity) {
           num_sorted = states_capacity;
           qsort((void*) states, num_sorted, sizeof(state), compare);
           states_capacity <<= 1;
@@ -159,14 +160,14 @@ int main() {
           #ifdef DEBUG
             printf("Capacity expanded to %zu\n", states_capacity);
           #endif
-        } else if (2 * num_states > 3 * num_sorted) {
-          num_sorted = states_capacity - (states_capacity >> 2);
+        } else if (num_states > num_sorted + MAX_TAIL_SIZE) {
+          num_sorted = num_states;
           qsort((void*) states, num_sorted, sizeof(state), compare);
           #ifdef DEBUG
             printf("Re-sorting at %zu\n", num_sorted);
           #endif
         }
-        states[num_states - 1] = child;
+        states[num_states++] = child;
         bloom_insert(bloom, child_hash_a, child_hash_b);
 
         queue_length++;

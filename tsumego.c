@@ -236,6 +236,11 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  s.ko_threats = -1;
+  if (strcmp(name, "Carpenter's Square (defender has threats)") == 0) {
+    return s;
+  }
+
   // Invalidate state if no matching entry found
   s.visual_area = 0;
   return s;
