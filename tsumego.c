@@ -217,20 +217,20 @@ state get_tsumego(char *name) {
     return s;
   }
 
-  // . . . . 0
+  // . . . . .
   // . . . @ 0
   // . . . @ 0
   // . @ @ @ 0
   // . 0 0 0 0
 
   s.visual_area = rectangle(5, 5);
-  s.logical_area = rectangle(3, 3) | rectangle(4, 1) | rectangle(1, 5);
+  s.logical_area = rectangle(3, 3) | rectangle(5, 1) | rectangle(1, 5);
   s.opponent = rectangle(4, 4) & ~s.logical_area;
   s.player = rectangle(5, 5) & ~s.opponent & ~s.logical_area;
   s.target = s.opponent;
   s.immortal = s.player;
   s.ko_threats = 0;
-  s.button = 1;  // Lose playing accuracy to reduce search space size. Asymmetric for the same reason.
+  s.button = 1;  // Lose playing accuracy to reduce search space size
 
   if (strcmp(name, "Carpenter's Square") == 0) {
     return s;

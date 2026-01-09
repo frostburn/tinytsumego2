@@ -516,3 +516,30 @@ int compare(const void *a_, const void *b_) {
 
     return 0;
 }
+
+stones_t hash_a(const state *s) {
+  stones_t result = s->passes;
+  result = (result << 4) | s->ko_threats;
+  result = (result << 4) | s->button;
+  result = (result << 4) | s->white_to_play;
+  result ^= s->ko * 98765ULL;
+  result ^= s->external * 12345ULL;
+  result ^= s->player;
+  result *= 7777771234563346789ULL;
+  result ^= (s->opponent << 32) | (s->opponent >> 32);
+  return result;
+}
+
+stones_t hash_b(const state *s) {
+  stones_t result = s->passes;
+  result = (result << 5) | s->ko_threats;
+  result = (result << 5) | s->button;
+  result = (result << 5) | s->white_to_play;
+  result *= 582327ULL;
+  result ^= s->ko;
+  result ^= s->external * 23345ULL;
+  result *= 12356743289ULL;
+  result ^= (s->player << 32) | (s->player >> 32);
+  result ^= s->opponent;
+  return result * 1238767834675843ULL;
+}

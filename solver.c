@@ -4,14 +4,58 @@
 #include <stdio.h>
 #include "tsumego.c"
 
-// #define DEBUG
+#define DEBUG
 // #define PRINT_EXPANSION
+
+#define BLOOM_SIZE (262144)
+#define BLOOM_MASK (262143)
+#define BLOOM_SHIFT (21)
 
 // Large value for capturing the target stones
 #define TARGET_SCORE (1000)
 
 // The maximum regular score (and then some)
 #define BIG_SCORE (WIDTH * HEIGHT + 10)
+
+// Add an entry to the bloom filter
+void bloom_insert(unsigned char *bloom, stones_t a, stones_t b) {
+  bloom[(a >> 3) & BLOOM_MASK] |= 1 << (a & 7);
+  a >>= BLOOM_SHIFT;
+  bloom[(a >> 3) & BLOOM_MASK] |= 1 << (a & 7);
+  a >>= BLOOM_SHIFT;
+  bloom[(a >> 3) & BLOOM_MASK] |= 1 << (a & 7);
+
+  bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
+  b >>= BLOOM_SHIFT;
+  bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
+  b >>= BLOOM_SHIFT;
+  bloom[(b >> 3) & BLOOM_MASK] |= 1 << (b & 7);
+}
+
+// Test bloom filter membership `true` indicates likely membership in the set. `false` indicates that the element definitely isn't in the set.
+bool bloom_test(unsigned char *bloom, stones_t a, stones_t b) {
+  if (!(bloom[(a >> 3) & BLOOM_MASK] & (1 << (a & 7)))) {
+    return false;
+  }
+  a >>= BLOOM_SHIFT;
+  if (!(bloom[(a >> 3) & BLOOM_MASK] & (1 << (a & 7)))) {
+    return false;
+  }
+  a >>= BLOOM_SHIFT;
+  if (!(bloom[(a >> 3) & BLOOM_MASK] & (1 << (a & 7)))) {
+    return false;
+  }
+
+  if (!(bloom[(b >> 3) & BLOOM_MASK] & (1 << (b & 7)))) {
+    return false;
+  }
+  b >>= BLOOM_SHIFT;
+  if (!(bloom[(b >> 3) & BLOOM_MASK] & (1 << (b & 7)))) {
+    return false;
+  }
+  b >>= BLOOM_SHIFT;
+  return bloom[(b >> 3) & BLOOM_MASK] & (1 << (b & 7));
+}
 
 float score(state *s) {
   return (
@@ -35,7 +79,9 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Square Nine");
+  state root = get_tsumego("Carpenter's Square");
+
+  unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
   size_t num_states = 1;
   size_t states_capacity = 1;
@@ -62,6 +108,10 @@ int main() {
   }
   moves[j] = pass();
 
+  size_t num_maybe_positive = 0;
+  size_t num_false_positive = 0;
+  size_t num_true_negative = 0;
+
   size_t num_expanded = 0;
 
   while (num_expanded < num_states) {
@@ -74,21 +124,31 @@ int main() {
       state child = parent;
       const move_result r = make_move(&child, moves[j]);
       if (!(r == ILLEGAL || r == SECOND_PASS || r == TAKE_TARGET)) {
-        // Binary search the sorted head
-        void *existing = bsearch((void*) &child, (void*) states, num_sorted, sizeof(state), compare);
-        if (existing) {
-          continue;
-        }
-        // Search tail linearly
-        bool novel = true;
-        for (size_t i = num_sorted; i < num_states; ++i) {
-          if (compare((void*) (states + i), (void*) &child) == 0) {
-            novel = false;
-            break;
+        stones_t child_hash_a = hash_a(&child);
+        stones_t child_hash_b = hash_b(&child);
+        // Pre-filter using bloom
+        bool maybe_seen = bloom_test(bloom, child_hash_a, child_hash_b);
+        if (maybe_seen) {
+          num_maybe_positive++;
+          // Binary search the sorted head
+          void *existing = bsearch((void*) &child, (void*) states, num_sorted, sizeof(state), compare);
+          if (existing) {
+            continue;
           }
-        }
-        if (!novel) {
-          continue;
+          // Search tail linearly
+          bool novel = true;
+          for (size_t i = num_sorted; i < num_states; ++i) {
+            if (compare((void*) (states + i), (void*) &child) == 0) {
+              novel = false;
+              break;
+            }
+          }
+          if (!novel) {
+            continue;
+          }
+          num_false_positive++;
+        } else {
+          num_true_negative++;
         }
         num_states++;
         if (num_states > states_capacity) {
@@ -107,6 +167,7 @@ int main() {
           #endif
         }
         states[num_states - 1] = child;
+        bloom_insert(bloom, child_hash_a, child_hash_b);
 
         queue_length++;
         if (queue_length > queue_capacity) {
@@ -126,7 +187,18 @@ int main() {
     num_expanded++;
   }
 
+  size_t bloom_bits = 0;
+  for (size_t i = 0; i < BLOOM_SIZE; ++i) {
+    bloom_bits += __builtin_popcount(bloom[i]);
+  }
+
+  free(bloom);
   free(expansion_queue);
+
+  printf("Bloom stats:\n");
+  printf(" Occupancy: %g %%\n", ((double)bloom_bits) / BLOOM_SIZE / 8 * 100);
+  printf(" False positive rate: %g %%\n", num_false_positive / ((double) num_maybe_positive) * 100);
+  printf(" True negative rate: %g %%\n", num_true_negative / ((double) (num_maybe_positive + num_true_negative)) * 100);
 
   printf("Solution space size = %zu\n", num_states);
 
