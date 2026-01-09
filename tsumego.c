@@ -262,6 +262,59 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  if (strcmp(name, "L-group") == 0) {
+    return parse_state("\
+      . . . . . x x x x \
+      W W b . . x x x x \
+      , W b . . x x x x \
+      , W b b . x x x x \
+      W , W W . x x x x \
+      , , , W . x x x x \
+    ");
+  }
+
+  s = parse_state("   \
+    . . . . . . x x x \
+    , W b b . . x x x \
+    W , W b . . x x x \
+    , , W b b . x x x \
+    , W , W W . x x x \
+    , , , , W . x x x \
+  ");
+
+  if (strcmp(name, "First L+1 group defense") == 0) {
+    return s;
+  }
+
+  if (strcmp(name, "First L+1 group attack") == 0) {
+    stones_t temp = s.player;
+    s.player = s.opponent;
+    s.opponent = temp;
+    return s;
+  }
+
+  s = parse_state("     \
+      . . . . . x x x x \
+      W W b . . x x x x \
+      , W b . . x x x x \
+      , W b b . x x x x \
+      W , W b . x x x x \
+      , , , W . x x x x \
+      , , W , . x x x x \
+  ");
+
+  if (strcmp(name, "Second L+1 group defense") == 0) {
+    return s;
+  }
+
+  if (strcmp(name, "Second L+1 group attack") == 0) {
+    stones_t temp = s.player;
+    s.player = s.opponent;
+    s.opponent = temp;
+    return s;
+  }
+
+
   // Invalidate state if no matching entry found
   s.visual_area = 0;
   return s;

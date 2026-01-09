@@ -89,7 +89,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Bent Four in the Corner is Dead (defender has threats)");
+  state root = get_tsumego("Second L+1 group defense");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
