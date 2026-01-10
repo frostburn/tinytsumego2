@@ -67,7 +67,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("Long L group attack (with threats)");
+  state root = get_tsumego("Rectangle Eight (defender has threats)");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
@@ -263,6 +263,12 @@ int main() {
 
   printf("Low = %f, high = %f\n", low, high);
 
+  // Make passing the first option when demonstrating
+  for (int i = num_moves - 1; i > 0; --i) {
+    moves[i] = moves[i - 1];
+  }
+  moves[0] = pass();
+
   bool low_to_play = true;
   #ifdef ATTACKER_PLAYS_HIGH
     low_to_play = false;
@@ -319,6 +325,7 @@ int main() {
           if (r == KO_THREAT_AND_RETAKE) {
             printf("Ko threat made and answered...\n");
           }
+          printf("\n");
           print_state(&s);
           break;
         }
