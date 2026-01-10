@@ -239,20 +239,20 @@ state get_tsumego(char *name) {
     return s;
   }
 
-  // . . . . .
-  // . . . @ 0
-  // . . . @ 0
-  // . @ @ @ 0
-  // . 0 0 0 0
+  // . . . . . .
+  // . . . @ 0 0
+  // . . . @ 0 0
+  // . @ @ @ 0 0
+  // . 0 0 0 0 0
+  // . 0 0 0 0 0
 
-  s.visual_area = rectangle(5, 5);
-  s.logical_area = rectangle(3, 3) | rectangle(5, 1) | rectangle(1, 5);
+  s.visual_area = rectangle(6, 6);
+  s.logical_area = rectangle(3, 3) | rectangle(6, 1) | rectangle(1, 6);
   s.opponent = rectangle(4, 4) & ~s.logical_area;
-  s.player = rectangle(5, 5) & ~s.opponent & ~s.logical_area;
+  s.player = rectangle(6, 6) & ~s.opponent & ~s.logical_area;
   s.target = s.opponent;
   s.immortal = s.player;
   s.ko_threats = 0;
-  s.button = 1;  // Lose playing accuracy to reduce search space size
 
   if (strcmp(name, "Carpenter's Square") == 0) {
     return s;
@@ -392,6 +392,33 @@ state get_tsumego(char *name) {
   s.opponent = temp;
   s.ko_threats = -1;
   if (strcmp(name, "J+1 group with descent attack") == 0) {
+    return s;
+  }
+
+  s = parse_state("\
+      . . . . . x x x x \
+      W W b . . x x x x \
+      , W b . . x x x x \
+      , W b . . x x x x \
+      , W b b . x x x x \
+      W , W W . x x x x \
+      , , , W . x x x x \
+  ");
+
+  if (strcmp(name, "Long L group defense") == 0) {
+    return s;
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+
+  if (strcmp(name, "Long L group attack") == 0) {
+    return s;
+  }
+
+  s.ko_threats = 1;
+  if (strcmp(name, "Long L group attack (with threats)") == 0) {
     return s;
   }
 

@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "tinytsumego2/scoring.h"
+
 #include "tsumego.c"
 
 // #define DEBUG
@@ -17,12 +19,6 @@
 #define BLOOM_SHIFT (24)
 
 #define MAX_TAIL_SIZE (8192)
-
-// Large value for capturing the target stones
-#define TARGET_CAPTURED_SCORE (1000)
-
-// The maximum regular score (and then some)
-#define BIG_SCORE (WIDTH * HEIGHT + 10)
 
 // Add an entry to the bloom filter
 void bloom_insert(unsigned char *bloom, stones_t a, stones_t b) {
@@ -64,31 +60,6 @@ bool bloom_test(unsigned char *bloom, stones_t a, stones_t b) {
   return bloom[b >> 3] & (1 << (b & 7));
 }
 
-// Chinese-like score with bonus for taking the button and saving up ko-threats
-float score(state *s) {
-  return (
-    chinese_liberty_score(s) +
-    s->button * 0.5 +
-    s->ko_threats * 0.0625
-  );
-}
-
-// Big score for capturing the target. Stone score not included to reduce weird play. Button and ko threat bonuses are included
-float target_lost_score(state *s) {
-  return -TARGET_CAPTURED_SCORE + s->button * 0.5 + s->ko_threats * 0.0625;
-}
-
-// Incentivize delaying if the target stones cannot be saved
-float delay_capture(float my_score) {
-  #ifdef NO_CAPTURE_DELAY
-    return my_score;
-  #endif
-  if (my_score < -BIG_SCORE) {
-    return my_score + 0.25;
-  }
-  return my_score;
-}
-
 // Score range for a given game state. States with loops may not converge to a single score.
 typedef struct value {
   float low;
@@ -96,7 +67,7 @@ typedef struct value {
 } value;
 
 int main() {
-  state root = get_tsumego("L+2 group with descent attack");
+  state root = get_tsumego("Long L group attack (with threats)");
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 

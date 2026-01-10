@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Tsumego (go problems) are arranged inside a 9x7 goban (playing area).
  * Stones (playing pieces) are represented as bit boards (unsigned integers).

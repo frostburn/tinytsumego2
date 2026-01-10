@@ -1,7 +1,8 @@
 ADD_LIBRARY(
   tinytsumego2
-  stones.c
+  scoring.c
   state.c
+  stones.c
 )
 INSTALL(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/tinytsumego2
