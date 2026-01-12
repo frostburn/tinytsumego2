@@ -217,11 +217,24 @@ void test_external_liberties() {
   assert(r == TAKE_TARGET);
 }
 
+void test_2x1_occupied() {
+  state s = parse_state(". .");
+  s.button = 1;
+
+  move_result r = make_move(&s, single(0, 0));
+  print_state(&s);
+  assert(r == NORMAL);
+
+  r = make_move(&s, single(0, 0));
+  assert(r == ILLEGAL);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
   test_rectangle_six_keyspace();
   test_parse();
   test_external_liberties();
+  test_2x1_occupied();
   return EXIT_SUCCESS;
 }

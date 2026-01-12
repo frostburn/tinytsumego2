@@ -44,6 +44,65 @@ state get_tsumego(char *name) {
     return s;
   }
 
+  // . .
+  s.visual_area = rectangle(2, 1);
+  s.logical_area = rectangle(2, 1);
+  s.player = 0;
+  s.opponent = 0;
+  s.target = 0;
+
+  if (strcmp(name, "2x1 Goban") == 0) {
+    return s;
+  }
+
+  s.button = 1;
+  if (strcmp(name, "2x1 Goban (lost button)") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(3, 1);
+  s.logical_area = s.visual_area;
+  s.button = 0;
+
+  if (strcmp(name, "3x1 Goban") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(4, 1);
+  s.logical_area = s.visual_area;
+
+  if (strcmp(name, "4x1 Goban") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(5, 1);
+  s.logical_area = s.visual_area;
+
+  if (strcmp(name, "5x1 Goban") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(2, 2);
+  s.logical_area = s.visual_area;
+
+  if (strcmp(name, "2x2 Goban") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(3, 2);
+  s.logical_area = s.visual_area;
+
+  if (strcmp(name, "3x2 Goban") == 0) {
+    return s;
+  }
+
+  s.visual_area = rectangle(4, 2);
+  s.logical_area = s.visual_area;
+
+  if (strcmp(name, "4x2 Goban") == 0) {
+    return s;
+  }
+
   // . . . . @
   // @ @ @ @ @
   s.visual_area = rectangle(5, 2);
