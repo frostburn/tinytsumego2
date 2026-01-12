@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "jkiss/jkiss.h"
+#include "jkiss/util.h"
 #include "tinytsumego2/scoring.h"
 
 #include "tsumego.c"
@@ -19,6 +21,7 @@ typedef struct node {
 } node;
 
 int main() {
+  jkiss_init();
   state root = get_tsumego("Rectangle Eight (defender has threats)");
 
   print_state(&root);
@@ -60,9 +63,15 @@ int main() {
     bool low_fixed = true;
     bool evaluate_more = true;
 
+    stones_t *my_moves = malloc(num_moves * sizeof(stones_t));
+    for (int i = 0; i < num_moves; ++i) {
+      my_moves[i] = moves[i];
+    }
+    shuffle(my_moves, num_moves, sizeof(stones_t));
+
     for (int i = 0; i < num_moves; ++i) {
       state child = nodes[index].state;
-      move_result r = make_move(&child, moves[i]);
+      move_result r = make_move(&child, my_moves[i]);
       if (r == SECOND_PASS) {
         float child_score = score(&child);
         if (nodes[index].high == -child_score && !nodes[index].high_fixed) {
@@ -216,6 +225,7 @@ int main() {
     if (old_low != low || old_high != high) {
       graph_updated = true;
     }
+    free(my_moves);
   }
 
   while (!nodes[0].low_fixed || !nodes[0].high_fixed) {

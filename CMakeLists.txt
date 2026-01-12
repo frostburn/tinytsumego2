@@ -26,9 +26,11 @@ SET(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
 
 INCLUDE_DIRECTORIES(
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/jkiss/include"
 )
 LINK_DIRECTORIES(${LIBRARY_OUTPUT_PATH})
 
+ADD_SUBDIRECTORY(jkiss/src)
 ADD_SUBDIRECTORY(src)
 
 ENABLE_TESTING()
@@ -41,4 +43,4 @@ ADD_EXECUTABLE(solver solver.c)
 TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
 
 ADD_EXECUTABLE(ab_solver ab_solver.c)
-TARGET_LINK_LIBRARIES(ab_solver tinytsumego2 m)
+TARGET_LINK_LIBRARIES(ab_solver jkiss tinytsumego2 m)

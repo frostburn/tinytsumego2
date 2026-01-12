@@ -4,6 +4,7 @@
     "ctzll",
     "ENDFOREACH",
     "goban",
+    "jkiss",
     "negamax",
     "OPENMP",
     "popcountll",
