@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "tinytsumego2/stones.h"
 
 void print_stones(const stones_t stones) {
@@ -104,4 +105,27 @@ char row_of(const stones_t stone) {
     return 's';
   }
   return '0' + (ctz(stone) / WIDTH);
+}
+
+stones_t *chains(stones_t stones, int *num_chains) {
+  stones_t *result = malloc(MAX_CHAINS * sizeof(stones_t));
+  *num_chains = 0;
+  // TODO: Pre-calculate nubs
+  for (int i = 0; i < HEIGHT; i += 2) {
+    stones_t chain = flood(V_NUB << (i * V_SHIFT), stones);
+    if (chain) {
+      result[(*num_chains)++] = chain;
+      stones ^= chain;
+    }
+  }
+  for (int i = 2; (i < WIDTH) && stones; i += 2) {
+    for (int j = 0; j < HEIGHT; ++j) {
+      stones_t chain = flood(H_NUB << (i + j * V_SHIFT), stones);
+      if (chain) {
+        result[(*num_chains)++] = chain;
+        stones ^= chain;
+      }
+    }
+  }
+  return realloc(result, (*num_chains) * sizeof(stones_t));
 }

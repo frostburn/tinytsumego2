@@ -229,6 +229,41 @@ void test_2x1_occupied() {
   assert(r == ILLEGAL);
 }
 
+void test_benson() {
+  state s = parse_state(" \
+        . . . W W W W x x \
+        W W W W @ @ W x x \
+        W @ @ @ . @ W x x \
+        W @ . . @ @ W x x \
+        W @ @ @ W W W x x \
+        W W W W W , , x x \
+  ");
+
+  state expected = s;
+
+  print_state(&s);
+  apply_benson(&s);
+  assert(equals(&s, &expected));
+
+  s.opponent |= single(2, 3);
+
+  expected = parse_state("\
+        . . . W W W W x x \
+        W W W W B B W x x \
+        W B B B , B W x x \
+        W B B , B B W x x \
+        W B B B W W W x x \
+        W W W W W , , x x \
+  ");
+
+  print_state(&expected);
+
+  print_state(&s);
+  apply_benson(&s);
+  print_state(&s);
+  assert(equals(&s, &expected));
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -236,5 +271,6 @@ int main() {
   test_parse();
   test_external_liberties();
   test_2x1_occupied();
+  test_benson();
   return EXIT_SUCCESS;
 }

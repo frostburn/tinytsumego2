@@ -10,6 +10,12 @@
 
 // #define DEBUG_SEARCH
 
+struct child {
+  state state;
+  move_result move_result;
+  int heuristic_penalty;
+};
+
 // Node in the game graph
 typedef struct node {
   state state;
@@ -20,9 +26,16 @@ typedef struct node {
   bool high_fixed;
 } node;
 
+int compare_children(const void *a_, const void *b_) {
+  struct child *a = (struct child*) a_;
+  struct child *b = (struct child*) b_;
+  return a->heuristic_penalty - b->heuristic_penalty;
+}
+
 int main() {
   jkiss_init();
-  state root = get_tsumego("Rectangle Eight (defender has threats)");
+  // TODO: Fix. The score is wrong now.
+  state root = get_tsumego("Bent Four in the Corner is Dead (attacker tenuki)");
 
   print_state(&root);
 
@@ -63,15 +76,38 @@ int main() {
     bool low_fixed = true;
     bool evaluate_more = true;
 
-    stones_t *my_moves = malloc(num_moves * sizeof(stones_t));
+    struct child *children = malloc(num_moves * sizeof(struct child));
+    state parent = nodes[index].state;
+    int num_player_immortal = popcount(parent.player & parent.immortal);
+    int num_opponent_immortal = popcount(parent.opponent & parent.immortal);
+    stones_t empty = parent.visual_area & ~(parent.player | parent.opponent);
     for (int i = 0; i < num_moves; ++i) {
-      my_moves[i] = moves[i];
+      children[i].state = nodes[index].state;
+      children[i].move_result = make_move((state*)(children + i), moves[i]);
+      children[i].heuristic_penalty = 0;
+      if (children[i].move_result == ILLEGAL) {
+        children[i].heuristic_penalty += 100000;
+      }
+      else if (children[i].move_result == SECOND_PASS) {
+        children[i].heuristic_penalty -= 10000;
+      } else if (children[i].move_result == TAKE_TARGET) {
+        children[i].heuristic_penalty -= 100000;
+      } else {
+        apply_benson((state*)(children + i));
+        children[i].heuristic_penalty = jrand() % 1000 - popcount(cross(moves[i]) & empty) * 4000;
+        if (popcount(children[i].state.opponent & children[i].state.immortal) > num_player_immortal) {
+          children[i].heuristic_penalty -= 20000;
+        }
+        if (popcount(children[i].state.player & children[i].state.immortal) > num_opponent_immortal) {
+          children[i].heuristic_penalty += 30000;
+        }
+      }
     }
-    shuffle(my_moves, num_moves, sizeof(stones_t));
+    qsort((void*) children, num_moves, sizeof(struct child), compare_children);
 
     for (int i = 0; i < num_moves; ++i) {
-      state child = nodes[index].state;
-      move_result r = make_move(&child, my_moves[i]);
+      state child = children[i].state;
+      move_result r = children[i].move_result;
       if (r == SECOND_PASS) {
         float child_score = score(&child);
         if (nodes[index].high == -child_score && !nodes[index].high_fixed) {
@@ -225,7 +261,7 @@ int main() {
     if (old_low != low || old_high != high) {
       graph_updated = true;
     }
-    free(my_moves);
+    free(children);
   }
 
   while (!nodes[0].low_fixed || !nodes[0].high_fixed) {

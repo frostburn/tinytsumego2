@@ -54,7 +54,9 @@ void print_state(const state *s) {
       } else if (p & s->external) {
         printf(" +");
       }
-      else {
+      else if (p & white) {
+        printf(" #");
+      } else {
         printf(" @");
       }
     }
@@ -542,4 +544,105 @@ stones_t hash_b(const state *s) {
   result ^= (s->player << 32) | (s->player >> 32);
   result ^= s->opponent;
   return result * 1238767834675843ULL;
+}
+
+stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t immortal) {
+  int num_chains;
+  stones_t *black_chains = chains(black & ~immortal, &num_chains);
+  stones_t black_enclosed = visual_area ^ black;
+  int num_regions;
+  stones_t *regions = chains(black_enclosed, &num_regions);
+  stones_t white_mortal = white & ~immortal;
+
+  bool **vital = malloc(num_chains * sizeof(bool*));
+  bool **adjacent = malloc(num_chains * sizeof(bool*));
+  for (int i = 0; i < num_chains; ++i) {
+    vital[i] = calloc(num_regions, sizeof(bool));
+    adjacent[i] = calloc(num_regions, sizeof(bool));
+  }
+
+  for (int i = 0; i < num_chains; ++i) {
+    stones_t libs = cross(black_chains[i]);
+    for (int j = 0; j < num_regions; ++j) {
+      if (!(regions[j] & ~white_mortal & ~libs)) {
+        vital[i][j] = true;
+        adjacent[i][j] = true;
+      } else if (cross(regions[j]) & black_chains[i]) {
+        adjacent[i][j] = true;
+      }
+    }
+  }
+
+  bool done = false;
+
+  while (!done) {
+    done = true;
+    for (int i = 0; i < num_chains; ++i) {
+      int num_vital = 0;
+      for (int j = 0; j < num_regions; ++j) {
+        if (vital[i][j]) {
+          num_vital++;
+        }
+      }
+      if (num_vital < 2 && black_chains[i]) {
+        done = false;
+        black_chains[i] = 0ULL;
+        for (int j = 0; j < num_regions; ++j) {
+          if (adjacent[i][j]) {
+            for (int k = 0; k < num_chains; ++k) {
+              vital[k][j] = false;
+            }
+            regions[j] = 0ULL;
+          }
+        }
+      }
+    }
+  }
+
+  for (int j = 0; j < num_regions; ++j) {
+    int num_vital = 0;
+    for (int i = 0; i < num_chains; ++i) {
+      if (vital[i][j]) {
+        num_vital++;
+      }
+    }
+    if (!num_vital) {
+      regions[j] = 0ULL;
+    }
+  }
+
+  stones_t result = 0ULL;
+  for (int i = 0; i < num_chains; ++i) {
+    result |= black_chains[i];
+  }
+  for (int j = 0; j < num_regions; ++j) {
+    result |= regions[j];
+  }
+
+  free(black_chains);
+  free(regions);
+  free(vital);
+
+  return result;
+}
+
+void apply_benson(state *s) {
+  stones_t ext_mask = ~s->external;
+  stones_t player_unconditional = benson(s->visual_area, s->player & ext_mask, s->opponent & ext_mask, s->immortal);
+  // Convert dead opponent stones (Makes no difference under Chinese rules)
+  // TODO: Consider capturing instead for less confusion
+  stones_t eyespace = s->opponent & player_unconditional;
+  s->player |= eyespace;
+  s->opponent ^= eyespace;
+  // Visualize unconditionally alive stones as immortal
+  s->immortal |= s->player & player_unconditional;
+
+  stones_t opponent_unconditional = benson(s->visual_area, s->opponent & ext_mask, s->player & ext_mask, s->immortal);
+  eyespace = s->player & opponent_unconditional;
+  s->opponent |= eyespace;
+  s->player ^= eyespace;
+  s->immortal |= s->opponent & opponent_unconditional;
+
+  // Remove unconditionally alive stones and their eye-space from consideration
+  s->logical_area ^= s->logical_area & (player_unconditional | opponent_unconditional);
 }

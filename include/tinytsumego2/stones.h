@@ -38,6 +38,12 @@
 #define V7 (V6 << H_SHIFT)
 #define V8 (V7 << H_SHIFT)
 
+// 2x1 nubs
+#define H_NUB (3ULL)
+#define V_NUB (513ULL)
+
+#define MAX_CHAINS (32)
+
 // 64 bits of stones (1 bit outside the 9x7 rectangle)
 typedef unsigned long long int stones_t;
 
@@ -73,3 +79,6 @@ char column_of(const stones_t stone);
 
 // Indicate the row of a single stone: '0' through '6' or 's' for pass()
 char row_of(const stones_t stone);
+
+// Break `stones` into individual chains. Returns a dynamically allocated array. Stores the number of chains in the second argument.
+stones_t *chains(stones_t stones, int *num_chains);

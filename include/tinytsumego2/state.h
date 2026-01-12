@@ -109,3 +109,6 @@ stones_t hash_a(const state *s);
 
 // Get a hash of a state. Collisions can happen but child states of a common root state should hash reasonably well.
 stones_t hash_b(const state *s);
+
+// Apply Benson's Algorithm for Unconditional Life by removing unconditional eye-space from logical playing area.
+void apply_benson(state *s);

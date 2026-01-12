@@ -22,6 +22,7 @@ state get_tsumego(char *name) {
   s.white_to_play = false;
 
   if (strcmp(name, "Straight Three") == 0) {
+    // Score: Target captured
     return s;
   }
 
@@ -29,6 +30,7 @@ state get_tsumego(char *name) {
   s.opponent = 0;
 
   if (strcmp(name, "Straight Three Defense") == 0) {
+    // Score: 7.5
     return s;
   }
 
@@ -41,6 +43,7 @@ state get_tsumego(char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Straight Two") == 0) {
+    // Score: Target captured
     return s;
   }
 
@@ -52,11 +55,13 @@ state get_tsumego(char *name) {
   s.target = 0;
 
   if (strcmp(name, "2x1 Goban") == 0) {
+    // Score: -1.5 to 2.5
     return s;
   }
 
   s.button = 1;
   if (strcmp(name, "2x1 Goban (lost button)") == 0) {
+    // Score: -1.5 to 2.5
     return s;
   }
 
@@ -112,6 +117,7 @@ state get_tsumego(char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Straight Four") == 0) {
+    // Score: 9.5
     return s;
   }
 
@@ -126,6 +132,7 @@ state get_tsumego(char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Hat Four") == 0) {
+    // Score: Target captured
     return s;
   }
 
@@ -133,6 +140,7 @@ state get_tsumego(char *name) {
   s.opponent = 0;
 
   if (strcmp(name, "Hat Four Defense") == 0) {
+    // Score: 11.5
     return s;
   }
 
@@ -148,11 +156,13 @@ state get_tsumego(char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner") == 0) {
+    // Score: Target captured
     return s;
   }
 
   s.ko_threats = -1;
   if (strcmp(name, "Bent Four in the Corner (1 ko threat)") == 0) {
+    // Score: -5.5
     return s;
   }
 
@@ -161,6 +171,7 @@ state get_tsumego(char *name) {
   s.player ^= single(4, 0);
   s.immortal = s.player;
   if (strcmp(name, "Bent Four in the Corner (1 liberty)") == 0) {
+    // Score: Target captured
     return s;
   }
 
@@ -168,6 +179,7 @@ state get_tsumego(char *name) {
   s.player ^= single(4, 1);
   s.immortal = s.player;
   if (strcmp(name, "Bent Four in the Corner (2 liberties)") == 0) {
+    // Score: -6.5
     return s;
   }
 
@@ -184,11 +196,18 @@ state get_tsumego(char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner is Dead") == 0) {
+    // Score: Target captured
     return s;
   }
 
-  s.ko_threats = -1;
   if (strcmp(name, "Bent Four in the Corner is Dead (defender has threats)") == 0) {
+    s.ko_threats = -1;
+    return s;
+  }
+
+  if (strcmp(name, "Bent Four in the Corner is Dead (attacker tenuki)") == 0) {
+    // Score: Target lost
+    make_move(&s, pass());
     return s;
   }
 
@@ -203,9 +222,9 @@ state get_tsumego(char *name) {
   s.opponent = s.visual_area ^ s.logical_area;
   s.target = s.opponent;
   s.immortal = 0;
-  s.ko_threats = 0;
 
   if (strcmp(name, "Bulky Five") == 0) {
+    // Score: Target captured
     return s;
   }
 
