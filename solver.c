@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -66,8 +67,8 @@ typedef struct value {
   float high;
 } value;
 
-int main() {
-  state root = get_tsumego("Bent Four in the Corner is Dead (attacker tenuki)");
+int solve(tsumego t, bool verbose) {
+  state root = t.state;
 
   unsigned char *bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 
@@ -82,7 +83,9 @@ int main() {
   state* expansion_queue = malloc(queue_capacity * sizeof(state));
   expansion_queue[0] = root;
 
-  print_state(&root);
+  if (verbose) {
+    print_state(&root);
+  }
 
   int num_moves = popcount(root.logical_area) + 1;
   stones_t* moves = malloc(num_moves * sizeof(stones_t));
@@ -199,12 +202,14 @@ int main() {
   free(bloom);
   free(expansion_queue);
 
-  printf("Bloom stats:\n");
-  printf(" Occupancy: %g %%\n", ((double)bloom_bits) / BLOOM_SIZE / 8 * 100);
-  printf(" False positive rate: %g %%\n", num_false_positive / ((double) num_maybe_positive) * 100);
-  printf(" True negative rate: %g %%\n", num_true_negative / ((double) (num_maybe_positive + num_true_negative)) * 100);
+  if (verbose) {
+    printf("Bloom stats:\n");
+    printf(" Occupancy: %g %%\n", ((double)bloom_bits) / BLOOM_SIZE / 8 * 100);
+    printf(" False positive rate: %g %%\n", num_false_positive / ((double) num_maybe_positive) * 100);
+    printf(" True negative rate: %g %%\n", num_true_negative / ((double) (num_maybe_positive + num_true_negative)) * 100);
 
-  printf("Solution space size = %zu\n", num_states);
+    printf("Solution space size = %zu\n", num_states);
+  }
 
   states_capacity = num_states;
   states = realloc(states, states_capacity * sizeof(state));
@@ -260,6 +265,12 @@ int main() {
   offset = (state*) bsearch((void*) &root, (void*) states, num_states, sizeof(state), compare);
   float low = values[offset - states].low;
   float high = values[offset - states].high;
+  float root_low = low;
+  float root_high = high;
+
+  if (!verbose) {
+    goto cleanup;
+  }
 
   printf("Low = %f, high = %f\n", low, high);
 
@@ -337,5 +348,24 @@ int main() {
   free(values);
   free(states);
 
+  if (root_low != t.low_delay || root_high != t.high_delay) {
+    fprintf(stderr, "%f, %f\n", root_low, root_high);
+  }
+
+  assert(root_low == t.low_delay);
+  assert(root_high == t.high_delay);
+
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+  if (argc <= 1) {
+    for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
+      printf("%s\n", TSUMEGO_NAMES[i]);
+      solve(get_tsumego(TSUMEGO_NAMES[i]), false);
+    }
+    return EXIT_SUCCESS;
+  } else {
+    return solve(get_tsumego(argv[1]), true);
+  }
 }
