@@ -21,6 +21,24 @@ state rectangle_six() {
   return s;
 }
 
+state bent_four_in_the_corner_is_dead() {
+  state s;
+
+  s.visual_area = rectangle(4, 4);
+  s.logical_area = rectangle(3, 1) | rectangle(1, 3);
+  s.player = single(1, 0) | single(0, 1);
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.ko = 0;
+  s.target = s.opponent;
+  s.immortal = 0;
+  s.passes = 0;
+  s.ko_threats = -1;
+  s.button = 0;
+  s.white_to_play = false;
+
+  return s;
+}
+
 void test_rectangle_six_no_liberties_capture_mainline() {
   state s = rectangle_six();
   move_result r;
@@ -261,6 +279,20 @@ void test_benson() {
   print_state(&s);
   apply_benson(&s);
   print_state(&s);
+  assert(equals(&s, &expected));
+
+  s = bent_four_in_the_corner_is_dead();
+  expected = s;
+  apply_benson(&s);
+
+  assert(equals(&s, &expected));
+
+  make_move(&s, pass());
+  make_move(&s, single(2, 0));
+  expected = s;
+  apply_benson(&s);
+  print_state(&s);
+
   assert(equals(&s, &expected));
 }
 

@@ -626,12 +626,17 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   return result;
 }
 
-void apply_benson(state *s) {
+move_result apply_benson(state *s) {
+  move_result result = NORMAL;
+
   stones_t ext_mask = ~s->external;
   stones_t player_unconditional = benson(s->visual_area, s->player & ext_mask, s->opponent & ext_mask, s->immortal);
   // Convert dead opponent stones (Makes no difference under Chinese rules)
   // TODO: Consider capturing instead for less confusion
   stones_t eyespace = s->opponent & player_unconditional;
+  if (eyespace & s->target) {
+    result = TARGET_LOST;
+  }
   s->player |= eyespace;
   s->opponent ^= eyespace;
   // Visualize unconditionally alive stones as immortal
@@ -639,10 +644,15 @@ void apply_benson(state *s) {
 
   stones_t opponent_unconditional = benson(s->visual_area, s->opponent & ext_mask, s->player & ext_mask, s->immortal);
   eyespace = s->player & opponent_unconditional;
+  if (eyespace & s->target) {
+    result = TAKE_TARGET;
+  }
   s->opponent |= eyespace;
   s->player ^= eyespace;
   s->immortal |= s->opponent & opponent_unconditional;
 
   // Remove unconditionally alive stones and their eye-space from consideration
   s->logical_area ^= s->logical_area & (player_unconditional | opponent_unconditional);
+
+  return result;
 }

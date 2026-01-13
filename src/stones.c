@@ -118,7 +118,7 @@ stones_t *chains(stones_t stones, int *num_chains) {
       stones ^= chain;
     }
   }
-  for (int i = 2; (i < WIDTH) && stones; i += 2) {
+  for (int i = 1; (i < WIDTH) && stones; i += 2) {
     for (int j = 0; j < HEIGHT; ++j) {
       stones_t chain = flood(H_NUB << (i + j * V_SHIFT), stones);
       if (chain) {

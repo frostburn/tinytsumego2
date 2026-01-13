@@ -95,8 +95,14 @@ int main() {
       } else if (children[i].move_result == TAKE_TARGET) {
         children[i].heuristic_penalty -= 100000;
       } else {
-        // TODO: Fix. Leads to wrong score.
-        // apply_benson((state*)(children + i));
+        move_result benson_result = apply_benson((state*)(children + i));
+        if (benson_result == TAKE_TARGET) {
+          children[i].move_result = benson_result;
+          children[i].heuristic_penalty -= 100000;
+        } else if (benson_result == TARGET_LOST) {
+          children[i].move_result = benson_result;
+          children[i].heuristic_penalty += 100000;
+        }
         children[i].heuristic_penalty = jrand() % 1000 - popcount(cross(moves[i]) & empty) * 4000;
         if (popcount(children[i].state.opponent & children[i].state.immortal) > num_player_immortal) {
           children[i].heuristic_penalty -= 20000;
@@ -128,8 +134,11 @@ int main() {
         low = fmax(low, -child_score);
         high = fmax(high, -child_score);
       }
-      else if (r == TAKE_TARGET) {
+      else if (r == TAKE_TARGET || r == TARGET_LOST) {
         float child_score = target_lost_score(&child);
+        if (r == TARGET_LOST) {
+          child_score = -child_score;
+        }
         if (nodes[index].high == -child_score && !nodes[index].high_fixed) {
           nodes[index].high_fixed = true;
           graph_updated = true;
@@ -330,6 +339,7 @@ int main() {
         for (int k = 0; k < num_moves; ++k) {
           state child = nodes[i].state;
           move_result r = make_move(&child, moves[k]);
+          // TODO: Apply Benson's
           if (r == SECOND_PASS) {
             printf("sp = %f, ", score(&child));
           } else if (r == TAKE_TARGET) {

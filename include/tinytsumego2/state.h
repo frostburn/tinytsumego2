@@ -59,7 +59,8 @@ typedef enum move_result
   FILL_EXTERNAL,
   NORMAL,
   KO_THREAT_AND_RETAKE,
-  TAKE_TARGET
+  TAKE_TARGET,
+  TARGET_LOST
 } move_result;
 
 // Print a game state with ANSI colors
@@ -111,4 +112,5 @@ stones_t hash_a(const state *s);
 stones_t hash_b(const state *s);
 
 // Apply Benson's Algorithm for Unconditional Life by removing unconditional eye-space from logical playing area.
-void apply_benson(state *s);
+// Returns TAKE_TARGET or TARGET_LOST if the process captures target stones as a side effect.
+move_result apply_benson(state *s);
