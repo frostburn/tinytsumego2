@@ -553,8 +553,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Long L Group Defense") == 0) {
-    // TODO: Wait for the computation to finish
-    return single_valued(s, 0);
+    return single_valued(s, -4.5);
   }
 
   temp = s.player;
@@ -562,8 +561,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
 
   if (strcmp(name, "Long L Group Attack") == 0) {
-    // TODO
-    return single_valued(s, 0);
+    return single_valued(s, 15.5);
   }
 
   s.ko_threats = 1;
