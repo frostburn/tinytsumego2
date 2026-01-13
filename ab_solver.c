@@ -24,6 +24,7 @@ typedef struct node {
   float high;
   bool low_fixed;
   bool high_fixed;
+  int generation;
 } node;
 
 int compare_children(const void *a_, const void *b_) {
@@ -34,7 +35,6 @@ int compare_children(const void *a_, const void *b_) {
 
 int main() {
   jkiss_init();
-  // TODO: Fix. The score is wrong now.
   state root = get_tsumego("Bent Four in the Corner is Dead (attacker tenuki)");
 
   print_state(&root);
@@ -51,10 +51,12 @@ int main() {
   }
   moves[m] = pass();
 
+  int generation = 0;
+
   size_t num_nodes = 1;
   size_t nodes_capacity = 1;
   node *nodes = malloc(sizeof(node));
-  nodes[0] = (node) {root, 0, -INFINITY, INFINITY, false, false};
+  nodes[0] = (node) {root, 0, -INFINITY, INFINITY, false, false, generation};
 
   bool graph_updated = false;
   bool fix_loops = false;
@@ -93,7 +95,8 @@ int main() {
       } else if (children[i].move_result == TAKE_TARGET) {
         children[i].heuristic_penalty -= 100000;
       } else {
-        apply_benson((state*)(children + i));
+        // TODO: Fix. Leads to wrong score.
+        // apply_benson((state*)(children + i));
         children[i].heuristic_penalty = jrand() % 1000 - popcount(cross(moves[i]) & empty) * 4000;
         if (popcount(children[i].state.opponent & children[i].state.immortal) > num_player_immortal) {
           children[i].heuristic_penalty -= 20000;
@@ -104,6 +107,8 @@ int main() {
       }
     }
     qsort((void*) children, num_moves, sizeof(struct child), compare_children);
+
+    nodes[index].generation = generation;
 
     for (int i = 0; i < num_moves; ++i) {
       state child = children[i].state;
@@ -142,24 +147,29 @@ int main() {
         for (size_t j = 0; j < num_nodes; ++j) {
           if (equals(&child, &(nodes[j].state))) {
             found = true;
-            if (nodes[j].depth < nodes[index].depth) {
+            if (nodes[j].depth < nodes[index].depth && nodes[j].generation == generation) {
               // Loop detected
-              if (fix_loops && nodes[index].low == -nodes[j].high && !nodes[j].high_fixed) {
-                nodes[j].high_fixed = true;
-                graph_updated = true;
-                #ifdef DEBUG_SEARCH
-                  printf("Tentatively fixing upper bound %f for loop node %zu\n", nodes[j].high, j);
-                #endif
-              }
-              if (fix_loops && nodes[index].high == -nodes[j].low && !nodes[j].low_fixed) {
-                nodes[j].low_fixed = true;
-                graph_updated = true;
-                #ifdef DEBUG_SEARCH
-                  printf("Tentatively fixing lower bound %f for loop node %zu\n", nodes[j].low, j);
-                #endif
+              if (fix_loops) {
+                if (nodes[index].low == -nodes[j].high && !nodes[j].high_fixed) {
+                  nodes[j].high_fixed = true;
+                  graph_updated = true;
+                  #ifdef DEBUG_SEARCH
+                    printf("Tentatively fixing upper bound %f for loop node %zu by %zu\n", nodes[j].high, j, index);
+                  #endif
+                }
+                if (nodes[index].high == -nodes[j].low && !nodes[j].low_fixed) {
+                  nodes[j].low_fixed = true;
+                  graph_updated = true;
+                  #ifdef DEBUG_SEARCH
+                    printf("Tentatively fixing lower bound %f for loop node %zu by %zu\n", nodes[j].low, j, index);
+                  #endif
+                }
               }
 
-              if (!nodes[j].high_fixed) {
+              if (!nodes[j].high_fixed && -nodes[j].low > nodes[index].low) {
+                #ifdef DEBUG_SEARCH
+                  printf("Not fixing low for %zu due to loop node %zu\n", index, j);
+                #endif
                 low_fixed = false;
               }
               if (nodes[j].low_fixed && nodes[index].high == -nodes[j].low && !nodes[index].high_fixed) {
@@ -199,7 +209,10 @@ int main() {
                 #endif
               }
             }
-            if (!nodes[j].high_fixed) {
+            if (!nodes[j].high_fixed && -nodes[j].low > nodes[index].low) {
+              #ifdef DEBUG_SEARCH
+                printf("Not fixing low for %zu due to %zu\n", index, j);
+              #endif
               low_fixed = false;
             }
             low = fmax(low, -nodes[j].high);
@@ -208,23 +221,33 @@ int main() {
           }
         }
         if (!found) {
-          if (num_nodes >= nodes_capacity) {
-            nodes_capacity <<= 1;
-            nodes = realloc(nodes, nodes_capacity * sizeof(node));
-            #ifdef DEBUG
-              printf("Capacity increased to %zu\n", nodes_capacity);
-            #endif
-          }
-          size_t j = num_nodes++;
-          nodes[j] = (node) {child, nodes[index].depth + 1, -INFINITY, INFINITY, false, false};
           if (evaluate_more) {
+            if (num_nodes >= nodes_capacity) {
+              nodes_capacity <<= 1;
+              nodes = realloc(nodes, nodes_capacity * sizeof(node));
+              #ifdef DEBUG
+                printf("Capacity increased to %zu\n", nodes_capacity);
+              #endif
+            }
+            size_t j = num_nodes++;
+            nodes[j] = (node) {child, nodes[index].depth + 1, -INFINITY, INFINITY, false, false, generation};
+            graph_updated = true;
             improve_bound(j, !lower);
-          }
-          if (!nodes[j].high_fixed) {
+            if (!nodes[j].high_fixed && -nodes[j].low > nodes[index].low) {
+              #ifdef DEBUG_SEARCH
+                printf("Not fixing low for %zu due to new node %zu\n", index, j);
+              #endif
+              low_fixed = false;
+            }
+            low = fmax(low, -nodes[j].high);
+            high = fmax(high, -nodes[j].low);
+          } else {
+            #ifdef DEBUG_SEARCH
+              printf("Not fixing low for %zu due to an unevaluated node\n", index);
+            #endif
             low_fixed = false;
+            high = INFINITY;
           }
-          low = fmax(low, -nodes[j].high);
-          high = fmax(high, -nodes[j].low);
         }
       }
       if (lower && (low > old_low)) {
@@ -239,7 +262,10 @@ int main() {
     nodes[index].low = low;
     nodes[index].high = high;
     if (low == high) {
-      low_fixed = true;
+      if (!nodes[index].low_fixed || !nodes[index].high_fixed) {
+        graph_updated = true;
+      }
+      nodes[index].low_fixed = true;
       nodes[index].high_fixed = true;
       #ifdef DEBUG_SEARCH
         printf("Score %f fixed for %zu\n", low, index);
@@ -255,7 +281,11 @@ int main() {
     }
 
     #ifdef DEBUG_SEARCH
-      printf("Improved bounds to %f, %f from %f, %f for %zu\n", nodes[index].low, nodes[index].high, old_low, old_high, index);
+      if (old_low != nodes[index].low || old_high != nodes[index].high) {
+        printf("Improved bounds to %f, %f from %f, %f for %zu\n", nodes[index].low, nodes[index].high, old_low, old_high, index);
+      } else {
+        printf("Failed to improve bounds %f, %f for %zu\n", nodes[index].low, nodes[index].high, index);
+      }
     #endif
 
     if (old_low != low || old_high != high) {
@@ -269,15 +299,20 @@ int main() {
     #ifdef DEBUG_SEARCH
       printf("\nImproving root lower bound\n");
     #endif
+    generation++;
     improve_bound(0, true);
     #ifdef DEBUG_SEARCH
       printf("\nImproving root upper bound\n");
     #endif
+    generation++;
     improve_bound(0, false);
     if (!graph_updated) {
       if (fix_loops) {
         break;
       }
+      #ifdef DEBUG_SEARCH
+        printf("Failed to update graph. Fixing loops\n");
+      #endif
       fix_loops = true;
     }
   }
@@ -287,7 +322,7 @@ int main() {
   printf("%f%s, %f%s\n", nodes[0].low, nodes[0].low_fixed ? "*" : "", nodes[0].high, nodes[0].high_fixed ? "*" : "");
 
   #ifdef DEBUG_SEARCH
-  for (int j = 1; j < 2; ++j) {
+  for (int j = 1; j < 10; ++j) {
     printf("\nDepth %d\n", j);
     for (size_t i = 0; i < num_nodes; ++i) {
       if (nodes[i].depth == j) {
