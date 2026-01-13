@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -33,11 +34,13 @@ int compare_children(const void *a_, const void *b_) {
   return a->heuristic_penalty - b->heuristic_penalty;
 }
 
-int main() {
-  jkiss_init();
-  state root = get_tsumego("Bent Four in the Corner is Dead (attacker tenuki)");
-
-  print_state(&root);
+// TODO: Fix "Rectangle Eight in the Corner"
+// TODO: Fix "Rectangle Eight in the Corner (defender has threats)"
+int solve(tsumego t, bool verbose) {
+  state root = t.state;
+  if (verbose) {
+    print_state(&root);
+  }
 
   int num_moves = popcount(root.logical_area) + 1;
   stones_t* moves = malloc(num_moves * sizeof(stones_t));
@@ -326,9 +329,11 @@ int main() {
     }
   }
 
-  printf("%zu nodes expanded\n", num_nodes);
+  if (verbose) {
+    printf("%zu nodes expanded\n", num_nodes);
 
-  printf("%f%s, %f%s\n", nodes[0].low, nodes[0].low_fixed ? "*" : "", nodes[0].high, nodes[0].high_fixed ? "*" : "");
+    printf("%f%s, %f%s\n", nodes[0].low, nodes[0].low_fixed ? "*" : "", nodes[0].high, nodes[0].high_fixed ? "*" : "");
+  }
 
   #ifdef DEBUG_SEARCH
   for (int j = 1; j < 10; ++j) {
@@ -358,7 +363,27 @@ int main() {
   }
   #endif
 
+  float low = nodes[0].low;
+  float high = nodes[0].high;
+
   free(moves);
   free(nodes);
+
+  assert(low == t.low);
+  assert(high == t.high);
+
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+  jkiss_init();
+  if (argc <= 1) {
+    for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
+      printf("%s\n", TSUMEGO_NAMES[i]);
+      solve(get_tsumego(TSUMEGO_NAMES[i]), true);
+    }
+    return EXIT_SUCCESS;
+  } else {
+    return solve(get_tsumego(argv[1]), true);
+  }
 }
