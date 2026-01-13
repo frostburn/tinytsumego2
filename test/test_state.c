@@ -294,6 +294,18 @@ void test_benson() {
   print_state(&s);
 
   assert(equals(&s, &expected));
+
+  s = parse_state("   \
+    @ . @ w w B x x x \
+    . . w . w B x x x \
+    w w w w w B x x x \
+  ");
+
+  expected = s;
+  apply_benson(&s);
+  print_state(&s);
+
+  assert(equals(&s, &expected));
 }
 
 int main() {

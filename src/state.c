@@ -47,6 +47,9 @@ void print_state(const state *s) {
     if (p & black) {
       printf("\x1b[30m");  // Black
       if (p & s->target) {
+        if (p & s->immortal) {
+          printf("\x1b[1m");  // Bold
+        }
         printf(" b");
       }
       else if (p & s->immortal) {
@@ -63,6 +66,9 @@ void print_state(const state *s) {
     else if (p & white) {
       printf("\x1b[97m");  // Bright White
       if (p & s->target) {
+        if (p & s->immortal) {
+          printf("\x1b[1m");  // Bold
+        }
         printf(" w");
       }
       else if (p & s->immortal) {
@@ -553,6 +559,14 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   int num_regions;
   stones_t *regions = chains(black_enclosed, &num_regions);
   stones_t white_mortal = white & ~immortal;
+
+  int i = 0;
+  for (int j = 0; j < num_regions; ++j) {
+    if (!(regions[j] & white & immortal)) {
+      regions[i++] = regions[j];
+    }
+  }
+  num_regions = i;
 
   bool **vital = malloc(num_chains * sizeof(bool*));
   bool **adjacent = malloc(num_chains * sizeof(bool*));
