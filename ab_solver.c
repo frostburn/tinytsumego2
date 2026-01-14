@@ -13,6 +13,8 @@
 // #define DEBUG
 // #define DEBUG_SEARCH
 
+#define MAX_TAIL_SIZE (8192)
+
 struct child {
   state state;
   move_result move_result;
@@ -266,6 +268,11 @@ int solve(tsumego t, bool verbose) {
               #ifdef DEBUG
                 printf("Capacity increased to %zu\n", nodes_capacity);
               #endif
+              index = find_index(&parent);
+              my_sorted = num_sorted;
+            } else if (num_nodes > num_sorted + MAX_TAIL_SIZE) {
+              num_sorted = num_nodes;
+              qsort((void*) nodes, num_sorted, sizeof(node), compare);
               index = find_index(&parent);
               my_sorted = num_sorted;
             }

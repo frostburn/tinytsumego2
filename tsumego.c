@@ -566,8 +566,7 @@ tsumego get_tsumego(const char *name) {
 
   s.ko_threats = 1;
   if (strcmp(name, "Long L Group Attack (with threats)") == 0) {
-    // TODO
-    return single_valued(s, 0);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 994.8125);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);
