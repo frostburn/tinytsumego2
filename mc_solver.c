@@ -1,0 +1,180 @@
+#include <assert.h>
+#include <limits.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "jkiss/jkiss.h"
+#include "jkiss/util.h"
+#include "tinytsumego2/scoring.h"
+
+#include "tsumego.c"
+
+#define NUM_PLAYOUTS (10000)
+
+#define EPSILON (1e-4f)
+
+typedef struct node {
+  state state;
+
+  // Odds of winning
+  double odds;
+
+  // Distance from root node
+  int depth;
+
+  // Last time this node was touched
+  int generation;
+} node;
+
+int main(int argc, char *argv[]) {
+  jkiss_init();
+
+  char *name = "Straight Three";
+  if (argc > 1) {
+    name = argv[1];
+  }
+
+  tsumego t = get_tsumego(name);
+  state root = t.state;
+  float komi = t.low;
+
+  if (argc <= 2) {
+    komi -= EPSILON;
+  } else {
+    komi += EPSILON;
+  }
+
+  int num_moves = popcount(root.logical_area) + 1;
+  stones_t* moves = malloc(num_moves * sizeof(stones_t));
+
+  int m = 0;
+  for (int i = 0; i < 64; ++i) {
+    const stones_t p = 1ULL << i;
+    if (root.logical_area & p) {
+      moves[m++] = p;
+    }
+  }
+  moves[m] = pass();
+
+  size_t num_nodes = 1;
+  // TODO: No
+  size_t nodes_capacity = 10000;
+  node *nodes = malloc(sizeof(node) * nodes_capacity);
+
+  unsigned int entropy_buffer = num_moves * num_moves;
+  entropy_buffer *= entropy_buffer;
+
+  // Play random moves until game over and return the score.
+  float playout(state s) {
+    unsigned int i = 1234567;
+    unsigned int entropy = 0;
+    float sign = -1;
+    for (;;) {
+      if (entropy < entropy_buffer) {
+        i = jrand();
+        entropy = UINT_MAX;
+      }
+      state child = s;
+      move_result r = make_move(&child, moves[i % num_moves]);
+      i /= num_moves;
+      entropy /= num_moves;
+      if (r == SECOND_PASS) {
+        return sign * score(&child);
+      } else if (r == TAKE_TARGET) {
+        return sign * target_lost_score(&child);
+      } else if (r != ILLEGAL) {
+        s = child;
+        sign = -sign;
+      }
+    }
+  }
+
+  int generation = 0;
+
+  void improve_odds(node *n) {
+    n->generation = generation;
+    state s = n->state;
+    float my_komi = s.white_to_play == root.white_to_play ? komi : -komi;
+    double loss_odds = 1;
+    int num_legal = 0;
+    for (int i = 0; i < num_moves; ++i) {
+      state child = s;
+      move_result r = make_move(&child, moves[i]);
+      if (r == SECOND_PASS) {
+        if (-score(&child) > my_komi) {
+          n->odds = 1;
+          return;
+        }
+      } else if (r == TAKE_TARGET) {
+        if (-target_lost_score(&child) > my_komi) {
+          n->odds = 1;
+          return;
+        }
+      } else if (r != ILLEGAL) {
+        num_legal++;
+        node *child_node = NULL;
+        for (size_t j = 0; j < num_nodes; ++j) {
+          if (equals(&child, (state*)(nodes + j))) {
+            child_node = nodes + j;
+            break;
+          }
+        }
+        if (child_node) {
+          if (child_node->depth > n->depth) {
+            child_node->depth = n->depth + 1;
+          } else if (child_node->generation == n->generation) {
+            // We're at a loop node that has been explored this generation
+            loss_odds *= child_node->odds;
+            // Bail out
+            continue;
+          }
+          improve_odds(child_node);
+          loss_odds *= child_node->odds;
+        } else {
+          int num_wins = 1;
+          for (int i = 0; i < NUM_PLAYOUTS; ++i) {
+            if (playout(child) > -my_komi) {
+              num_wins++;
+            }
+          }
+          double odds = num_wins / (double) (NUM_PLAYOUTS + 2);
+          nodes[num_nodes++] = (node){child, odds, n->depth + 1, generation};
+          if (num_nodes >= nodes_capacity) {
+            // TODO: No
+            fprintf(stderr, "Out of capacity, lol\n");
+            exit(EXIT_FAILURE);
+          }
+          loss_odds *= odds;
+        }
+      }
+    }
+    // TODO: Modify odds to model playout correlation
+    n->odds = 1 - loss_odds;
+  }
+
+  int num_wins = 1;
+  for (int i = 0; i < NUM_PLAYOUTS; ++i) {
+    if (playout(root) > komi) {
+      num_wins++;
+    }
+  }
+
+  double odds = num_wins / (double) (NUM_PLAYOUTS + 2);
+
+  nodes[0] = (node){root, odds, 0, generation};
+
+  print_state(&root);
+  printf("Starting win rate: %g %%\n", odds * 100);
+
+  for (int i = 0; i < 10; ++i) {
+    improve_odds(nodes);
+    printf("Improved win rate: %g %%\n", nodes[0].odds * 100);
+  }
+
+  free(moves);
+  free(nodes);
+
+  return EXIT_SUCCESS;
+}

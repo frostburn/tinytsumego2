@@ -44,3 +44,6 @@ TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
 
 ADD_EXECUTABLE(ab_solver ab_solver.c)
 TARGET_LINK_LIBRARIES(ab_solver jkiss tinytsumego2 m)
+
+ADD_EXECUTABLE(mc_solver mc_solver.c)
+TARGET_LINK_LIBRARIES(mc_solver jkiss tinytsumego2 m)
