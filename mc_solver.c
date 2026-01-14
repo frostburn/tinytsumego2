@@ -15,6 +15,7 @@
 
 #define EPSILON (1e-4f)
 
+// TODO: Count visits for exploration vs. exploitation?
 typedef struct node {
   state state;
 
@@ -99,6 +100,10 @@ int main(int argc, char *argv[]) {
     float my_komi = s.white_to_play == root.white_to_play ? komi : -komi;
     double loss_odds = 1;
     int num_legal = 0;
+
+    node *most_promising = NULL;
+    node *runner_up = NULL;
+
     for (int i = 0; i < num_moves; ++i) {
       state child = s;
       move_result r = make_move(&child, moves[i]);
@@ -130,8 +135,29 @@ int main(int argc, char *argv[]) {
             // Bail out
             continue;
           }
-          improve_odds(child_node);
-          loss_odds *= child_node->odds;
+          // Choose two nodes to explore further
+          if (!most_promising) {
+            most_promising = child_node;
+          } else {
+            if (child_node->odds < most_promising->odds) {
+              if (runner_up) {
+                loss_odds *= runner_up->odds;
+              }
+              runner_up = most_promising;
+              most_promising = child_node;
+            } else {
+              if (runner_up) {
+                if (child_node->odds < runner_up->odds) {
+                  loss_odds *= runner_up->odds;
+                  runner_up = child_node;
+                } else {
+                  loss_odds *= child_node->odds;
+                }
+              } else {
+                runner_up = child_node;
+              }
+            }
+          }
         } else {
           int num_wins = 1;
           for (int i = 0; i < NUM_PLAYOUTS; ++i) {
@@ -150,7 +176,19 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    // TODO: Modify odds to model playout correlation
+
+    if (most_promising) {
+      improve_odds(most_promising);
+      loss_odds *= most_promising->odds;
+    }
+    if (runner_up) {
+      improve_odds(runner_up);
+      loss_odds *= runner_up->odds;
+    }
+
+    // Ad hoc curve to model playout correlation
+    loss_odds = pow(loss_odds, 1 / (fmin(num_legal, 3) + 0.5));
+
     n->odds = 1 - loss_odds;
   }
 
@@ -168,10 +206,13 @@ int main(int argc, char *argv[]) {
   print_state(&root);
   printf("Starting win rate: %g %%\n", odds * 100);
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 50; ++i) {
     improve_odds(nodes);
+    generation++;
     printf("Improved win rate: %g %%\n", nodes[0].odds * 100);
   }
+
+  printf("%zu nodes explored\n", num_nodes);
 
   free(moves);
   free(nodes);
