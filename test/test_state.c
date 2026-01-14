@@ -269,7 +269,7 @@ void test_benson() {
         . . . W W W W x x \
         W W W W B B W x x \
         W B B B , B W x x \
-        W B B , B B W x x \
+        W B , B B B W x x \
         W B B B W W W x x \
         W W W W W , , x x \
   ");
@@ -305,6 +305,20 @@ void test_benson() {
   apply_benson(&s);
   print_state(&s);
 
+  assert(equals(&s, &expected));
+
+  s = parse_state("@ . 0 .");
+  print_state(&s);
+  apply_benson(&s);
+  print_state(&s);
+
+  expected = parse_state(", W W ,");
+  assert(equals(&s, &expected));
+
+  s = parse_state(". @ . 0 0");
+  expected = s;
+  apply_benson(&s);
+  print_state(&s);
   assert(equals(&s, &expected));
 }
 

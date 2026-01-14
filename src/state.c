@@ -559,12 +559,22 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   int num_regions;
   stones_t *regions = chains(black_enclosed, &num_regions);
   stones_t white_mortal = white & ~immortal;
+  stones_t white_immortal = white & immortal;
+  stones_t black_cross = cross(black);
+  stones_t non_liberties = visual_area & ~black_cross & ~(white & cross(black_cross));
 
   int i = 0;
   for (int j = 0; j < num_regions; ++j) {
-    if (!(regions[j] & white & immortal)) {
-      regions[i++] = regions[j];
+    // Immortal stones poison a region
+    if (regions[j] & white_immortal) {
+      continue;
     }
+    // You could technically live under the stones of a large region
+    // The bigger reason is that captured large chains don't give points under liberty scoring
+    if (regions[j] & non_liberties) {
+      continue;
+    }
+    regions[i++] = regions[j];
   }
   num_regions = i;
 
@@ -645,24 +655,23 @@ move_result apply_benson(state *s) {
 
   stones_t ext_mask = ~s->external;
   stones_t player_unconditional = benson(s->visual_area, s->player & ext_mask, s->opponent & ext_mask, s->immortal);
-  // Convert dead opponent stones (Makes no difference under Chinese rules)
-  // TODO: Consider capturing instead for less confusion
-  stones_t eyespace = s->opponent & player_unconditional;
-  if (eyespace & s->target) {
+  // Capture dead opponent stones (Makes no difference under Chinese rules)
+  stones_t dead = s->opponent & player_unconditional;
+  if (dead & s->target) {
     result = TARGET_LOST;
   }
-  s->player |= eyespace;
-  s->opponent ^= eyespace;
+  s->player |= liberties(dead, player_unconditional);
+  s->opponent ^= dead;
   // Visualize unconditionally alive stones as immortal
   s->immortal |= s->player & player_unconditional;
 
   stones_t opponent_unconditional = benson(s->visual_area, s->opponent & ext_mask, s->player & ext_mask, s->immortal);
-  eyespace = s->player & opponent_unconditional;
-  if (eyespace & s->target) {
+  dead = s->player & opponent_unconditional;
+  if (dead & s->target) {
     result = TAKE_TARGET;
   }
-  s->opponent |= eyespace;
-  s->player ^= eyespace;
+  s->opponent |= liberties(dead, opponent_unconditional);
+  s->player ^= dead;
   s->immortal |= s->opponent & opponent_unconditional;
 
   // Remove unconditionally alive stones and their eye-space from consideration
