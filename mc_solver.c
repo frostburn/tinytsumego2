@@ -31,19 +31,12 @@ typedef struct node {
   int generation;
 } node;
 
-int main(int argc, char *argv[]) {
-  jkiss_init();
+int solve(tsumego t, bool low_komi, bool verbose) {
 
-  char *name = "Straight Three";
-  if (argc > 1) {
-    name = argv[1];
-  }
-
-  tsumego t = get_tsumego(name);
   state root = t.state;
   float komi = t.low;
 
-  if (argc <= 2) {
+  if (low_komi) {
     komi -= EPSILON;
   } else {
     komi += EPSILON;
@@ -269,19 +262,40 @@ int main(int argc, char *argv[]) {
   print_state(&root);
   printf("Starting win rate: %g %%\n", odds * 100);
 
+  double last_odds = NAN;
+
   while(generation < 10000) {
     double odds = improve_odds(find_node(&root));
     generation++;
-    printf("Generation %i win rate: %g %%\n", generation, odds * 100);
-    if (odds == 0 || odds == 1) {
+    if (verbose) {
+      printf("Generation %i win rate: %g %%\n", generation, odds * 100);
+    }
+    if (odds == 0 || odds == 1 || (!low_komi && last_odds == odds)) {
+      last_odds = odds;
       break;
     }
+    last_odds = odds;
   }
 
+  printf("Final win rate: %g %%\n", last_odds * 100);
   printf("%zu nodes explored\n", num_nodes);
 
   free(moves);
   free(nodes);
 
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+  jkiss_init();
+  if (argc <= 1) {
+    for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
+      printf("%s\n", TSUMEGO_NAMES[i]);
+      solve(get_tsumego(TSUMEGO_NAMES[i]), true, false);
+      solve(get_tsumego(TSUMEGO_NAMES[i]), false, false);
+    }
+    return EXIT_SUCCESS;
+  } else {
+    return solve(get_tsumego(argv[1]), argc >= 3, true);
+  }
 }
