@@ -643,9 +643,15 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
     result |= regions[j];
   }
 
+  for (int i = 0; i < num_chains; ++i) {
+    free(vital[i]);
+    free(adjacent[i]);
+  }
+
   free(black_chains);
   free(regions);
   free(vital);
+  free(adjacent);
 
   return result;
 }
