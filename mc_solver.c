@@ -11,7 +11,7 @@
 
 #include "tsumego.c"
 
-#define NUM_PLAYOUTS (10000)
+#define NUM_PLAYOUTS (100)
 
 #define EPSILON (1e-4f)
 
