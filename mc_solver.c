@@ -15,6 +15,8 @@
 
 #define EPSILON (1e-4f)
 
+#define MAX_TAIL_SIZE (8192)
+
 // TODO: Count visits for exploration vs. exploitation?
 typedef struct node {
   state state;
@@ -60,9 +62,23 @@ int main(int argc, char *argv[]) {
   moves[m] = pass();
 
   size_t num_nodes = 1;
-  // TODO: No
-  size_t nodes_capacity = 10000;
+  size_t nodes_capacity = 1;
+  size_t num_sorted = 1;
   node *nodes = malloc(sizeof(node) * nodes_capacity);
+
+  node* find_node(state *s) {
+    // Heavy abuse of struct state vs. struct node
+    void *existing = bsearch((void *)s, (void*)nodes, num_sorted, sizeof(node), compare);
+    if (existing) {
+      return (node*)existing;
+    }
+    for (size_t i = num_sorted; i < num_nodes; ++i) {
+      if (compare((void *)s, (void *)(nodes + i)) == 0) {
+        return nodes + i;
+      }
+    }
+    return NULL;
+  }
 
   unsigned int entropy_buffer = num_moves * num_moves;
   entropy_buffer *= entropy_buffer;
@@ -94,7 +110,8 @@ int main(int argc, char *argv[]) {
 
   int generation = 0;
 
-  void improve_odds(node *n) {
+  // TODO: Benson's
+  double improve_odds(node *n) {
     n->generation = generation;
     state s = n->state;
     float my_komi = s.white_to_play == root.white_to_play ? komi : -komi;
@@ -103,6 +120,10 @@ int main(int argc, char *argv[]) {
 
     node *most_promising = NULL;
     node *runner_up = NULL;
+    state mp_state = s;
+    state ru_state = s;
+    mp_state.visual_area = 0;
+    ru_state.visual_area = 0;
 
     for (int i = 0; i < num_moves; ++i) {
       state child = s;
@@ -110,22 +131,16 @@ int main(int argc, char *argv[]) {
       if (r == SECOND_PASS) {
         if (-score(&child) > my_komi) {
           n->odds = 1;
-          return;
+          return 1;
         }
       } else if (r == TAKE_TARGET) {
         if (-target_lost_score(&child) > my_komi) {
           n->odds = 1;
-          return;
+          return 1;
         }
       } else if (r != ILLEGAL) {
         num_legal++;
-        node *child_node = NULL;
-        for (size_t j = 0; j < num_nodes; ++j) {
-          if (equals(&child, (state*)(nodes + j))) {
-            child_node = nodes + j;
-            break;
-          }
-        }
+        node *child_node = find_node(&child);
         if (child_node) {
           if (child_node->depth > n->depth) {
             child_node->depth = n->depth + 1;
@@ -166,30 +181,73 @@ int main(int argc, char *argv[]) {
             }
           }
           double odds = num_wins / (double) (NUM_PLAYOUTS + 2);
-          nodes[num_nodes++] = (node){child, odds, n->depth + 1, generation};
           if (num_nodes >= nodes_capacity) {
-            // TODO: No
-            fprintf(stderr, "Out of capacity, lol\n");
-            exit(EXIT_FAILURE);
+            if (most_promising) {
+              mp_state = most_promising->state;
+            }
+            if (runner_up) {
+              ru_state = runner_up->state;
+            }
+            num_sorted = nodes_capacity;
+            qsort((void*) nodes, num_sorted, sizeof(node), compare);
+            nodes_capacity <<= 1;
+            nodes = realloc(nodes, nodes_capacity * sizeof(node));
+            #ifdef DEBUG
+              printf("Capacity increased to %zu\n", nodes_capacity);
+            #endif
+            n = find_node(&s);
+            if (most_promising) {
+              most_promising = find_node(&mp_state);
+            }
+            if (runner_up) {
+              runner_up = find_node(&ru_state);
+            }
+          } else if (num_nodes > num_sorted + MAX_TAIL_SIZE) {
+            if (most_promising) {
+              mp_state = most_promising->state;
+            }
+            if (runner_up) {
+              ru_state = runner_up->state;
+            }
+            num_sorted = num_nodes;
+            qsort((void*) nodes, num_sorted, sizeof(node), compare);
+            n = find_node(&s);
+            if (most_promising) {
+              most_promising = find_node(&mp_state);
+            }
+            if (runner_up) {
+              runner_up = find_node(&ru_state);
+            }
           }
+          nodes[num_nodes++] = (node){child, odds, n->depth + 1, generation};
           loss_odds *= odds;
         }
       }
     }
 
+    size_t my_sorted = num_sorted;
+    if (runner_up) {
+      ru_state = runner_up->state;
+    }
     if (most_promising) {
-      improve_odds(most_promising);
-      loss_odds *= most_promising->odds;
+      loss_odds *= improve_odds(most_promising);
     }
     if (runner_up) {
-      improve_odds(runner_up);
-      loss_odds *= runner_up->odds;
+      if (my_sorted != num_sorted) {
+        runner_up = find_node(&ru_state);
+      }
+      loss_odds *= improve_odds(runner_up);
     }
 
     // Ad hoc curve to model playout correlation
     loss_odds = pow(loss_odds, 1 / (fmin(num_legal, 3) + 0.5));
 
+    if (my_sorted != num_sorted) {
+      n = find_node(&s);
+    }
     n->odds = 1 - loss_odds;
+
+    return n->odds;
   }
 
   int num_wins = 1;
@@ -206,10 +264,13 @@ int main(int argc, char *argv[]) {
   print_state(&root);
   printf("Starting win rate: %g %%\n", odds * 100);
 
-  for (int i = 0; i < 50; ++i) {
-    improve_odds(nodes);
+  while(generation < 10000) {
+    double odds = improve_odds(find_node(&root));
     generation++;
-    printf("Improved win rate: %g %%\n", nodes[0].odds * 100);
+    printf("Generation %i win rate: %g %%\n", generation, odds * 100);
+    if (odds == 0 || odds == 1) {
+      break;
+    }
   }
 
   printf("%zu nodes explored\n", num_nodes);
