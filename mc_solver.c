@@ -110,7 +110,6 @@ int main(int argc, char *argv[]) {
 
   int generation = 0;
 
-  // TODO: Benson's
   double improve_odds(node *n) {
     n->generation = generation;
     state s = n->state;
@@ -128,13 +127,19 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < num_moves; ++i) {
       state child = s;
       move_result r = make_move(&child, moves[i]);
+      move_result br = apply_benson(&child);
       if (r == SECOND_PASS) {
         if (-score(&child) > my_komi) {
           n->odds = 1;
           return 1;
         }
-      } else if (r == TAKE_TARGET) {
+      } else if (r == TAKE_TARGET || br == TAKE_TARGET) {
         if (-target_lost_score(&child) > my_komi) {
+          n->odds = 1;
+          return 1;
+        }
+      } else if (br == TARGET_LOST) {
+        if (target_lost_score(&child) > my_komi) {
           n->odds = 1;
           return 1;
         }
