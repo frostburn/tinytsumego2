@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include "tinytsumego2/state.h"
 
@@ -367,7 +368,7 @@ size_t to_key(state *root, state *child) {
   key = key * (2 * abs(root->ko_threats) + 1) + child->ko_threats + abs(root->ko_threats);
   key = key * 2 + child->passes;
 
-  stones_t effective_area = root->logical_area & ~(root->target | root->immortal);
+  stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
 
   // Index ko
   key *= popcount(effective_area) + 1;
@@ -396,25 +397,44 @@ size_t to_key(state *root, state *child) {
     }
   }
 
-  // TODO: Make external liberty counting more lightweight
+  // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
+  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & child->player);
+  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & child->opponent);
 
   return key;
 }
 
 size_t keyspace_size(state *root) {
-  const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal));
+  const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
   size_t result = (
     2 * // Player to play
     3 * // Button ownership
     (2 * abs(root->ko_threats) + 1) * // Number and ownership of the remaining "external" ko threats
     2 * // Passes
-    (num_moves + 1) // Location (or absence) of the illegal ko square
+    (num_moves + 1) * // Location (or absence) of the illegal ko square
+    (popcount(root->external & root->player) + 1) * // Number of external liberties filled by the player
+    (popcount(root->external & root->opponent) + 1) // Number of external liberties filled by the opponent
   );
   // Ternary encoding of stones
   for (size_t i = 0; i < num_moves; ++i) {
+    if (result >= SIZE_MAX / 3) {
+      fprintf(stderr, "Warning: Keyspace overflow\n");
+    }
     result *= 3;
   }
   return result;
+}
+
+int compare_keys(const void *a_, const void *b_) {
+  size_t a = *((size_t*) a_);
+  size_t b = *((size_t*) b_);
+  if (a < b) {
+    return -1;
+  }
+  if (a > b) {
+    return 1;
+  }
+  return 0;
 }
 
 int chinese_liberty_score(const state *s) {

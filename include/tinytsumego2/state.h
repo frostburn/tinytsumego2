@@ -89,11 +89,15 @@ state parse_state(const char *visuals);
 move_result make_move(state *s, const stones_t move);
 
 // Return the unique index identifying a child state of a root state
+// Assumes external liberties (if any) are arranged in a contiguous block
 // Only a single pass is allowed. Do not index leaf nodes of the tree!
 size_t to_key(state *root, state *child);
 
 // Return the size of the key space of the given root state
 size_t keyspace_size(state *root);
+
+// Compare two unique indices. Compatible with qsort.
+int compare_keys(const void *a_, const void *b_);
 
 // Count the difference between the number of player's stones and liberties and opponent's stones and liberties
 int chinese_liberty_score(const state *s);
@@ -103,7 +107,6 @@ bool equals(const state *a, const state *b);
 
 // Compare two child states of a common root state. Compatible with qsort.
 int compare(const void *a_, const void *b_);
-
 
 // Get a hash of a state. Collisions can happen but child states of a common root state should hash reasonably well.
 stones_t hash_a(const state *s);

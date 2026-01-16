@@ -13,6 +13,7 @@ state rectangle_six() {
   s.ko = 0;
   s.target = s.opponent;
   s.immortal = 0;
+  s.external = 0;
   s.passes = 0;
   s.ko_threats = -1;
   s.button = 0;
@@ -31,6 +32,7 @@ state bent_four_in_the_corner_is_dead() {
   s.ko = 0;
   s.target = s.opponent;
   s.immortal = 0;
+  s.external = 0;
   s.passes = 0;
   s.ko_threats = -1;
   s.button = 0;
@@ -157,6 +159,44 @@ void test_rectangle_six_keyspace() {
   assert(root_key < size);
   assert(child_key < size);
   assert(grandchild_key < size);
+  assert(root_key != child_key);
+  assert(root_key != grandchild_key);
+  assert(child_key != grandchild_key);
+}
+
+void test_rectangle_six_external_liberties_keyspace() {
+  state root = rectangle_six();
+  root.visual_area = rectangle(5, 3);
+  root.external = rectangle(1, 3) << 4;
+  root.logical_area = rectangle(3, 2) | root.external;
+  root.player |= root.external;
+  print_state(&root);
+
+  size_t size = keyspace_size(&root);
+  assert(size == 734832);
+
+  size_t root_key = to_key(&root, &root);
+
+  state child = root;
+  make_move(&child, single(4, 1));
+  size_t child_key = to_key(&root, &child);
+
+  state alt = root;
+  make_move(&alt, single(4, 2));
+  size_t alt_key = to_key(&root, &alt);
+
+  move_result r = make_move(&child, single(4, 1));
+  assert(r == ILLEGAL);
+  size_t undo_key = to_key(&root, &child);
+
+  make_move(&child, single(1, 1));
+  size_t grandchild_key = to_key(&root, &child);
+
+  assert(root_key < size);
+  assert(child_key < size);
+  assert(grandchild_key < size);
+  assert(alt_key == child_key);
+  assert(undo_key == child_key);
   assert(root_key != child_key);
   assert(root_key != grandchild_key);
   assert(child_key != grandchild_key);
@@ -326,9 +366,11 @@ int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
   test_rectangle_six_keyspace();
+  test_rectangle_six_external_liberties_keyspace();
   test_parse();
   test_external_liberties();
   test_2x1_occupied();
   test_benson();
+
   return EXIT_SUCCESS;
 }
