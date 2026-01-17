@@ -1,4 +1,6 @@
 #pragma once
+
+#include <stdbool.h>
 /*
  * Tsumego (go problems) are arranged inside a 9x7 goban (playing area).
  * Stones (playing pieces) are represented as bit boards (unsigned integers).
@@ -42,6 +44,9 @@
 #define H_NUB (3ULL)
 #define V_NUB (513ULL)
 
+// Area that cannot be rotated or mirrored diagonally
+#define EAST_STRIP (V7 | V8)
+
 #define MAX_CHAINS (32)
 
 // 64 bits of stones (1 bit outside the 9x7 rectangle)
@@ -74,6 +79,9 @@ stones_t flood(register stones_t source, register const stones_t target);
 // Expand `stones` in a "cross" pattern
 stones_t cross(const stones_t stones);
 
+// Expand `stones` in a "blob" pattern
+stones_t blob(stones_t stones);
+
 // Indicate the column of a single stone: 'A' through 'I' or 'p' for pass()
 char column_of(const stones_t stone);
 
@@ -82,3 +90,18 @@ char row_of(const stones_t stone);
 
 // Break `stones` into individual chains. Returns a dynamically allocated array. Stores the number of chains in the second argument.
 stones_t *chains(stones_t stones, int *num_chains);
+
+// Break `stones` into individual stone bits. Stores the number of bits in the second argument.
+stones_t *dots(stones_t stones, int *num_dots);
+
+// Mirror `stones` vertically
+stones_t stones_mirror_v(stones_t stones);
+
+// Mirror `stones` horizontally
+stones_t stones_mirror_h(stones_t stones);
+
+// Mirror `stones` diagonally
+stones_t stones_mirror_d(stones_t stones);
+
+// Return `true` if the stones form a single chain
+bool is_contiguous(stones_t stones);
