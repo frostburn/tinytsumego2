@@ -11,8 +11,38 @@
 // Size 2
 // ..
 
+// Size 11 (too wide to fit)
+// . . . . . . . . . . .
+
+// . . . . . . . . . .
+// .
+
+// . . . . . . . . . .
+//   .
+
+// . . . . . . . . . .
+//     .
+
+// . . . . . . . . . .
+//       .
+
+// . . . . . . . . . .
+//         .
+
+//   . . . . . . . . .
+// . .
+
+//     . . . . . . . .
+// . . .
+
+//       . . . . . . .
+// . . . .
+
+//         . . . . . .
+// . . . . .
+
 #define MAX_SIZE (11)
-#define VERBOSE
+// #define VERBOSE
 
 stones_t snap(stones_t stones) {
   if (!stones) {
@@ -66,6 +96,31 @@ stones_t canonize(stones_t stones) {
   return stones;
 }
 
+bool is_whole(stones_t stones) {
+  stones_t edges = (NORTH_WALL | WEST_WALL | EAST_WALL | SOUTH_WALL) & ~stones;
+  stones_t negative_space = flood(edges, ~stones);
+  return stones == ~negative_space;
+}
+
+// Assumes canonized input
+bool is_corner_valid(stones_t stones) {
+  stones_t negative_space = flood(single(WIDTH - 1, HEIGHT - 1), ~stones);
+  if (stones == ~negative_space) {
+    return true;
+  }
+
+  stones = snap(stones_mirror_h(stones));
+  negative_space = flood(single(WIDTH - 1, HEIGHT - 1), ~stones);
+  if (stones == ~negative_space) {
+    return true;
+  }
+
+  stones = snap(stones_mirror_v(stones));
+  negative_space = flood(single(WIDTH - 1, HEIGHT - 1), ~stones);
+  return stones == ~negative_space;
+}
+
+// https://oeis.org/A000105
 static size_t EXPECTED_COUNTS[] = {
   2,
   5,
@@ -75,7 +130,7 @@ static size_t EXPECTED_COUNTS[] = {
   369,
   1285,
   4655 - 1, // The straight decomino doesn't fit
-  17073 - 10, // The 10 extensions of the straight decomino don't fit
+  17073 - 10, // See missing shapes above
   63600,
   238591,
   901971,
@@ -106,6 +161,9 @@ int main() {
     int num_bits = 0;
     stones_t *bits = dots(cross(polyomino) ^ polyomino, &num_bits);
     for (int i = 0; i < num_bits; ++i) {
+      if (bits[i] == 1ULL << 63) {
+        continue;
+      }
       stones_t candidate = canonize(polyomino | bits[i]);
       bool novel = true;
       for (size_t j = 0; j < polyomino_counts[index]; ++j) {
@@ -143,8 +201,37 @@ int main() {
   }
 
   for (size_t size = 3; size <= MAX_SIZE; ++size) {
-    printf("%zu polyominoes of size %zu\n", polyomino_counts[size - 3], size);
+    size_t num_whole = 0;
+    size_t num_center_valid = 0;
+    size_t num_edge_valid = 0;
+    size_t num_corner_valid = 0;
+    for (size_t i = 0; i < polyomino_counts[size - 3]; ++i) {
+      stones_t polyomino = polyominoes_by_size[size - 3][i];
+      if (is_whole(polyomino)) {
+        num_whole++;
+        // Canonization forces it to touch north and west
+
+        // Can it be moved off the walls without touching others
+        if (!(polyomino & (H5 | V7))) {
+          num_center_valid++;
+        }
+
+        // Can it be moved off a wall (and is not already touching south or east)
+        if (!(polyomino & (H6 | V8))) {
+          num_edge_valid++;
+          if (is_corner_valid(polyomino)) {
+            num_corner_valid++;
+          }
+        }
+      }
+    }
+    printf("%zu polyominoes of size %zu (%zu without holes)\n", polyomino_counts[size - 3], size, num_whole);
     assert(polyomino_counts[size - 3] == EXPECTED_COUNTS[size - 3]);
+
+    printf("%zu valid eyespaces for a center group\n", num_center_valid);
+    printf("%zu valid eyespaces for an edge group\n", num_edge_valid);
+    printf("%zu valid eyespaces for a corner group\n", num_corner_valid);
+    printf("\n");
   }
 
   return EXIT_SUCCESS;
