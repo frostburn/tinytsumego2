@@ -1,6 +1,7 @@
-#include "tinytsumego2/stones.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "tinytsumego2/stones.h"
 
 // Enumerate all contiguous eyespace shapes for tabulation purposes
 
@@ -9,6 +10,9 @@
 
 // Size 2
 // ..
+
+#define MAX_SIZE (11)
+#define VERBOSE
 
 stones_t snap(stones_t stones) {
   if (!stones) {
@@ -62,46 +66,85 @@ stones_t canonize(stones_t stones) {
   return stones;
 }
 
-#define MAX_SIZE (6)
+static size_t EXPECTED_COUNTS[] = {
+  2,
+  5,
+  12,
+  35,
+  108,
+  369,
+  1285,
+  4655 - 1, // The straight decomino doesn't fit
+  17073 - 10, // The 10 extensions of the straight decomino don't fit
+  63600,
+  238591,
+  901971,
+  3426576,
+  13079255,
+  50107909,
+  192622052,
+  742624232,
+  2870671950,
+  11123060678,
+  43191857688,
+  168047007728,
+  654999700403,
+  2557227044764,
+  9999088822075,
+  39153010938487,
+  153511100594603,
+};
 
 int main() {
-  stones_t **eyespaces_by_size = malloc((MAX_SIZE - 2) * sizeof(stones_t*));
-  eyespaces_by_size[0] = malloc(2 * sizeof(stones_t));
-  size_t *eyespace_counts = (size_t*) calloc(MAX_SIZE - 2, sizeof(size_t));
+  stones_t **polyominoes_by_size = malloc((MAX_SIZE - 2) * sizeof(stones_t*));
+  polyominoes_by_size[0] = malloc(2 * sizeof(stones_t));
+  size_t *polyomino_counts = (size_t*) calloc(MAX_SIZE - 2, sizeof(size_t));
 
-  void expand_eyespace(stones_t eyespace) {
-    size_t index = popcount(eyespace) - 2;
-    eyespace = eyespace << (1 + V_SHIFT);
+  void expand_polyomino(stones_t polyomino) {
+    size_t index = popcount(polyomino) - 2;
 
     int num_bits = 0;
-    stones_t *bits = dots(cross(eyespace) ^ eyespace, &num_bits);
+    stones_t *bits = dots(cross(polyomino) ^ polyomino, &num_bits);
     for (int i = 0; i < num_bits; ++i) {
-      stones_t candidate = canonize(eyespace | bits[i]);
+      stones_t candidate = canonize(polyomino | bits[i]);
       bool novel = true;
-      for (size_t j = 0; j < eyespace_counts[index]; ++j) {
-        if (eyespaces_by_size[index][j] == candidate) {
+      for (size_t j = 0; j < polyomino_counts[index]; ++j) {
+        if (polyominoes_by_size[index][j] == candidate) {
           novel = false;
           break;
         }
       }
       if (novel) {
-        eyespaces_by_size[index][eyespace_counts[index]++] = candidate;
-        print_stones(candidate);
+        polyominoes_by_size[index][polyomino_counts[index]++] = candidate;
+        #ifdef VERBOSE
+          print_stones(candidate);
+        #endif
       }
     }
   }
 
-  expand_eyespace(3ULL);
+  expand_polyomino(3ULL << (1 + V_SHIFT));
   for (size_t size = 3; size < MAX_SIZE; ++size) {
-    eyespaces_by_size[size - 2] = malloc(1000 * sizeof(stones_t));
-    for (size_t i = 0; i < eyespace_counts[size - 3]; ++i) {
-      expand_eyespace(eyespaces_by_size[size - 3][i]);
+    polyominoes_by_size[size - 2] = malloc(20000 * sizeof(stones_t));
+    for (size_t i = 0; i < polyomino_counts[size - 3]; ++i) {
+      stones_t polyomino = polyominoes_by_size[size - 3][i];
+      expand_polyomino(polyomino);
+      if (!(polyomino & EAST_WALL)) {
+        expand_polyomino(polyomino << 1);
+        if (!(polyomino & SOUTH_WALL)) {
+          expand_polyomino(polyomino << (1 + V_SHIFT));
+        }
+      }
+      if (!(polyomino & SOUTH_WALL)) {
+        expand_polyomino(polyomino << V_SHIFT);
+      }
     }
-    eyespaces_by_size[size - 2] = realloc(eyespaces_by_size[size - 2], eyespace_counts[size - 2] * sizeof(stones_t));
+    polyominoes_by_size[size - 2] = realloc(polyominoes_by_size[size - 2], polyomino_counts[size - 2] * sizeof(stones_t));
   }
 
   for (size_t size = 3; size <= MAX_SIZE; ++size) {
-    printf("%zu eyespaces of size %zu\n", eyespace_counts[size - 3], size);
+    printf("%zu polyominoes of size %zu\n", polyomino_counts[size - 3], size);
+    assert(polyomino_counts[size - 3] == EXPECTED_COUNTS[size - 3]);
   }
 
   return EXIT_SUCCESS;

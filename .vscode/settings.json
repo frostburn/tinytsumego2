@@ -2,6 +2,7 @@
   "cSpell.words": [
     "clzll",
     "ctzll",
+    "decomino",
     "ENDFOREACH",
     "eyespace",
     "eyespaces",
@@ -11,6 +12,8 @@
     "jlrand",
     "negamax",
     "OPENMP",
+    "polyomino",
+    "polyominoes",
     "popcountll",
     "tenuki",
     "tinytsumego",

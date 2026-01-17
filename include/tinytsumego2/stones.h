@@ -28,6 +28,7 @@
 #define H4 (H3 << V_SHIFT)
 #define H5 (H4 << V_SHIFT)
 #define H6 (H5 << V_SHIFT)
+#define SOUTH_WALL (H6)
 
 // Vertical strips
 #define V0 (WEST_WALL)
@@ -39,6 +40,7 @@
 #define V6 (V5 << H_SHIFT)
 #define V7 (V6 << H_SHIFT)
 #define V8 (V7 << H_SHIFT)
+#define EAST_WALL (V8)
 
 // 2x1 nubs
 #define H_NUB (3ULL)
