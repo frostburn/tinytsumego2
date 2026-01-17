@@ -48,19 +48,26 @@ typedef struct state
   bool white_to_play;
 } state;
 
-// Result of making a move
+// Result of making a move (ordered to facilitate game graph expansion)
 typedef enum move_result
 {
+  // Non-moves
   ILLEGAL,
+
+  // Game-ending moves
+  TARGET_LOST, // Not a legal move but can happen as an optimization
+  SECOND_PASS,
+  TAKE_TARGET,
+
+  // Non-constructive moves
   CLEAR_KO,
   TAKE_BUTTON,
   PASS,
-  SECOND_PASS,
+
+  // Constructive moves
   FILL_EXTERNAL,
   NORMAL,
   KO_THREAT_AND_RETAKE,
-  TAKE_TARGET,
-  TARGET_LOST
 } move_result;
 
 // Print a game state with ANSI colors
@@ -117,3 +124,9 @@ stones_t hash_b(const state *s);
 // Apply Benson's Algorithm for Unconditional Life by removing unconditional eye-space from logical playing area.
 // Returns TAKE_TARGET or TARGET_LOST if the process captures target stones as a side effect.
 move_result apply_benson(state *s);
+
+// Snap a state to the upper left corner
+void snap(state *s);
+
+// Returns `true` if the state is legal. No chains without liberties etc.
+bool is_legal(state *s);

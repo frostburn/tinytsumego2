@@ -438,8 +438,14 @@ int compare_keys(const void *a_, const void *b_) {
 }
 
 int chinese_liberty_score(const state *s) {
-  stones_t player_controlled = s->player | liberties(s->player, s->visual_area & ~s->opponent);
-  stones_t opponent_controlled = s->opponent | liberties(s->opponent, s->visual_area & ~s->player);
+  stones_t empty = (s->visual_area & ~(s->player | s->opponent)) | s->external;
+
+  stones_t player_controlled = s->player & ~s->external;
+  player_controlled |= liberties(player_controlled, empty);
+
+  stones_t opponent_controlled = s->opponent & ~s->external;
+  opponent_controlled |= liberties(opponent_controlled, empty);
+
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
 
@@ -704,4 +710,48 @@ move_result apply_benson(state *s) {
   s->logical_area ^= s->logical_area & (player_unconditional | opponent_unconditional);
 
   return result;
+}
+
+bool is_legal(state *s) {
+  if (s->passes < 0 || s->passes > 2) {
+    return false;
+  }
+  if (s->button != -1 && s->button != 0 && s->button != 1) {
+    return false;
+  }
+  if ((s->logical_area | s->player | s->opponent | s->ko | s->immortal | s->external) & ~s->visual_area) {
+    return false;
+  }
+  stones_t empty = ~(s->player | s->opponent);
+  if ((s->immortal | s->external | s->target) & empty) {
+    return false;
+  }
+  empty = (s->visual_area & empty) | s->external;
+
+  int num_chains = 0;
+  stones_t *cs = chains(s->player, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (cs[i] & s->immortal) {
+      continue;
+    }
+    if (!popcount(liberties(cs[i], empty))) {
+      return false;
+    }
+  }
+  free(cs);
+
+  cs = chains(s->opponent, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (cs[i] & s->immortal) {
+      continue;
+    }
+    if (!popcount(liberties(cs[i], empty))) {
+      return false;
+    }
+  }
+  free(cs);
+
+  // TODO: Ko legality
+
+  return true;
 }

@@ -203,6 +203,7 @@ int main() {
   for (size_t size = 3; size <= MAX_SIZE; ++size) {
     size_t num_whole = 0;
     size_t num_center_valid = 0;
+    // TODO: Distinguish between broken symmetries due to goban edges
     size_t num_edge_valid = 0;
     size_t num_corner_valid = 0;
     for (size_t i = 0; i < polyomino_counts[size - 3]; ++i) {

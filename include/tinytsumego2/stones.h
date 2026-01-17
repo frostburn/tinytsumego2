@@ -42,6 +42,9 @@
 #define V8 (V7 << H_SHIFT)
 #define EAST_WALL (V8)
 
+// Last bit
+#define LAST_STONE (1ULL << 63)
+
 // 2x1 nubs
 #define H_NUB (3ULL)
 #define V_NUB (513ULL)
@@ -105,5 +108,14 @@ stones_t stones_mirror_h(stones_t stones);
 // Mirror `stones` diagonally
 stones_t stones_mirror_d(stones_t stones);
 
+// Snap `stones` to the upper left corner
+stones_t stones_snap(stones_t stones);
+
 // Return `true` if the stones form a single chain
 bool is_contiguous(stones_t stones);
+
+// Return how far east `stones` extend
+int width_of(stones_t stones);
+
+// Return how far south `stones` extend
+int height_of(stones_t stones);
