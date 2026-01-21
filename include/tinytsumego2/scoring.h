@@ -12,10 +12,10 @@
 // #define NO_CAPTURE_DELAY
 
 // Chinese-like score with bonus for taking the button and saving up ko-threats
-float score(state *s);
+float score(const state *s);
 
 // Big score for capturing the target. Stone score not included to reduce weird play. Button and ko threat bonuses are included
-float target_lost_score(state *s);
+float target_lost_score(const state *s);
 
 // Incentivize delaying if the target stones cannot be saved
 float delay_capture(float my_score);
