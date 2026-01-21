@@ -451,6 +451,16 @@ int chinese_liberty_score(const state *s) {
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
 
+int compensated_liberty_score(const state *s) {
+  stones_t empty = s->visual_area & ~(s->player | s->opponent);
+
+  stones_t player_controlled = s->player | liberties(s->player, empty);
+
+  stones_t opponent_controlled = s->opponent | liberties(s->opponent, empty);
+
+  return popcount(player_controlled) - popcount(opponent_controlled);
+}
+
 bool equals(const state *a, const state *b) {
   if (a->visual_area != b->visual_area) {
     return false;
@@ -712,4 +722,61 @@ move_result apply_benson(state *s) {
   s->logical_area ^= s->logical_area & (player_unconditional | opponent_unconditional);
 
   return result;
+}
+
+bool is_legal(state *s) {
+  if (s->passes < 0 || s->passes > 2) {
+    return false;
+  }
+  if (s->button != -1 && s->button != 0 && s->button != 1) {
+    return false;
+  }
+  if ((s->logical_area | s->player | s->opponent | s->ko | s->immortal | s->external) & ~s->visual_area) {
+    return false;
+  }
+  stones_t empty = ~(s->player | s->opponent);
+  if ((s->immortal | s->external | s->target) & empty) {
+    return false;
+  }
+  empty = (s->visual_area & empty) | s->external;
+
+  int num_chains = 0;
+  stones_t *cs = chains(s->player & ~s->external, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (cs[i] & s->immortal) {
+      continue;
+    }
+    if (!popcount(liberties(cs[i], empty))) {
+      return false;
+    }
+  }
+  free(cs);
+
+  bool ko_found = false;
+  cs = chains(s->opponent & ~s->external, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (cs[i] & s->immortal) {
+      continue;
+    }
+    stones_t libs = liberties(cs[i], empty);
+    if (!popcount(libs)) {
+      return false;
+    }
+
+    // Bit magic to check that a single stone has ko as its liberty
+    if (
+      (libs == s->ko) &&
+      ((cs[i] & (cs[i] - 1ULL)) == 0ULL)
+     ) {
+      ko_found = true;
+    }
+  }
+  free(cs);
+
+  // Bit magic to check that ko is a single square if present
+  if (s->ko && (!ko_found || ((s->ko & (s->ko - 1ULL)) != 0ULL))) {
+    return false;
+  }
+
+  return true;
 }

@@ -59,6 +59,10 @@ int ctz(const stones_t stones) {
   return __builtin_ctzll(stones);
 }
 
+int clz(const stones_t stones) {
+  return __builtin_clzll(stones);
+}
+
 stones_t liberties(const stones_t stones, const stones_t empty) {
   return (
     ((stones & WEST_BLOCK) << H_SHIFT) |
@@ -186,6 +190,47 @@ stones_t stones_mirror_d(stones_t stones) {
   );
 }
 
+stones_t stones_snap(stones_t stones) {
+  if (!stones) {
+    return stones;
+  }
+  while (!(stones & NORTH_WALL)) {
+    stones >>= V_SHIFT;
+  }
+  while (!(stones & WEST_WALL)) {
+    stones >>= 1;
+  }
+  return stones;
+}
+
 bool is_contiguous(stones_t stones) {
   return flood(1ULL << ctz(stones), stones) == stones;
+}
+
+int width_of(stones_t stones) {
+  stones_t w = EAST_WALL;
+  for (int result = WIDTH; result; result--) {
+    if (stones & w) {
+      return result;
+    }
+    w >>= 1;
+  }
+  if (stones) {
+    return 1;
+  }
+  return 0;
+}
+
+int height_of(stones_t stones) {
+  int result = HEIGHT;
+  for (stones_t w = SOUTH_WALL; w; w >>= V_SHIFT) {
+    if (stones & w) {
+      return result;
+    }
+    result--;
+  }
+  if (stones) {
+    return HEIGHT + 1;
+  }
+  return 0;
 }

@@ -21,7 +21,7 @@ int solve(tsumego t, bool verbose) {
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
-  solve_full_graph(&fg);
+  solve_full_graph(&fg, true);
 
   value root_value = get_full_graph_value(&fg, &root);
   float low = root_value.low;

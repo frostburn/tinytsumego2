@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "jkiss/jkiss.h"
 #include "jkiss/util.h"
 #include "tinytsumego2/partial_solver.h"
@@ -11,13 +12,14 @@
 
 #include "tsumego.c"
 
-int solve(tsumego t, bool verbose) {
+int solve(tsumego t, bool verbose, tablebase *tb) {
   state root = t.state;
   if (verbose) {
     print_state(&root);
   }
 
   game_graph gg = create_game_graph(&root);
+  gg.tablebase = tb;
 
   solve_game_graph(&gg, verbose);
   node_proxy np = get_game_graph_node(&gg, &root);
@@ -75,13 +77,45 @@ int solve(tsumego t, bool verbose) {
 
 int main(int argc, char *argv[]) {
   jkiss_init();
-  if (argc <= 1) {
+
+  FILE *tablebase_file = NULL;
+
+  int c;
+  while ((c = getopt(argc, argv, "t::")) != -1) {
+    switch (c) {
+      case 't':
+        printf("Opening tablebase file %s\n", optarg);
+        tablebase_file = fopen(optarg, "rb");
+        if (!tablebase_file) {
+          fprintf(stderr, "Failed to open file\n");
+          return EXIT_FAILURE;
+        }
+        break;
+      default:
+        abort();
+    }
+  }
+
+  tablebase tb = {0};
+  tablebase *tb_ptr = NULL;
+  if (tablebase_file) {
+    tb = read_tablebase(tablebase_file);
+    tb_ptr = &tb;
+    fclose(tablebase_file);
+  }
+
+  if (optind >= argc) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      solve(get_tsumego(TSUMEGO_NAMES[i]), true);
+      solve(get_tsumego(TSUMEGO_NAMES[i]), true, tb_ptr);
     }
     return EXIT_SUCCESS;
   } else {
-    return solve(get_tsumego(argv[1]), true);
+    return solve(get_tsumego(argv[optind]), true, tb_ptr);
   }
+
+  if (tb_ptr) {
+    free_tablebase(tb_ptr);
+  }
+  return EXIT_SUCCESS;
 }

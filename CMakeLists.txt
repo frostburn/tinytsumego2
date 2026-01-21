@@ -50,3 +50,9 @@ TARGET_LINK_LIBRARIES(mc_solver jkiss tinytsumego2 m)
 
 ADD_EXECUTABLE(enumerate_eyespaces enumerate_eyespaces.c)
 TARGET_LINK_LIBRARIES(enumerate_eyespaces tinytsumego2)
+
+ADD_EXECUTABLE(build_tablebase build_tablebase.c)
+TARGET_LINK_LIBRARIES(build_tablebase tinytsumego2 m)
+
+ADD_EXECUTABLE(verify_tablebase verify_tablebase.c)
+TARGET_LINK_LIBRARIES(verify_tablebase tinytsumego2 m)
