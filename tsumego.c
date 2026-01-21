@@ -464,6 +464,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
 
   if (strcmp(name, "Second L+1 Group Defense") == 0) {
+    // -6 + BUTTON_BONUS - KO_THREAT_BONUS, instead?
     return single_valued(s, -5 - BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
@@ -565,8 +566,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Long L Group Defense") == 0) {
-    // TODO: Wait for the solver to finish
-    return single_valued(s, -5 + BUTTON_BONUS);
+    return single_valued(s, -4 - BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -574,7 +574,6 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
 
   if (strcmp(name, "Long L Group Attack") == 0) {
-    // TODO: Wait for the solver to finish
     return single_valued(s, 16 - BUTTON_BONUS);
   }
 

@@ -109,6 +109,9 @@ int compare_keys(const void *a_, const void *b_);
 // Count the difference between the number of player's stones and liberties and opponent's stones and liberties
 int chinese_liberty_score(const state *s);
 
+// Chinese-like score but ownership is anticipated
+int compensated_liberty_score(const state *s);
+
 // Return true if two game states are the same. False otherwise.
 bool equals(const state *a, const state *b);
 
@@ -124,3 +127,6 @@ stones_t hash_b(const state *s);
 // Apply Benson's Algorithm for Unconditional Life by removing unconditional eye-space from logical playing area.
 // Returns TAKE_TARGET or TARGET_LOST if the process captures target stones as a side effect.
 move_result apply_benson(state *s);
+
+// Returns `true` if the state is legal. No chains without liberties etc.
+bool is_legal(state *s);

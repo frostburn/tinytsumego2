@@ -104,7 +104,7 @@ value get_full_graph_value(full_graph *fg, const state *s) {
   return fg->values[offset - fg->states];
 }
 
-void solve_full_graph(full_graph *fg) {
+void solve_full_graph(full_graph *fg, bool use_delay) {
   fg->values = malloc(fg->num_nodes * sizeof(value));
 
   // Initialize to unknown ranges
@@ -138,8 +138,13 @@ void solve_full_graph(full_graph *fg) {
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
           const value child_value = get_full_graph_value(fg, &child);
-          low = fmax(low, -delay_capture(child_value.high));
-          high = fmax(high, -delay_capture(child_value.low));
+          if (use_delay) {
+            low = fmax(low, -delay_capture(child_value.high));
+            high = fmax(high, -delay_capture(child_value.low));
+          } else {
+            low = fmax(low, -child_value.high);
+            high = fmax(high, -child_value.low);
+          }
         }
       }
       if (fg->values[i].low != low || fg->values[i].high != high) {

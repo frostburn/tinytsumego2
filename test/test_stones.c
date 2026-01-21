@@ -18,8 +18,22 @@ void test_chains() {
   assert(cs[1] == single(1, 0));
 }
 
+void test_width_of() {
+  assert(width_of(0ULL) == 0);
+  assert(width_of(1ULL) == 1);
+  assert(width_of(5ULL << V_SHIFT) == 3);
+}
+
+void test_height_of() {
+  assert(height_of(0ULL) == 0);
+  assert(height_of(1ULL) == 1);
+  assert(height_of(5ULL << V_SHIFT) == 2);
+}
+
 int main() {
   test_rectangles();
   test_chains();
+  test_width_of();
+  test_height_of();
   return EXIT_SUCCESS;
 }

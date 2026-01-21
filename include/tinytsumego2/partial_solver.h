@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/tablebase.h"
 
 #define MIN_CAPACITY (128)
 #define MAX_TAIL_SIZE (8192)
@@ -70,6 +71,9 @@ typedef struct game_graph {
 
   // This flag controls fixing value ranges once the graph fails to update
   bool fix_loops;
+
+  // Tablebase of known solutions
+  tablebase *tablebase;
 } game_graph;
 
 // Sort children by heuristic penalty using qsort

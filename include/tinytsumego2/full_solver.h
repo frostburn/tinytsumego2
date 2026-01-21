@@ -48,8 +48,8 @@ void expand_full_graph(full_graph *fg);
 // Get the value range of a state in a game graph
 value get_full_graph_value(full_graph *fg, const state *s);
 
-// Apply negamax to an expanded full game graph until it converges
-void solve_full_graph(full_graph *fg);
+// Apply negamax to an expanded full game graph until it converges. The second argument controls the bonus for delaying inevitable target loss
+void solve_full_graph(full_graph *fg, bool use_delay);
 
 // Free memory allocated by a full game graph
 void free_full_graph(full_graph *fg);

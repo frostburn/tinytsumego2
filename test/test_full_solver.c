@@ -28,7 +28,7 @@ void test_straight_two_loss() {
 
   full_graph fg = create_full_graph(&root);
   expand_full_graph(&fg);
-  solve_full_graph(&fg);
+  solve_full_graph(&fg, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -46,7 +46,7 @@ void test_straight_three_capture() {
 
   full_graph fg = create_full_graph(&root);
   expand_full_graph(&fg);
-  solve_full_graph(&fg);
+  solve_full_graph(&fg, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -58,8 +58,27 @@ void test_straight_three_capture() {
   free_full_graph(&fg);
 }
 
+void test_straight_three_capture_no_delay() {
+  state root = straight_three();
+  print_state(&root);
+
+  full_graph fg = create_full_graph(&root);
+  expand_full_graph(&fg);
+  solve_full_graph(&fg, false);
+
+  value v = get_full_graph_value(&fg, &root);
+
+  printf("%g, %g\n\n", v.low, v.high);
+
+  assert(v.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+  assert(v.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+
+  free_full_graph(&fg);
+}
+
 int main() {
   test_straight_two_loss();
   test_straight_three_capture();
+  test_straight_three_capture_no_delay();
   return EXIT_SUCCESS;
 }

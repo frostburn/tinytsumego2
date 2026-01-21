@@ -113,13 +113,28 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
     gg->num_sorted = gg->num_nodes;
     qsort((void*) gg->nodes, gg->num_sorted, sizeof(node), compare);
   }
+
+  float low = -INFINITY;
+  float high = INFINITY;
+  bool low_fixed = false;
+  bool high_fixed = false;
+  if (gg->tablebase) {
+    value v = get_tablebase_value(gg->tablebase, s);
+    if (!isnan(v.low)) {
+      low = v.low;
+      high = v.high;
+      low_fixed = true;
+      high_fixed = true;
+    }
+  }
+
   gg->nodes[gg->num_nodes++] = (node) {
     *s,
     INT_MAX,
-    -INFINITY,
-    INFINITY,
-    false,
-    false,
+    low,
+    high,
+    low_fixed,
+    high_fixed,
     -1,
     0,
     0,
@@ -130,10 +145,10 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
   return (node_proxy) {
     *s,
     INT_MAX,
-    -INFINITY,
-    INFINITY,
-    false,
-    false,
+    low,
+    high,
+    low_fixed,
+    high_fixed,
     -1,
     0,
     0,
@@ -229,6 +244,7 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
       np->depth
     );
   #endif
+
   float low = -INFINITY;
   float high = -INFINITY;
 
@@ -390,4 +406,5 @@ void free_game_graph(game_graph *gg) {
   gg->num_nodes = 0;
   gg->nodes_capacity = 0;
   gg->num_sorted = 0;
+  gg->nodes = NULL;
 }
