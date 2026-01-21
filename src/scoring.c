@@ -1,7 +1,7 @@
 #include "tinytsumego2/scoring.h"
 
 // Chinese-like score with bonus for taking the button and saving up ko-threats
-float score(state *s) {
+float score(const state *s) {
   return (
     chinese_liberty_score(s) +
     s->button * 0.5 +
@@ -10,7 +10,7 @@ float score(state *s) {
 }
 
 // Big score for capturing the target. Stone score not included to reduce weird play. Button and ko threat bonuses are included
-float target_lost_score(state *s) {
+float target_lost_score(const state *s) {
   return -TARGET_CAPTURED_SCORE + s->button * 0.5 + s->ko_threats * 0.0625;
 }
 

@@ -336,11 +336,13 @@ move_result make_move(state *s, stones_t move) {
   // Expand immortal areas
   if (chain & s->immortal) {
     s->immortal |= chain;
+    s->logical_area &= ~chain;
   }
 
   // Expand target areas
   if (chain & s->target) {
     s->target |= chain;
+    s->logical_area &= ~chain;
   }
 
   // Swap players
@@ -438,8 +440,14 @@ int compare_keys(const void *a_, const void *b_) {
 }
 
 int chinese_liberty_score(const state *s) {
-  stones_t player_controlled = s->player | liberties(s->player, s->visual_area & ~s->opponent);
-  stones_t opponent_controlled = s->opponent | liberties(s->opponent, s->visual_area & ~s->player);
+  stones_t empty = (s->visual_area & ~(s->player | s->opponent)) | s->external;
+
+  stones_t player_controlled = s->player & ~s->external;
+  player_controlled |= liberties(player_controlled, empty);
+
+  stones_t opponent_controlled = s->opponent & ~s->external;
+  opponent_controlled |= liberties(opponent_controlled, empty);
+
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
 

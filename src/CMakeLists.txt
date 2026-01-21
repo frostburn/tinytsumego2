@@ -1,5 +1,7 @@
 ADD_LIBRARY(
   tinytsumego2
+  bloom.c
+  full_solver.c
   scoring.c
   state.c
   stones.c
