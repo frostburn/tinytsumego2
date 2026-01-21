@@ -539,7 +539,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = -1;
   if (strcmp(name, "J+1 Group with Descent Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 996.5);
+    return delay_valued(s, 999.4375, 996.5);
   }
 
   s = parse_state("\
