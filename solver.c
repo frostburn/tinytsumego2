@@ -17,6 +17,7 @@ int solve(tsumego t, bool verbose) {
   expand_full_graph(&fg);
 
   if (verbose) {
+    print_state(&root);
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
@@ -105,7 +106,7 @@ int solve(tsumego t, bool verbose) {
   free_full_graph(&fg);
 
   if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
-    fprintf(stderr, "%f, %f\n", root_value.low, root_value.high);
+    fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low_delay, t.high_delay);
   }
 
   assert(root_value.low == t.low_delay);

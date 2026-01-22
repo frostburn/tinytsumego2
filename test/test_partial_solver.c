@@ -34,8 +34,8 @@ void test_straight_two_loss() {
 
   print_game_graph(&gg);
 
-  assert(np.low == -TARGET_CAPTURED_SCORE + 0.5);
-  assert(np.high == -TARGET_CAPTURED_SCORE + 0.5);
+  assert(np.low == -TARGET_CAPTURED_SCORE + BUTTON_BONUS);
+  assert(np.high == -TARGET_CAPTURED_SCORE + BUTTON_BONUS);
 
   free_game_graph(&gg);
 }
@@ -51,8 +51,8 @@ void test_straight_three_capture() {
 
   print_game_graph(&gg);
 
-  assert(np.low == TARGET_CAPTURED_SCORE - 0.5);
-  assert(np.high == TARGET_CAPTURED_SCORE - 0.5);
+  assert(np.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+  assert(np.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
 
   free_game_graph(&gg);
 }
