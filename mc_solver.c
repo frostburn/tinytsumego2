@@ -13,7 +13,7 @@
 
 #define NUM_PLAYOUTS (100)
 
-#define EPSILON (1e-4f)
+#define EPSILON_Q7 (1)
 
 #define MAX_TAIL_SIZE (8192)
 
@@ -34,12 +34,12 @@ typedef struct node {
 int solve(tsumego t, bool low_komi, bool verbose) {
 
   state root = t.state;
-  float komi = t.low;
+  score_q7_t komi = float_to_score_q7(t.low);
 
   if (low_komi) {
-    komi -= EPSILON;
+    komi -= EPSILON_Q7;
   } else {
-    komi += EPSILON;
+    komi += EPSILON_Q7;
   }
 
   int num_moves = popcount(root.logical_area) + 1;
@@ -77,10 +77,10 @@ int solve(tsumego t, bool low_komi, bool verbose) {
   entropy_buffer *= entropy_buffer;
 
   // Play random moves until game over and return the score.
-  float playout(state s) {
+  score_q7_t playout(state s) {
     unsigned int i = 1234567;
     unsigned int entropy = 0;
-    float sign = -1;
+    score_q7_t sign = -1;
     for (;;) {
       if (entropy < entropy_buffer) {
         i = jrand();
@@ -91,9 +91,9 @@ int solve(tsumego t, bool low_komi, bool verbose) {
       i /= num_moves;
       entropy /= num_moves;
       if (r == SECOND_PASS) {
-        return sign * score(&child);
+        return sign * score_q7(&child);
       } else if (r == TAKE_TARGET) {
-        return sign * target_lost_score(&child);
+        return sign * target_lost_score_q7(&child);
       } else if (r != ILLEGAL) {
         s = child;
         sign = -sign;
@@ -106,7 +106,7 @@ int solve(tsumego t, bool low_komi, bool verbose) {
   double improve_odds(node *n) {
     n->generation = generation;
     state s = n->state;
-    float my_komi = s.white_to_play == root.white_to_play ? komi : -komi;
+    score_q7_t my_komi = s.white_to_play == root.white_to_play ? komi : -komi;
     double loss_odds = 1;
     int num_legal = 0;
 
@@ -122,17 +122,17 @@ int solve(tsumego t, bool low_komi, bool verbose) {
       move_result r = make_move(&child, moves[i]);
       move_result br = apply_benson(&child);
       if (r == SECOND_PASS) {
-        if (-score(&child) > my_komi) {
+        if (-score_q7(&child) > my_komi) {
           n->odds = 1;
           return 1;
         }
       } else if (r == TAKE_TARGET || br == TAKE_TARGET) {
-        if (-target_lost_score(&child) > my_komi) {
+        if (-target_lost_score_q7(&child) > my_komi) {
           n->odds = 1;
           return 1;
         }
       } else if (br == TARGET_LOST) {
-        if (target_lost_score(&child) > my_komi) {
+        if (target_lost_score_q7(&child) > my_komi) {
           n->odds = 1;
           return 1;
         }

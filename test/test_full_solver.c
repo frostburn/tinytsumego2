@@ -34,8 +34,8 @@ void test_straight_two_loss() {
 
   printf("%g, %g\n\n", v.low, v.high);
 
-  assert(v.low == -TARGET_CAPTURED_SCORE + 0.5 + 0.25);
-  assert(v.high == -TARGET_CAPTURED_SCORE + 0.5 + 0.25);
+  assert(v.low == -TARGET_CAPTURED_SCORE + DELAY_BONUS + BUTTON_BONUS);
+  assert(v.high == -TARGET_CAPTURED_SCORE + DELAY_BONUS + BUTTON_BONUS);
 
   free_full_graph(&fg);
 }
@@ -52,8 +52,8 @@ void test_straight_three_capture() {
 
   printf("%g, %g\n\n", v.low, v.high);
 
-  assert(v.low == TARGET_CAPTURED_SCORE - 0.5 - 3 * 0.25);
-  assert(v.high == TARGET_CAPTURED_SCORE - 0.5 - 3 * 0.25);
+  assert(v.low == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
+  assert(v.high == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
 
   free_full_graph(&fg);
 }

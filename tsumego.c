@@ -69,8 +69,14 @@ tsumego single_valued(state s, float score) {
   return (tsumego) {s, score, score, score, score};
 }
 
-tsumego delay_valued(state s, float score, float delay_score) {
-  return (tsumego) {s, score, score, delay_score, delay_score};
+tsumego delay_valued(state s, float score, int delay) {
+  return (tsumego) {
+    s,
+    score,
+    score,
+    score - delay * DELAY_BONUS,
+    score - delay * DELAY_BONUS
+  };
 }
 
 tsumego dual_valued(state s, float low, float high) {
@@ -97,14 +103,14 @@ tsumego get_tsumego(const char *name) {
   s.white_to_play = false;
 
   if (strcmp(name, "Straight Three") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 998.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 3);
   }
 
   s.player = s.opponent;
   s.opponent = 0;
 
   if (strcmp(name, "Straight Three Defense") == 0) {
-    return single_valued(s, 7.5);
+    return single_valued(s, 8 - BUTTON_BONUS);
   }
 
   // . . @
@@ -116,7 +122,7 @@ tsumego get_tsumego(const char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Straight Two") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE + 0.5, 1000);
+    return delay_valued(s, TARGET_CAPTURED_SCORE + BUTTON_BONUS, 2);
   }
 
   // . .
@@ -127,14 +133,13 @@ tsumego get_tsumego(const char *name) {
   s.target = 0;
 
   if (strcmp(name, "2x1 Goban") == 0) {
-    // Score: -1.5 to 2.5
-    return dual_valued(s, -1.5, 2.5);
+    return dual_valued(s, -2 + BUTTON_BONUS, 2 + BUTTON_BONUS);
   }
 
   s.button = 1;
   if (strcmp(name, "2x1 Goban (lost button)") == 0) {
     // Score: -1.5 to 2.5
-    return dual_valued(s, -1.5, 2.5);
+    return dual_valued(s, -2 + BUTTON_BONUS, 2 + BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(3, 1);
@@ -142,42 +147,42 @@ tsumego get_tsumego(const char *name) {
   s.button = 0;
 
   if (strcmp(name, "3x1 Goban") == 0) {
-    return single_valued(s, 2.5);
+    return single_valued(s, 3 - BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(4, 1);
   s.logical_area = s.visual_area;
 
   if (strcmp(name, "4x1 Goban") == 0) {
-    return single_valued(s, 3.5);
+    return single_valued(s, 4 - BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(5, 1);
   s.logical_area = s.visual_area;
 
   if (strcmp(name, "5x1 Goban") == 0) {
-    return dual_valued(s, -4.5, 5.5);
+    return dual_valued(s, -5 + BUTTON_BONUS, 5 + BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(2, 2);
   s.logical_area = s.visual_area;
 
   if (strcmp(name, "2x2 Goban") == 0) {
-    return dual_valued(s, -3.5, 4.5);
+    return dual_valued(s, -4 + BUTTON_BONUS, 4 + BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(3, 2);
   s.logical_area = s.visual_area;
 
   if (strcmp(name, "3x2 Goban") == 0) {
-    return dual_valued(s, -5.5, 6.5);
+    return dual_valued(s, -6 + BUTTON_BONUS, 6 + BUTTON_BONUS);
   }
 
   s.visual_area = rectangle(4, 2);
   s.logical_area = s.visual_area;
 
   if (strcmp(name, "4x2 Goban") == 0) {
-    return single_valued(s, 7.5);
+    return single_valued(s, 8 - BUTTON_BONUS);
   }
 
 
@@ -190,7 +195,7 @@ tsumego get_tsumego(const char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Straight Four") == 0) {
-    return single_valued(s, -9.5);
+    return single_valued(s, -10 + BUTTON_BONUS);
   }
 
   // . . . @
@@ -204,14 +209,14 @@ tsumego get_tsumego(const char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Hat Four") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 998);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 6);
   }
 
   s.player = s.opponent;
   s.opponent = 0;
 
   if (strcmp(name, "Hat Four Defense") == 0) {
-    return single_valued(s, 11.5);
+    return single_valued(s, 12 - BUTTON_BONUS);
   }
 
   // . . . @ 0 0
@@ -226,12 +231,12 @@ tsumego get_tsumego(const char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 998);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 6);
   }
 
   s.ko_threats = -1;
   if (strcmp(name, "Bent Four in the Corner (1 ko threat)") == 0) {
-    return single_valued(s, -5.5);
+    return single_valued(s, -6 + BUTTON_BONUS);
   }
 
   s.ko_threats = 0;
@@ -239,14 +244,14 @@ tsumego get_tsumego(const char *name) {
   s.player ^= single(4, 0);
   s.immortal = s.player;
   if (strcmp(name, "Bent Four in the Corner (1 liberty)") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 997.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 7);
   }
 
   s.logical_area ^= single(4, 1);
   s.player ^= single(4, 1);
   s.immortal = s.player;
   if (strcmp(name, "Bent Four in the Corner (2 liberties)") == 0) {
-    return single_valued(s, -6.5);
+    return single_valued(s, -6 - BUTTON_BONUS);
   }
 
   // . 0 . @
@@ -262,18 +267,24 @@ tsumego get_tsumego(const char *name) {
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner is Dead") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE + 0.5, 998.25);
+    return delay_valued(s, TARGET_CAPTURED_SCORE + BUTTON_BONUS, 9);
   }
 
   if (strcmp(name, "Bent Four in the Corner is Dead (defender has threats)") == 0) {
     s.ko_threats = -1;
     // The high value indicates that target loss can be delayed indefinitely
-    return (tsumego) {s, -7.5625, 1000.4375, -7.5625, 72.9375};
+    return (tsumego) {
+        s,
+        -8 + BUTTON_BONUS - KO_THREAT_BONUS,
+        TARGET_CAPTURED_SCORE + BUTTON_BONUS - KO_THREAT_BONUS,
+        -8 + BUTTON_BONUS - KO_THREAT_BONUS,
+        72.71875
+    };
   }
 
   if (strcmp(name, "Bent Four in the Corner is Dead (attacker tenuki)") == 0) {
     make_move(&s, pass());
-    return delay_valued(s, -TARGET_CAPTURED_SCORE - 0.5, -998.5);;
+    return delay_valued(s, -TARGET_CAPTURED_SCORE - BUTTON_BONUS, -8);;
   }
 
   // @ @ @ @ @
@@ -290,7 +301,7 @@ tsumego get_tsumego(const char *name) {
 
   if (strcmp(name, "Bulky Five") == 0) {
     // Score: Target captured
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 997);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 10);
   }
 
   // . . . @ 0 0
@@ -306,7 +317,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
 
   if (strcmp(name, "Rectangle Six in the Corner") == 0) {
-    return delay_valued(s, 999.4375, 996.9375);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS, 10);
   }
 
   s.logical_area ^= single(4, 0);
@@ -314,21 +325,21 @@ tsumego get_tsumego(const char *name) {
   s.player ^= single(4, 0);
   s.ko_threats = 0;
   if (strcmp(name, "Rectangle Six in the Corner (1 physical liberty)") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 996.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 11);
   }
 
   s.player ^= single(4, 0);
   s.external ^= single(4, 0);
 
   if (strcmp(name, "Rectangle Six in the Corner (1 liberty)") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 996.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 11);
   }
 
   s.logical_area ^= single(4, 1);
   s.immortal ^= single(4, 1);
   s.external ^= single(4, 1);
   if (strcmp(name, "Rectangle Six in the Corner (2 liberties)") == 0) {
-    return single_valued(s, -5.5);
+    return single_valued(s, -6 + BUTTON_BONUS);
   }
 
 
@@ -342,7 +353,7 @@ tsumego get_tsumego(const char *name) {
       , B B B B , , , , \
       , , , , , , , , , \
     ");
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 997.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 7);
   }
 
   // . . . . @ 0
@@ -359,12 +370,12 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 0;
 
   if (strcmp(name, "Rectangle Eight in the Corner") == 0) {
-    return single_valued(s, -3.5);
+    return single_valued(s, -4 + BUTTON_BONUS);
   }
 
   s.ko_threats = -1;
   if (strcmp(name, "Rectangle Eight in the Corner (defender has threats)") == 0) {
-    return single_valued(s, -11.5);
+    return single_valued(s, -12 + BUTTON_BONUS);
   }
 
   // . . . @
@@ -381,7 +392,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 0;
 
   if (strcmp(name, "Square Nine in the Corner") == 0) {
-    return single_valued(s, -6.5);
+    return single_valued(s, -7 + BUTTON_BONUS);
   }
 
   // . . . . . .
@@ -418,7 +429,7 @@ tsumego get_tsumego(const char *name) {
       , , , W . x x x x \
     ");
 
-    return delay_valued(s, -TARGET_CAPTURED_SCORE + 0.5, -997.25);
+    return delay_valued(s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS, -12);
   }
 
   s = parse_state("   \
@@ -431,14 +442,14 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "First L+1 Group Defense") == 0) {
-    return single_valued(s, -6.5);
+    return single_valued(s, -7 + BUTTON_BONUS);
   }
 
   temp = s.player;
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "First L+1 Group Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 997);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 12);
   }
 
   s = parse_state("     \
@@ -453,7 +464,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
 
   if (strcmp(name, "Second L+1 Group Defense") == 0) {
-    return single_valued(s, -5.5625);
+    return single_valued(s, -5 - BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
   temp = s.player;
@@ -461,7 +472,8 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = 0;
   if (strcmp(name, "Second L+1 Group Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 996.5);
+    // TODO: Wait for the solver to finish
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 996.5);
   }
 
   s = parse_state("     \
@@ -475,7 +487,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "L+2 Group with Descent Defense") == 0) {
-    return dual_valued(s, -3.5, -1.5);
+    return dual_valued(s, -4 + BUTTON_BONUS, -2 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -483,7 +495,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = 1;
   if (strcmp(name, "L+2 Group with Descent Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 995.75);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS, 17);
   }
 
   s = parse_state("   \
@@ -497,28 +509,28 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Basic J Group Defense") == 0) {
-    return single_valued(s, -5.5);
+    return single_valued(s, -6 + BUTTON_BONUS);
   }
 
   temp = s.player;
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "Basic J Group Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 997);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 12);
   }
 
   s.logical_area ^= single(0, 3) ^ single(0, 4);
   s.opponent ^= single(0, 3) ^ single(0, 4);
   s.target = s.opponent;
   if (strcmp(name, "Straight J Group Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 996.25);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 13);
   }
 
   temp = s.player;
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "Straight J Group Defense") == 0) {
-    return single_valued(s, -5.5);
+    return single_valued(s, -5 - BUTTON_BONUS);
   }
 
   s = parse_state("   \
@@ -531,7 +543,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "J+1 Group with Descent Defense") == 0) {
-    return dual_valued(s, -2.5, -0.5);
+    return dual_valued(s, -3 + BUTTON_BONUS, -1 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -539,7 +551,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = -1;
   if (strcmp(name, "J+1 Group with Descent Attack") == 0) {
-    return delay_valued(s, 999.4375, 996.5);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 14);
   }
 
   s = parse_state("\
@@ -553,7 +565,8 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Long L Group Defense") == 0) {
-    return single_valued(s, -4.5);
+    // TODO: Wait for the solver to finish
+    return single_valued(s, -5 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -561,12 +574,14 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
 
   if (strcmp(name, "Long L Group Attack") == 0) {
-    return single_valued(s, 15.5);
+    // TODO: Wait for the solver to finish
+    return single_valued(s, 16 - BUTTON_BONUS);
   }
 
   s.ko_threats = 1;
   if (strcmp(name, "Long L Group Attack (with threats)") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - 0.5, 994.8125);
+    // TODO: Wait for the solver to finish
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 994.8125);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);
