@@ -39,6 +39,9 @@ static const char* TSUMEGO_NAMES[] = {
   "Rectangle Six in the Corner (1 physical liberty)",
   "Rectangle Six in the Corner (1 liberty)",
   "Rectangle Six in the Corner (2 liberties)",
+  "Walkie Talkie Seven",
+  "Walkie Talkie Seven (1 ko threat)",
+  "Walkie Talkie Seven (3 liberties)",
   "Problem A",
   "Rectangle Eight in the Corner",
   "Rectangle Eight in the Corner (defender has threats)",
@@ -342,6 +345,38 @@ tsumego get_tsumego(const char *name) {
     return single_valued(s, -6 + BUTTON_BONUS);
   }
 
+  // . . . . @
+  // . . . @ @
+  // @ @ @ @ @
+
+  s.visual_area = rectangle(5, 3);
+  s.logical_area = rectangle(3, 2) | single(3, 0);
+  s.player = 0;
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+  s.immortal = 0;
+  s.external = 0;
+  s.ko_threats = 0;
+
+  if (strcmp(name, "Walkie Talkie Seven") == 0) {
+    return single_valued(s, -5 - BUTTON_BONUS);
+  }
+
+  s.ko_threats = 1;
+  if (strcmp(name, "Walkie Talkie Seven (1 ko threat)") == 0) {
+    // There's tension between wasting ko threats and delaying capture
+    float no_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+    float with_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS - 11 * DELAY_BONUS;
+    return (tsumego) {s, no_delay, no_delay, with_delay, with_delay};
+  }
+
+  s.external = rectangle(1, 3) << 5;
+  s.visual_area |= s.external;
+  s.logical_area |= s.external;
+  s.player |= s.external;
+  if (strcmp(name, "Walkie Talkie Seven (3 liberties)") == 0) {
+    return single_valued(s, -12 + BUTTON_BONUS + KO_THREAT_BONUS);
+  }
 
   if (strcmp(name, "Problem A") == 0) {
     s = parse_state("\
