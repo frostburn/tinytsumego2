@@ -780,3 +780,40 @@ bool is_legal(state *s) {
 
   return true;
 }
+
+void mirror_v(state *s) {
+  s->visual_area = stones_mirror_v(s->visual_area);
+  s->logical_area = stones_mirror_v(s->logical_area);
+  s->player = stones_mirror_v(s->player);
+  s->opponent = stones_mirror_v(s->opponent);
+  s->ko = stones_mirror_v(s->ko);
+  s->target = stones_mirror_v(s->target);
+  s->immortal = stones_mirror_v(s->immortal);
+  s->external = stones_mirror_v(s->external);
+}
+
+void mirror_h(state *s) {
+  s->visual_area = stones_mirror_h(s->visual_area);
+  s->logical_area = stones_mirror_h(s->logical_area);
+  s->player = stones_mirror_h(s->player);
+  s->opponent = stones_mirror_h(s->opponent);
+  s->ko = stones_mirror_h(s->ko);
+  s->target = stones_mirror_h(s->target);
+  s->immortal = stones_mirror_h(s->immortal);
+  s->external = stones_mirror_h(s->external);
+}
+
+void mirror_d(state *s) {
+  s->visual_area = stones_mirror_d(s->visual_area);
+  s->logical_area = stones_mirror_d(s->logical_area);
+  s->player = stones_mirror_d(s->player);
+  s->opponent = stones_mirror_d(s->opponent);
+  s->ko = stones_mirror_d(s->ko);
+  s->target = stones_mirror_d(s->target);
+  s->immortal = stones_mirror_d(s->immortal);
+  s->external = stones_mirror_d(s->external);
+}
+
+bool can_mirror_d(const state *s) {
+  return !(s->visual_area & EAST_STRIP);
+}

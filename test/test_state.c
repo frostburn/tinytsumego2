@@ -362,6 +362,62 @@ void test_benson() {
   assert(equals(&s, &expected));
 }
 
+void test_mirror() {
+  state s = rectangle_six();
+  s.logical_area ^= s.target;
+  s.player = single(2, 0);
+  mirror_v(&s);
+  print_state(&s);
+
+  state expected = parse_state("\
+              x x x x x x x x x \
+              x x x x x x x x x \
+              x x x x x x x x x \
+              x x x x x x x x x \
+              w w w w x x x x x \
+              . . . w x x x x x \
+              . . @ w x x x x x \
+  ");
+  expected.ko_threats = -1;
+  print_state(&expected);
+
+  assert(equals(&s, &expected));
+
+  mirror_h(&s);
+  print_state(&s);
+
+  expected = parse_state("\
+        x x x x x x x x x \
+        x x x x x x x x x \
+        x x x x x x x x x \
+        x x x x x x x x x \
+        x x x x x w w w w \
+        x x x x x w . . . \
+        x x x x x w @ . . \
+  ");
+  expected.ko_threats = -1;
+  assert(equals(&s, &expected));
+
+  assert(!can_mirror_d(&s));
+
+  s = rectangle_six();
+  s.logical_area ^= s.target;
+  s.player = single(2, 0);
+  assert(can_mirror_d(&s));
+
+  mirror_d(&s);
+  print_state(&s);
+
+  expected = parse_state("\
+        . . w x x x x x x \
+        . . w x x x x x x \
+        @ . w x x x x x x \
+        w w w x x x x x x \
+  ");
+  expected.ko_threats = -1;
+  assert(equals(&s, &expected));
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -371,6 +427,7 @@ int main() {
   test_external_liberties();
   test_2x1_occupied();
   test_benson();
+  test_mirror();
 
   return EXIT_SUCCESS;
 }

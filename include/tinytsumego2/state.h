@@ -130,3 +130,15 @@ move_result apply_benson(state *s);
 
 // Returns `true` if the state is legal. No chains without liberties etc.
 bool is_legal(state *s);
+
+// Mirror the state vertically in-place
+void mirror_v(state *s);
+
+// Mirror the state horizontally in-place
+void mirror_h(state *s);
+
+// Mirror the state diagonally in-place
+void mirror_d(state *s);
+
+// Returns `true` if applying `mirror_d` preserves all information. Assumes the state is legal
+bool can_mirror_d(const state *s);
