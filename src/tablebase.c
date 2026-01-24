@@ -139,14 +139,32 @@ value get_tablebase_value(const tablebase *tb, const state *s) {
   if (s->passes != 0) {
     return (value) {NAN, NAN};
   }
+  bool opponent_targetted = s->opponent & s->target;
+  if (opponent_targetted) {
+    if (s->player & s->target) {
+      return (value) {NAN, NAN};
+    }
+  } else if (!(s->player & s->target)) {
+    return (value) {NAN, NAN};
+  }
   int num_external = popcount(s->external);
   for (size_t i = 0; i < tb->num_tables; ++i) {
     if (
-      tb->tables[i].button == s->button &&
+      tb->tables[i].button == abs(s->button) &&
       tb->tables[i].ko_threats == s->ko_threats &&
-      tb->tables[i].num_external == num_external
+      tb->tables[i].num_external == num_external &&
+      tb->tables[i].opponent_targetted == opponent_targetted
     ) {
-      size_t key = to_corner_tablebase_key(s);
+      size_t key;
+      if (opponent_targetted) {
+        state c = *s;
+        stones_t temp = c.player;
+        c.player = c.opponent;
+        c.opponent = temp;
+        key = to_corner_tablebase_key(&c);
+      } else {
+        key = to_corner_tablebase_key(s);
+      }
       if (key == INVALID_KEY) {
         return (value) {NAN, NAN};
       }
@@ -163,6 +181,11 @@ value get_tablebase_value(const tablebase *tb, const state *s) {
 
       // Only delta-values are tabulated. Add in a baseline unless the target can be captured
       float baseline = compensated_liberty_score(s);
+      if (tb->tables[i].button != s->button) {
+        // Compensate button ownership even for target captures
+        result.low -= 2 * BUTTON_BONUS;
+        result.high -= 2 * BUTTON_BONUS;
+      }
       if (abs(v.low) < BIG_SCORE_Q7) {
         result.low += baseline;
       }
@@ -180,6 +203,7 @@ size_t write_tsumego_table(const tsumego_table *restrict tt, FILE *restrict stre
   total += fwrite(&(tt->button), sizeof(int), 1, stream);
   total += fwrite(&(tt->ko_threats), sizeof(int), 1, stream);
   total += fwrite(&(tt->num_external), sizeof(int), 1, stream);
+  total += fwrite(&(tt->opponent_targetted), sizeof(bool), 1, stream);
   total += fwrite(tt->values, sizeof(table_value), TABLEBASE_SIZE, stream);
   return total;
 }
@@ -212,6 +236,7 @@ tsumego_table read_tsumego_table(FILE *restrict stream) {
   read_one(&(result.button), sizeof(int), stream);
   read_one(&(result.ko_threats), sizeof(int), stream);
   read_one(&(result.num_external), sizeof(int), stream);
+  read_one(&(result.opponent_targetted), sizeof(bool), stream);
   result.values = malloc(sizeof(table_value) * TABLEBASE_SIZE);
   read_many(result.values, sizeof(table_value), TABLEBASE_SIZE, stream);
   return result;

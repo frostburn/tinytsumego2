@@ -4,12 +4,13 @@
 #include "tinytsumego2/tablebase.h"
 #include "tinytsumego2/full_solver.h"
 
-tsumego_table create_table(table_type type, int button, int ko_threats, int num_external) {
+tsumego_table create_table(table_type type, int button, int ko_threats, int num_external, bool opponent_targetted) {
   tsumego_table result = (tsumego_table) {
     type,
     button,
     ko_threats,
     num_external,
+    opponent_targetted,
     NULL
   };
 
@@ -24,6 +25,12 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
   root.logical_area |= root.external;
   root.opponent |= root.external;
 
+  if (opponent_targetted) {
+    stones_t temp = root.player;
+    root.player = root.opponent;
+    root.opponent = temp;
+  }
+
   print_state(&root);
 
   full_graph fg = create_full_graph(&root);
@@ -37,6 +44,11 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
     s.visual_area |= s.external;
     s.logical_area |= s.external;
     s.opponent |= s.external;
+    if (opponent_targetted) {
+      stones_t temp = s.player;
+      s.player = s.opponent;
+      s.opponent = temp;
+    }
     if (is_legal(&s)) {
       add_full_graph_state(&fg, &s);
     }
@@ -60,6 +72,11 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
     s.visual_area |= s.external;
     s.logical_area |= s.external;
     s.opponent |= s.external;
+    if (opponent_targetted) {
+      stones_t temp = s.player;
+      s.player = s.opponent;
+      s.opponent = temp;
+    }
     if (is_legal(&s)) {
       num_legal++;
       value v = get_full_graph_value(&fg, &s);
@@ -106,9 +123,11 @@ int main(int argc, char *argv[]) {
   for (int button = 0; button <= 1; ++button) {
     for (int ko_threats = -1; ko_threats <= 1; ++ko_threats) {
       for (int num_external = 0; num_external <= 2; ++num_external) {
-        tb.num_tables++;
-        tb.tables = realloc(tb.tables, tb.num_tables * sizeof(tsumego_table));
-        tb.tables[tb.num_tables - 1] = create_table(CORNER, button, ko_threats, num_external);
+        for (int t = 0; t <= 1; ++t) {
+          tb.num_tables++;
+          tb.tables = realloc(tb.tables, tb.num_tables * sizeof(tsumego_table));
+          tb.tables[tb.num_tables - 1] = create_table(CORNER, button, ko_threats, num_external, !t);
+        }
       }
     }
   }

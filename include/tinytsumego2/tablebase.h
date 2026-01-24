@@ -35,6 +35,7 @@ typedef struct tsumego_table {
   int button;
   int ko_threats;
   int num_external;
+  bool opponent_targetted;
 
   // Always has `TABLEBASE_SIZE` entries but not all valid
   table_value *values;
