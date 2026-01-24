@@ -817,3 +817,25 @@ void mirror_d(state *s) {
 bool can_mirror_d(const state *s) {
   return !(s->visual_area & EAST_STRIP);
 }
+
+void snap(state *s) {
+  if (!s->visual_area) {
+    return;
+  }
+  int shift = 0;
+  while (!(s->visual_area & WEST_WALL)) {
+    s->visual_area >>= 1;
+    shift += 1;
+  }
+  while (!(s->visual_area & NORTH_WALL)) {
+    s->visual_area >>= V_SHIFT;
+    shift += V_SHIFT;
+  }
+  s->logical_area >>= shift;
+  s->player >>= shift;
+  s->opponent >>= shift;
+  s->ko >>= shift;
+  s->target >>= shift;
+  s->immortal >>= shift;
+  s->external >>= shift;
+}

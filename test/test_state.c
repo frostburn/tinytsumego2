@@ -418,6 +418,23 @@ void test_mirror() {
   assert(equals(&s, &expected));
 }
 
+void test_snap() {
+  state s = bent_four_in_the_corner_is_dead();
+  mirror_h(&s);
+  print_state(&s);
+  snap(&s);
+  print_state(&s);
+
+  state expected = parse_state("\
+              w . @ . x x x x x \
+              w w w @ x x x x x \
+              w w w . x x x x x \
+              w w w w x x x x x \
+  ");
+  expected.ko_threats = -1;
+  assert(equals(&s, &expected));
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -428,6 +445,7 @@ int main() {
   test_2x1_occupied();
   test_benson();
   test_mirror();
+  test_snap();
 
   return EXIT_SUCCESS;
 }

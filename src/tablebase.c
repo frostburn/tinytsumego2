@@ -54,40 +54,52 @@ bool can_be_tabulated(const state *s) {
   return true;
 }
 
-// TODO: Something to pre-orient the root state at the upper left corner
-
 size_t to_corner_tablebase_key(const state *s) {
   if (!can_be_tabulated(s)) {
     return INVALID_KEY;
   }
 
+  state c = *s;
+  snap(&c);
+
   // Must actually fit the tablebase
-  if (!fits_corner(s)) {
-    return INVALID_KEY;
+  if (!fits_corner(&c)) {
+    mirror_v(&c);
+    snap(&c);
+    if (!fits_corner(&c)) {
+      mirror_h(&c);
+      snap(&c);
+      if (!fits_corner(&c)) {
+        mirror_v(&c);
+        snap(&c);
+        if (!fits_corner(&c)) {
+          // TODO: Flip diagonally if table width != height
+          return INVALID_KEY;
+        }
+      }
+    }
   }
 
   // Check for gaps in the goban
-  stones_t eyespace = s->logical_area ^ s->external;
-  if (cross(eyespace) & ~s->visual_area) {
+  stones_t eyespace = c.logical_area ^ c.external;
+  if (cross(eyespace) & ~c.visual_area) {
     return INVALID_KEY;
   }
 
-  // TODO: At least flip diagonally if it could help
-
   // TODO: Block conversion
-  // TERNARY[(s->player & TABLE_MASK) | ((s->opponent & TABLE_MASK) << TABLE_WIDTH)] + 3**TABLE_WIDTH * TERNARY[...];
+  // TERNARY[(c.player & TABLE_MASK) | ((c.opponent & TABLE_MASK) << TABLE_WIDTH)] + 3**TABLE_WIDTH * TERNARY[...];
 
   size_t key = 0;
   for (int y = TABLE_HEIGHT - 1; y >= 0; --y) {
     stones_t p = 1ULL << (TABLE_WIDTH - 1 + y * V_SHIFT);
     for (int x = TABLE_WIDTH - 1; x >= 0; --x) {
       key *= 3;
-      if (s->player & p) {
+      if (c.player & p) {
         key += 1;
       } else if (!(eyespace & p)) {
         // Voids become player target stones
         key += 1;
-      } else if (s->opponent & p) {
+      } else if (c.opponent & p) {
         key += 2;
       }
       p >>= 1;

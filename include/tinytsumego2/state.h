@@ -142,3 +142,6 @@ void mirror_d(state *s);
 
 // Returns `true` if applying `mirror_d` preserves all information. Assumes the state is legal
 bool can_mirror_d(const state *s);
+
+// Snap state to the upper left corner. Assumes the state is legal
+void snap(state *s);
