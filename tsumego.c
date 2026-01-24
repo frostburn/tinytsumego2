@@ -64,6 +64,11 @@ static const char* TSUMEGO_NAMES[] = {
   "Long L Group Defense",
   "Long L Group Attack",
   "Long L Group Attack (with threats)",
+  "Escape A",
+  "Six is Dead",
+  "Seven on the Second Line Defense",
+  "Seven on the Second Line Attack",
+  "Eight is Alive"
 };
 
 const size_t NUM_TSUMEGO = sizeof(TSUMEGO_NAMES) / sizeof(char*);
@@ -104,6 +109,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 0;
   s.button = 0;
   s.white_to_play = false;
+  s.wide = false;
 
   if (strcmp(name, "Straight Three") == 0) {
     return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 3);
@@ -522,7 +528,9 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "L+2 Group with Descent Defense") == 0) {
-    return dual_valued(s, -4 + BUTTON_BONUS, -2 + BUTTON_BONUS);
+    // 1638579 nodes expanded (with tablebase)
+    // -3.750000*, -2.250000*
+    return dual_valued(s, -4 + BUTTON_BONUS, -2 - BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -613,8 +621,65 @@ tsumego get_tsumego(const char *name) {
 
   s.ko_threats = 1;
   if (strcmp(name, "Long L Group Attack (with threats)") == 0) {
-    // TODO: Wait for the solver to finish
-    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 994.8125);
+    // TODO: Wait for the solver to finish to get the delay value
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS, 0);
+  }
+
+  s = parse_state("   \
+    . @ . w . 0 . . . \
+    w w w w w B . . W \
+    + + B B B B , , , \
+  ");
+  s.ko_threats = -2;
+
+  if (strcmp(name, "Escape A") == 0) {
+    float no_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 2 * KO_THREAT_BONUS;
+    float with_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 12 * DELAY_BONUS;
+    return (tsumego) {s, no_delay, no_delay, with_delay, with_delay};
+  }
+
+  s = parse_state("                 \
+    . . . . . . . . . . x x x x x x \
+    W W b b b b b b W W x x x x x x \
+    , W W W W W W W W , x x x x x x \
+  ");
+  s.ko_threats = 1;
+  s.wide = true;
+
+  if (strcmp(name, "Six is Dead") == 0) {
+    return delay_valued(s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS + KO_THREAT_BONUS, -8);
+  }
+
+  s = parse_state("                 \
+    . . . . . . . . . . . x x x x x \
+    W W b b b b b b b W W x x x x x \
+    , W W W W W W W W , , x x x x x \
+  ");
+  s.wide = true;
+
+  if (strcmp(name, "Seven on the Second Line Defense") == 0) {
+    return single_valued(s, -5 + BUTTON_BONUS);
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+
+  if (strcmp(name, "Seven on the Second Line Attack") == 0) {
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 10);
+  }
+
+  s = parse_state("                 \
+    . . . . . . . . . . . . x x x x \
+    B B w w w w w w w w B B x x x x \
+    , , B B B B B B B B , B x x x x \
+    , B , , , , , , , , , B x x x x \
+  ");
+  s.wide = true;
+  s.ko_threats = 1;
+
+  if (strcmp(name, "Eight is Alive") == 0) {
+    return single_valued(s, 16 + BUTTON_BONUS + KO_THREAT_BONUS);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);

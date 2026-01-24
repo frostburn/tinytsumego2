@@ -13,17 +13,20 @@ void print_state(const state *s) {
     white = s->opponent;
   }
 
+  int width = s->wide ? WIDTH_16 : WIDTH;
+  int height = s->wide ? HEIGHT_16 : HEIGHT;
+
   // Column headers
   printf(" ");
-  for (int i = 0; i < WIDTH; i++) {
+  for (int i = 0; i < width; i++) {
       printf(" %c", 'A' + i);
   }
   printf("\n");
 
-  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+  for (int i = 0; i < width * height; i++) {
     // Row headers
-    if (i % WIDTH == 0) {
-      printf("%d", i / WIDTH);
+    if (i % width == 0) {
+      printf("%d", i / width);
     }
 
     stones_t p = (1ULL << i);
@@ -105,7 +108,7 @@ void print_state(const state *s) {
     else {
         printf("  ");
     }
-    if (i % WIDTH == WIDTH - 1){
+    if (i % width == width - 1){
         printf("\x1b[0m\n");
     }
   }
@@ -120,7 +123,7 @@ void print_state(const state *s) {
 
 void repr_state(const state *s) {
     printf(
-        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s}\n",
+        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s, %s}\n",
         s->visual_area,
         s->logical_area,
         s->player,
@@ -132,7 +135,8 @@ void repr_state(const state *s) {
         s->passes,
         s->ko_threats,
         s->button,
-        s->white_to_play ? "true" : "false"
+        s->white_to_play ? "true" : "false",
+        s->wide ? "true" : "false"
     );
 }
 
@@ -283,7 +287,11 @@ move_result make_move(state *s, stones_t move) {
 
   if (move & s->external) {
     // Normalize move placement inside the group of external liberties.
-    move = 1ULL << ctz(flood(move, s->external));
+    if (s->wide) {
+      move = 1ULL << ctz(flood_16(move, s->external));
+    } else {
+      move = 1ULL << ctz(flood(move, s->external));
+    }
     s->immortal |= move;
     s->external ^= move;
     result = FILL_EXTERNAL;
@@ -298,24 +306,49 @@ move_result make_move(state *s, stones_t move) {
   // Potential liberties for opponent's stones (visual non-logical liberties count as permanent)
   empty = s->visual_area & ~(s->player ^ s->external);
 
-  // Lol, macro abuse
-  #define KILL_CHAIN \
-  if (!liberties(chain, empty) && !(chain & s->immortal)) {\
-    kill |= chain;\
-    s->opponent ^= chain;\
-  }
-  stones_t chain = flood(move >> V_SHIFT, s->opponent);
-  KILL_CHAIN
-  chain = flood(move << V_SHIFT, s->opponent);
-  KILL_CHAIN
-  chain = flood((move >> H_SHIFT) & WEST_BLOCK, s->opponent);
-  KILL_CHAIN
-  chain = flood((move & WEST_BLOCK) << H_SHIFT, s->opponent);
-  KILL_CHAIN
+  stones_t chain;
+  stones_t libs;
 
-  // Check legality
-  chain = flood(move, s->player & ~s->external);
-  if (!liberties(chain, s->visual_area & ~(s->opponent ^ s->external)) && !(chain & s->immortal)) {
+  if (s->wide) {
+    // Lol, macro abuse
+    #define KILL_CHAIN_16 \
+    if (!liberties_16(chain, empty) && !(chain & s->immortal)) {\
+      kill |= chain;\
+      s->opponent ^= chain;\
+    }
+    chain = flood_16(move >> V_SHIFT_16, s->opponent);
+    KILL_CHAIN_16
+    chain = flood_16(move << V_SHIFT_16, s->opponent);
+    KILL_CHAIN_16
+    chain = flood_16((move >> H_SHIFT_16) & WEST_BLOCK_16, s->opponent);
+    KILL_CHAIN_16
+    chain = flood_16((move & WEST_BLOCK_16) << H_SHIFT_16, s->opponent);
+    KILL_CHAIN_16
+
+    // Check legality
+    chain = flood_16(move, s->player & ~s->external);
+    libs = liberties_16(chain, s->visual_area & ~(s->opponent ^ s->external));
+  } else {
+    // Lol, macro abuse
+    #define KILL_CHAIN \
+    if (!liberties(chain, empty) && !(chain & s->immortal)) {\
+      kill |= chain;\
+      s->opponent ^= chain;\
+    }
+    chain = flood(move >> V_SHIFT, s->opponent);
+    KILL_CHAIN
+    chain = flood(move << V_SHIFT, s->opponent);
+    KILL_CHAIN
+    chain = flood((move >> H_SHIFT) & WEST_BLOCK, s->opponent);
+    KILL_CHAIN
+    chain = flood((move & WEST_BLOCK) << H_SHIFT, s->opponent);
+    KILL_CHAIN
+
+    // Check legality
+    chain = flood(move, s->player & ~s->external);
+    libs = liberties(chain, s->visual_area & ~(s->opponent ^ s->external));
+  }
+  if (!libs && !(chain & s->immortal)) {
     // Oops! Revert state
     s->player = old_player;
     s->opponent = old_opponent;
@@ -325,10 +358,15 @@ move_result make_move(state *s, stones_t move) {
   }
 
   // Bit magic to check if a single stone was killed and the played stone was left alone in atari
+  if (s->wide) {
+    libs = liberties_16(chain, s->logical_area & ~s->opponent);
+  } else {
+    libs = liberties(chain, s->logical_area & ~s->opponent);
+  }
   if (
     (kill & (kill - 1ULL)) == 0ULL &&
     (chain & (chain - 1ULL)) == 0ULL &&
-    liberties(chain, s->logical_area & ~s->opponent) == kill
+    libs == kill
    ) {
     s->ko = kill;
   }
@@ -443,10 +481,15 @@ int chinese_liberty_score(const state *s) {
   stones_t empty = (s->visual_area & ~(s->player | s->opponent)) | s->external;
 
   stones_t player_controlled = s->player & ~s->external;
-  player_controlled |= liberties(player_controlled, empty);
-
   stones_t opponent_controlled = s->opponent & ~s->external;
-  opponent_controlled |= liberties(opponent_controlled, empty);
+
+  if (s->wide) {
+    player_controlled |= liberties_16(player_controlled, empty);
+    opponent_controlled |= liberties_16(opponent_controlled, empty);
+  } else {
+    player_controlled |= liberties(player_controlled, empty);
+    opponent_controlled |= liberties(opponent_controlled, empty);
+  }
 
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
@@ -454,9 +497,16 @@ int chinese_liberty_score(const state *s) {
 int compensated_liberty_score(const state *s) {
   stones_t empty = s->visual_area & ~(s->player | s->opponent);
 
-  stones_t player_controlled = s->player | liberties(s->player, empty);
+  stones_t player_controlled = s->player;
+  stones_t opponent_controlled = s->opponent;
 
-  stones_t opponent_controlled = s->opponent | liberties(s->opponent, empty);
+  if (s->wide) {
+    player_controlled |= liberties_16(s->player, empty);
+    opponent_controlled |= liberties_16(s->opponent, empty);
+  } else {
+    player_controlled |= liberties(s->player, empty);
+    opponent_controlled |= liberties(s->opponent, empty);
+  }
 
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
@@ -496,6 +546,9 @@ bool equals(const state *a, const state *b) {
     return false;
   }
   if (a->white_to_play != b->white_to_play) {
+    return false;
+  }
+  if (a->wide != b->wide) {
     return false;
   }
   return true;
@@ -590,16 +643,26 @@ stones_t hash_b(const state *s) {
   return result * 1238767834675843ULL;
 }
 
-stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t immortal) {
+stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t immortal, bool wide) {
   int num_chains;
-  stones_t *black_chains = chains(black & ~immortal, &num_chains);
+  stones_t *black_chains;
+  if (wide) {
+    black_chains = chains_16(black & ~immortal, &num_chains);
+  } else {
+    black_chains = chains(black & ~immortal, &num_chains);
+  }
   stones_t black_enclosed = visual_area ^ black;
   int num_regions;
-  stones_t *regions = chains(black_enclosed, &num_regions);
+  stones_t *regions;
+  if (wide) {
+    regions = chains_16(black_enclosed, &num_regions);
+  } else {
+    regions = chains(black_enclosed, &num_regions);
+  }
   stones_t white_mortal = white & ~immortal;
   stones_t white_immortal = white & immortal;
-  stones_t black_cross = cross(black);
-  stones_t non_liberties = visual_area & ~black_cross & ~(white & cross(black_cross));
+  stones_t black_cross = wide ? cross_16(black) : cross(black);
+  stones_t non_liberties = visual_area & ~black_cross & ~(white & (wide ? cross_16(black_cross) : cross(black_cross)));
 
   int i = 0;
   for (int j = 0; j < num_regions; ++j) {
@@ -624,12 +687,12 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   }
 
   for (int i = 0; i < num_chains; ++i) {
-    stones_t libs = cross(black_chains[i]);
+    stones_t libs = wide ? cross_16(black_chains[i]) : cross(black_chains[i]);
     for (int j = 0; j < num_regions; ++j) {
       if (!(regions[j] & ~white_mortal & ~libs)) {
         vital[i][j] = true;
         adjacent[i][j] = true;
-      } else if (cross(regions[j]) & black_chains[i]) {
+      } else if ((wide ? cross_16(regions[j]) : cross(regions[j])) & black_chains[i]) {
         adjacent[i][j] = true;
       }
     }
@@ -698,23 +761,31 @@ move_result apply_benson(state *s) {
   move_result result = NORMAL;
 
   stones_t ext_mask = ~s->external;
-  stones_t player_unconditional = benson(s->visual_area, s->player & ext_mask, s->opponent & ext_mask, s->immortal);
+  stones_t player_unconditional = benson(s->visual_area, s->player & ext_mask, s->opponent & ext_mask, s->immortal, s->wide);
   // Capture dead opponent stones (Makes no difference under Chinese rules)
   stones_t dead = s->opponent & player_unconditional;
   if (dead & s->target) {
     result = TARGET_LOST;
   }
-  s->player |= liberties(dead, player_unconditional);
+  if (s->wide) {
+    s->player |= liberties_16(dead, player_unconditional);
+  } else {
+    s->player |= liberties(dead, player_unconditional);
+  }
   s->opponent ^= dead;
   // Visualize unconditionally alive stones as immortal
   s->immortal |= s->player & player_unconditional;
 
-  stones_t opponent_unconditional = benson(s->visual_area, s->opponent & ext_mask, s->player & ext_mask, s->immortal);
+  stones_t opponent_unconditional = benson(s->visual_area, s->opponent & ext_mask, s->player & ext_mask, s->immortal, s->wide);
   dead = s->player & opponent_unconditional;
   if (dead & s->target) {
     result = TAKE_TARGET;
   }
-  s->opponent |= liberties(dead, opponent_unconditional);
+  if (s->wide) {
+    s->opponent |= liberties_16(dead, opponent_unconditional);
+  } else {
+    s->opponent |= liberties(dead, opponent_unconditional);
+  }
   s->player ^= dead;
   s->immortal |= s->opponent & opponent_unconditional;
 
@@ -741,24 +812,33 @@ bool is_legal(state *s) {
   empty = (s->visual_area & empty) | s->external;
 
   int num_chains = 0;
-  stones_t *cs = chains(s->player & ~s->external, &num_chains);
+  stones_t *cs;
+  if (s->wide) {
+    cs = chains_16(s->player & ~s->external, &num_chains);
+  } else {
+    cs = chains(s->player & ~s->external, &num_chains);
+  }
   for (int i = 0; i < num_chains; ++i) {
     if (cs[i] & s->immortal) {
       continue;
     }
-    if (!popcount(liberties(cs[i], empty))) {
+    if (!popcount(s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty))) {
       return false;
     }
   }
   free(cs);
 
   bool ko_found = false;
-  cs = chains(s->opponent & ~s->external, &num_chains);
+  if (s->wide) {
+    cs = chains_16(s->opponent & ~s->external, &num_chains);
+  } else {
+    cs = chains(s->opponent & ~s->external, &num_chains);
+  }
   for (int i = 0; i < num_chains; ++i) {
     if (cs[i] & s->immortal) {
       continue;
     }
-    stones_t libs = liberties(cs[i], empty);
+    stones_t libs = s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty);
     if (!popcount(libs)) {
       return false;
     }
@@ -782,28 +862,53 @@ bool is_legal(state *s) {
 }
 
 void mirror_v(state *s) {
-  s->visual_area = stones_mirror_v(s->visual_area);
-  s->logical_area = stones_mirror_v(s->logical_area);
-  s->player = stones_mirror_v(s->player);
-  s->opponent = stones_mirror_v(s->opponent);
-  s->ko = stones_mirror_v(s->ko);
-  s->target = stones_mirror_v(s->target);
-  s->immortal = stones_mirror_v(s->immortal);
-  s->external = stones_mirror_v(s->external);
+  if (s->wide) {
+    s->visual_area = stones_mirror_v_16(s->visual_area);
+    s->logical_area = stones_mirror_v_16(s->logical_area);
+    s->player = stones_mirror_v_16(s->player);
+    s->opponent = stones_mirror_v_16(s->opponent);
+    s->ko = stones_mirror_v_16(s->ko);
+    s->target = stones_mirror_v_16(s->target);
+    s->immortal = stones_mirror_v_16(s->immortal);
+    s->external = stones_mirror_v_16(s->external);
+  } else {
+    s->visual_area = stones_mirror_v(s->visual_area);
+    s->logical_area = stones_mirror_v(s->logical_area);
+    s->player = stones_mirror_v(s->player);
+    s->opponent = stones_mirror_v(s->opponent);
+    s->ko = stones_mirror_v(s->ko);
+    s->target = stones_mirror_v(s->target);
+    s->immortal = stones_mirror_v(s->immortal);
+    s->external = stones_mirror_v(s->external);
+  }
 }
 
 void mirror_h(state *s) {
-  s->visual_area = stones_mirror_h(s->visual_area);
-  s->logical_area = stones_mirror_h(s->logical_area);
-  s->player = stones_mirror_h(s->player);
-  s->opponent = stones_mirror_h(s->opponent);
-  s->ko = stones_mirror_h(s->ko);
-  s->target = stones_mirror_h(s->target);
-  s->immortal = stones_mirror_h(s->immortal);
-  s->external = stones_mirror_h(s->external);
+  if (s->wide) {
+    s->visual_area = stones_mirror_h_16(s->visual_area);
+    s->logical_area = stones_mirror_h_16(s->logical_area);
+    s->player = stones_mirror_h_16(s->player);
+    s->opponent = stones_mirror_h_16(s->opponent);
+    s->ko = stones_mirror_h_16(s->ko);
+    s->target = stones_mirror_h_16(s->target);
+    s->immortal = stones_mirror_h_16(s->immortal);
+    s->external = stones_mirror_h_16(s->external);
+  } else {
+    s->visual_area = stones_mirror_h(s->visual_area);
+    s->logical_area = stones_mirror_h(s->logical_area);
+    s->player = stones_mirror_h(s->player);
+    s->opponent = stones_mirror_h(s->opponent);
+    s->ko = stones_mirror_h(s->ko);
+    s->target = stones_mirror_h(s->target);
+    s->immortal = stones_mirror_h(s->immortal);
+    s->external = stones_mirror_h(s->external);
+  }
 }
 
 void mirror_d(state *s) {
+  if (s->wide) {
+    fprintf(stderr, "Wide diagonal mirroring not implemented");
+  }
   s->visual_area = stones_mirror_d(s->visual_area);
   s->logical_area = stones_mirror_d(s->logical_area);
   s->player = stones_mirror_d(s->player);
@@ -815,7 +920,7 @@ void mirror_d(state *s) {
 }
 
 bool can_mirror_d(const state *s) {
-  return !(s->visual_area & EAST_STRIP);
+  return !(s->visual_area & EAST_STRIP) && !s->wide;
 }
 
 void snap(state *s) {
@@ -823,13 +928,21 @@ void snap(state *s) {
     return;
   }
   int shift = 0;
-  while (!(s->visual_area & WEST_WALL)) {
+  stones_t wall = s->wide ? WEST_WALL_16 : WEST_WALL;
+  while (!(s->visual_area & wall)) {
     s->visual_area >>= 1;
     shift += 1;
   }
-  while (!(s->visual_area & NORTH_WALL)) {
-    s->visual_area >>= V_SHIFT;
-    shift += V_SHIFT;
+  if (s->wide) {
+    while (!(s->visual_area & NORTH_WALL_16)) {
+      s->visual_area >>= V_SHIFT_16;
+      shift += V_SHIFT_16;
+    }
+  } else {
+    while (!(s->visual_area & NORTH_WALL)) {
+      s->visual_area >>= V_SHIFT;
+      shift += V_SHIFT;
+    }
   }
   s->logical_area >>= shift;
   s->player >>= shift;

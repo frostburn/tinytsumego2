@@ -229,7 +229,7 @@ int width_of(stones_t stones) {
     if (stones & w) {
       return result;
     }
-    w >>= 1;
+    w >>= H_SHIFT;
   }
   if (stones) {
     return 1;

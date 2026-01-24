@@ -6,6 +6,7 @@ ADD_LIBRARY(
   scoring.c
   state.c
   stones.c
+  stones16.c
   tablebase.c
 )
 INSTALL(
