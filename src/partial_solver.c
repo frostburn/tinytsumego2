@@ -186,6 +186,7 @@ bool expand_children(game_graph *gg, node_proxy *np) {
   if (np->children != NULL) {
     return false;
   }
+  bool wide = np->state.wide;
   struct child *children = malloc(gg->num_moves * sizeof(struct child));
   state parent = np->state;
   int num_player_immortal = popcount(parent.player & parent.immortal);
@@ -213,7 +214,7 @@ bool expand_children(game_graph *gg, node_proxy *np) {
         children[i].move_result = benson_result;
         children[i].heuristic_penalty += 100000;
       }
-      children[i].heuristic_penalty = jrand() % 1000 - popcount(cross(gg->moves[i]) & empty) * 4000;
+      children[i].heuristic_penalty = jrand() % 1000 - popcount((wide ? cross_16(gg->moves[i]) : cross(gg->moves[i])) & empty) * 4000;
       if (popcount(children[i].state.opponent & children[i].state.immortal) > num_player_immortal) {
         children[i].heuristic_penalty -= 20000;
       }

@@ -225,6 +225,7 @@ void test_parse() {
       0,
       0,
       0,
+      false,
       false
     };
 
@@ -435,6 +436,46 @@ void test_snap() {
   assert(equals(&s, &expected));
 }
 
+void test_wide_state() {
+  state s = parse_state("\
+    , B , , , , , , , , , , x x x x \
+    , , B B B B B B B B B , x x x x \
+    B B w w w w w w w w B B x x x x \
+    . . . . . . . . . . . . x x x x \
+  ");
+  s.wide = true;
+  print_state(&s);
+
+  move_result r = make_move(&s, single_16(2, 3));
+  print_state(&s);
+  assert(r == NORMAL);
+
+  r = make_move(&s, single_16(3, 3));
+  print_state(&s);
+  assert(r == NORMAL);
+
+  s = parse_state("\
+    . . w x xxxx xxxx xxxx \
+    w w w \
+  ");
+  s.wide = true;
+  print_state(&s);
+
+  r = make_move(&s, single_16(0, 0));
+  print_state(&s);
+  assert(r == NORMAL);
+
+  s = parse_state("\
+    W b b 0 . 0 b b W W W x x x x x \
+    W W b b b b b b b W W x x x x x \
+    , W W W W W W W W , , \
+  ");
+  s.wide = true;
+  print_state(&s);
+  apply_benson(&s);
+  print_state(&s);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -446,6 +487,7 @@ int main() {
   test_benson();
   test_mirror();
   test_snap();
+  test_wide_state();
 
   return EXIT_SUCCESS;
 }

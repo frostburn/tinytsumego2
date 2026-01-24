@@ -35,6 +35,7 @@ typedef struct tsumego_table {
   int button;
   int ko_threats;
   int num_external;
+  // bool wide; // TODO
   bool opponent_targetted;
 
   // Always has `TABLEBASE_SIZE` entries but not all valid
@@ -53,10 +54,8 @@ size_t to_corner_tablebase_key(const state *s);
 // Build a game state from an enumeration of a corner tsumego
 state from_corner_tablebase_key(size_t key);
 
-// TODO
+// TODO: (Wide only)
 state from_edge_tablebase_key(size_t key);
-
-// TODO: Edge on along the horizontal edge if 4x4 tablebase is not happening
 
 // TODO
 state from_center_tablebase_key(size_t key);

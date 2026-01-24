@@ -59,6 +59,11 @@ size_t to_corner_tablebase_key(const state *s) {
     return INVALID_KEY;
   }
 
+  // TODO: Wide tables
+  if (s->wide) {
+    return INVALID_KEY;
+  }
+
   state c = *s;
   snap(&c);
 

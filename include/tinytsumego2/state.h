@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "tinytsumego2/stones.h"
+#include "tinytsumego2/stones16.h"
 
 // Game state
 typedef struct state
@@ -46,6 +47,9 @@ typedef struct state
 
   // Indicate which color "player" refers to.
   bool white_to_play;
+
+  // Use stones with a width of 16 instead
+  bool wide;
 } state;
 
 // Result of making a move (ordered to facilitate game graph expansion)
