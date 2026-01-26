@@ -13,11 +13,26 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
     opponent_targetted,
     NULL
   };
+  state root;
 
-  state root = from_corner_tablebase_key(0);
+  switch (type) {
+    case CORNER:
+      root = from_corner_tablebase_key(0);
+      break;
+    case EDGE:
+      root = from_edge_tablebase_key(0);
+      break;
+    default:
+      fprintf(stderr, "Unimplemented table type\n");
+      exit(EXIT_FAILURE);
+  }
   root.button = button;
   root.ko_threats = ko_threats;
-  root.external = cross(root.target) & ~(root.target | root.logical_area);
+  if (root.wide) {
+    root.external = cross_16(root.target) & ~(root.target | root.logical_area);
+  } else {
+    root.external = cross(root.target) & ~(root.target | root.logical_area);
+  }
   while (popcount(root.external) > num_external) {
     root.external ^= LAST_STONE >> clz(root.external);
   }
@@ -37,7 +52,18 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
 
   // Many buttonless states cannot be reached naturally
   for (size_t key = 0; key < TABLEBASE_SIZE; ++key) {
-    state s = from_corner_tablebase_key(key);
+    state s;
+    switch (type) {
+      case CORNER:
+        s = from_corner_tablebase_key(key);
+        break;
+      case EDGE:
+        s = from_edge_tablebase_key(key);
+        break;
+      case CENTER:
+        // TODO
+        s = (state) {0};
+    }
     s.button = button;
     s.ko_threats = ko_threats;
     s.external = root.external;
@@ -65,7 +91,18 @@ tsumego_table create_table(table_type type, int button, int ko_threats, int num_
 
   size_t num_legal = 0;
   for (size_t key = 0; key < TABLEBASE_SIZE; ++key) {
-    state s = from_corner_tablebase_key(key);
+    state s;
+    switch (type) {
+      case CORNER:
+        s = from_corner_tablebase_key(key);
+        break;
+      case EDGE:
+        s = from_edge_tablebase_key(key);
+        break;
+      case CENTER:
+        // TODO
+        s = (state) {0};
+    }
     s.button = button;
     s.ko_threats = ko_threats;
     s.external = root.external;
@@ -120,13 +157,15 @@ int main(int argc, char *argv[]) {
   }
   tablebase tb = {0};
 
-  for (int button = 0; button <= 1; ++button) {
-    for (int ko_threats = -1; ko_threats <= 1; ++ko_threats) {
-      for (int num_external = 0; num_external <= 2; ++num_external) {
-        for (int t = 0; t <= 1; ++t) {
-          tb.num_tables++;
-          tb.tables = realloc(tb.tables, tb.num_tables * sizeof(tsumego_table));
-          tb.tables[tb.num_tables - 1] = create_table(CORNER, button, ko_threats, num_external, !t);
+  for (table_type type = CORNER; type <= EDGE; ++type) {
+    for (int button = 0; button <= 1; ++button) {
+      for (int ko_threats = -1; ko_threats <= 1; ++ko_threats) {
+        for (int num_external = 0; num_external <= 2; ++num_external) {
+          for (int t = 0; t <= 1; ++t) {
+            tb.num_tables++;
+            tb.tables = realloc(tb.tables, tb.num_tables * sizeof(tsumego_table));
+            tb.tables[tb.num_tables - 1] = create_table(type, button, ko_threats, num_external, !t);
+          }
         }
       }
     }
@@ -136,18 +175,14 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     printf("Opening file %s\n", argv[1]);
     f = fopen(argv[1], "wb");
-  }
-
-  size_t n = write_tablebase(&tb, f);
-  if (n < tb.num_tables * TABLEBASE_SIZE) {
-    fprintf(stderr, "Failed to write everything\n");
-  }
-  free_tablebase(&tb);
-
-  if (f) {
+    size_t n = write_tablebase(&tb, f);
+    if (n < tb.num_tables * TABLEBASE_SIZE) {
+      fprintf(stderr, "Failed to write everything\n");
+    }
     printf("Closing file %s\n", argv[1]);
     fclose(f);
   }
+  free_tablebase(&tb);
 
   return EXIT_SUCCESS;
 }

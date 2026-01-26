@@ -186,3 +186,31 @@ int height_of_16(const stones_t stones) {
   }
   return 0;
 }
+
+int offset_h_16(stones_t stones) {
+  if (!stones) {
+    return 0;
+  }
+  for (int result = 0; result < WIDTH_16 - 1; ++result) {
+    if (stones & WEST_WALL_16) {
+      return result;
+    }
+    stones >>= H_SHIFT_16;
+  }
+  // Unreachable
+  return 0;
+}
+
+int offset_v_16(stones_t stones) {
+  if (!stones) {
+    return 0;
+  }
+  for(int result = 0;; result++) {
+    if (stones & NORTH_WALL_16) {
+      return result;
+    }
+    stones >>= V_SHIFT_16;
+  }
+  // Unreachable
+  return 0;
+}

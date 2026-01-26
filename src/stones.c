@@ -219,11 +219,11 @@ stones_t stones_snap(stones_t stones) {
   return stones;
 }
 
-bool is_contiguous(stones_t stones) {
+bool is_contiguous(const stones_t stones) {
   return flood(1ULL << ctz(stones), stones) == stones;
 }
 
-int width_of(stones_t stones) {
+int width_of(const stones_t stones) {
   stones_t w = EAST_WALL;
   for (int result = WIDTH; result; result--) {
     if (stones & w) {
@@ -237,7 +237,7 @@ int width_of(stones_t stones) {
   return 0;
 }
 
-int height_of(stones_t stones) {
+int height_of(const stones_t stones) {
   int result = HEIGHT;
   for (stones_t w = SOUTH_WALL; w; w >>= V_SHIFT) {
     if (stones & w) {
@@ -248,5 +248,33 @@ int height_of(stones_t stones) {
   if (stones) {
     return HEIGHT + 1;
   }
+  return 0;
+}
+
+int offset_h(stones_t stones) {
+  if (!stones) {
+    return 0;
+  }
+  for (int result = 0; result < WIDTH - 1; ++result) {
+    if (stones & WEST_WALL) {
+      return result;
+    }
+    stones >>= H_SHIFT;
+  }
+  // Last bit
+  return 0;
+}
+
+int offset_v(stones_t stones) {
+  if (!stones) {
+    return 0;
+  }
+  for(int result = 0;; result++) {
+    if (stones & NORTH_WALL) {
+      return result;
+    }
+    stones >>= V_SHIFT;
+  }
+  // Unreachable
   return 0;
 }
