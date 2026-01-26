@@ -36,6 +36,9 @@ typedef struct full_graph {
   value *values;
 } full_graph;
 
+// Print the contents of a full game graph
+void print_full_graph(full_graph *fg);
+
 // Create a full game graph on based a root state and schedule it for expansion
 full_graph create_full_graph(const state *root);
 

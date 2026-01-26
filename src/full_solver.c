@@ -1,7 +1,20 @@
 #include <math.h>
+#include <stdio.h>
 #include "tinytsumego2/bloom.h"
 #include "tinytsumego2/full_solver.h"
 #include "tinytsumego2/scoring.h"
+
+void print_full_graph(full_graph *fg) {
+  for (size_t i = 0; i < fg->num_nodes; ++i) {
+    value v = fg->values[i];
+    printf(
+      "#%zu: %f, %f\n",
+      i,
+      v.low,
+      v.high
+    );
+  }
+}
 
 full_graph create_full_graph(const state *root) {
   full_graph fg = {0};

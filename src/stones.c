@@ -12,8 +12,8 @@ void print_stones(const stones_t stones) {
 
   for (int i = 0; i < 64; i++) {
     // Row headers. Zero indexed from top to bottom
-    if (i % V_SHIFT == 0) {
-      printf("%d", i / V_SHIFT);
+    if (i % WIDTH == 0) {
+      printf("%d", i / WIDTH);
     }
 
     // Stone indicators
@@ -24,7 +24,7 @@ void print_stones(const stones_t stones) {
       printf(" .");
     }
 
-    if (i % V_SHIFT == V_SHIFT - 1){
+    if (i % WIDTH == WIDTH - 1){
       printf("\n");
     }
   }
@@ -32,18 +32,17 @@ void print_stones(const stones_t stones) {
 }
 
 stones_t rectangle(const int width, const int height) {
-  stones_t r = 0;
-  for (int i = 0; i < width; ++i)
-  {
-    for (int j = 0; j < height; ++j)
-    {
-      r |= 1ULL << (i * H_SHIFT + j * V_SHIFT);
-    }
+  if (!height) {
+    return 0ULL;
+  }
+  stones_t r = (1ULL << width) - 1ULL;
+  for (int j = 1; j < height; ++j) {
+    r |= r << V_SHIFT;
   }
   return r;
 }
 
-stones_t single(int x, int y) {
+stones_t single(const int x, const int y) {
   return 1ULL << (x * H_SHIFT + y * V_SHIFT);
 }
 
@@ -119,17 +118,34 @@ char row_of(const stones_t stone) {
 stones_t *chains(stones_t stones, int *num_chains) {
   stones_t *result = malloc(MAX_CHAINS * sizeof(stones_t));
   *num_chains = 0;
-  // TODO: Pre-calculate nubs
-  for (int i = 0; i < HEIGHT; i += 2) {
-    stones_t chain = flood(V_NUB << (i * V_SHIFT), stones);
+
+  // Nub alignment on the goban
+  // 0
+  // 0
+  // 1
+  // 1
+  // 2
+  // 2
+  // 3
+  // 3
+  for (stones_t nub = V_NUB; nub; nub <<= 2 * V_SHIFT) {
+    stones_t chain = flood(nub, stones);
     if (chain) {
       result[(*num_chains)++] = chain;
       stones ^= chain;
     }
   }
-  for (int i = 1; (i < WIDTH) && stones; i += 2) {
-    for (int j = 0; j < HEIGHT; ++j) {
-      stones_t chain = flood(H_NUB << (i + j * V_SHIFT), stones);
+
+  // . 0 0 1 1 2 2 3 3
+  for (stones_t nub = H_NUB << 1; stones; nub <<= 2) {
+
+    // . 0 0
+    // . 1 1
+    // . 2 2
+    // . 3 3
+    // . (etc.)
+    for (stones_t n = nub; n; n <<= V_SHIFT) {
+      stones_t chain = flood(n, stones);
       if (chain) {
         result[(*num_chains)++] = chain;
         stones ^= chain;
@@ -198,7 +214,7 @@ stones_t stones_snap(stones_t stones) {
     stones >>= V_SHIFT;
   }
   while (!(stones & WEST_WALL)) {
-    stones >>= 1;
+    stones >>= H_SHIFT;
   }
   return stones;
 }

@@ -20,10 +20,10 @@ void print_state(const state *s) {
   }
   printf("\n");
 
-  for (int i = 0; i < STATE_SIZE; i++) {
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
     // Row headers
-    if (i % V_SHIFT == 0) {
-      printf("%d", i / V_SHIFT);
+    if (i % WIDTH == 0) {
+      printf("%d", i / WIDTH);
     }
 
     stones_t p = (1ULL << i);
@@ -105,7 +105,7 @@ void print_state(const state *s) {
     else {
         printf("  ");
     }
-    if (i % V_SHIFT == V_SHIFT - 1){
+    if (i % WIDTH == WIDTH - 1){
         printf("\x1b[0m\n");
     }
   }

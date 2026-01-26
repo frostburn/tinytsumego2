@@ -3,8 +3,8 @@
 #include "tinytsumego2/stones.h"
 
 void test_rectangles() {
-  for (int i = 1; i <= 9; ++i) {
-    for (int j = 1; j <= 7; ++j) {
+  for (int i = 0; i <= 9; ++i) {
+    for (int j = 0; j <= 7; ++j) {
       assert(popcount(rectangle(i, j)) == i * j);
     }
   }

@@ -8,7 +8,6 @@
  */
 #define WIDTH (9)
 #define HEIGHT (7)
-#define STATE_SIZE (WIDTH * HEIGHT)
 
 // Bit shifts associated with "physical" shifts of stones on the goban
 #define H_SHIFT (1ULL)
@@ -57,14 +56,14 @@
 // 64 bits of stones (1 bit outside the 9x7 rectangle)
 typedef unsigned long long int stones_t;
 
-// Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the non-functional 64th bit.
+// Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the 64th bit.
 void print_stones(const stones_t stones);
 
 // Return a rectangle of stones
 stones_t rectangle(const int width, const int height);
 
 // Return a single stone at the given coordinates
-stones_t single(int x, int y);
+stones_t single(const int x, const int y);
 
 // Return the zero bit board corresponding to a passing move
 stones_t pass();
