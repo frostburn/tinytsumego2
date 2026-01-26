@@ -21,7 +21,8 @@ bool can_be_tabulated(const state *s) {
   }
 
   // Some eyespace must exist
-  if (!s->logical_area) {
+  stones_t eyespace = s->logical_area ^ s->external;
+  if (!eyespace) {
     return false;
   }
 
@@ -36,7 +37,6 @@ bool can_be_tabulated(const state *s) {
   }
 
   // Eyespace must be lined with target stones
-  stones_t eyespace = s->logical_area ^ s->external;
   if (liberties(eyespace, s->visual_area) & ~s->target) {
     return false;
   }
