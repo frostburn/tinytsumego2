@@ -33,12 +33,40 @@ void test_width_of() {
   assert(width_of(0ULL) == 0);
   assert(width_of(1ULL) == 1);
   assert(width_of(5ULL << V_SHIFT) == 3);
+
+  assert(width_of_16(0ULL) == 0);
+  assert(width_of_16(1ULL) == 1);
+  assert(width_of_16(5ULL << V_SHIFT_16) == 3);
 }
 
 void test_height_of() {
   assert(height_of(0ULL) == 0);
   assert(height_of(1ULL) == 1);
   assert(height_of(5ULL << V_SHIFT) == 2);
+
+  assert(height_of_16(0ULL) == 0);
+  assert(height_of_16(1ULL) == 1);
+  assert(height_of_16(5ULL << V_SHIFT_16) == 2);
+}
+
+void test_offset_h() {
+  assert(offset_h(0ULL) == 0);
+  assert(offset_h(1ULL) == 0);
+  assert(offset_h(6ULL << V_SHIFT) == 1);
+
+  assert(offset_h_16(0ULL) == 0);
+  assert(offset_h_16(1ULL) == 0);
+  assert(offset_h_16(6ULL << V_SHIFT_16) == 1);
+}
+
+void test_offset_v() {
+  assert(offset_v(0ULL) == 0);
+  assert(offset_v(1ULL) == 0);
+  assert(offset_v(6ULL << V_SHIFT) == 1);
+
+  assert(offset_v_16(0ULL) == 0);
+  assert(offset_v_16(1ULL) == 0);
+  assert(offset_v_16(6ULL << V_SHIFT_16) == 1);
 }
 
 void test_wide_stones() {
@@ -78,6 +106,8 @@ int main() {
   test_chains();
   test_width_of();
   test_height_of();
+  test_offset_h();
+  test_offset_v();
   test_wide_stones();
   return EXIT_SUCCESS;
 }

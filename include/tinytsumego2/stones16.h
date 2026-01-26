@@ -71,3 +71,9 @@ int width_of_16(const stones_t stones);
 
 // Return how far south `stones` extend
 int height_of_16(const stones_t stones);
+
+// Return how many empty columns there are to the west of `stones`
+int offset_h_16(stones_t stones);
+
+// Return how many empty rows there are to the north of `stones`
+int offset_v_16(stones_t stones);

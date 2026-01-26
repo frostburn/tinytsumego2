@@ -68,7 +68,9 @@ static const char* TSUMEGO_NAMES[] = {
   "Six is Dead",
   "Seven on the Second Line Defense",
   "Seven on the Second Line Attack",
-  "Eight is Alive"
+  "Eight is Alive",
+  "Rabbity Six Defense",
+  "Rabbity Six Attack"
 };
 
 const size_t NUM_TSUMEGO = sizeof(TSUMEGO_NAMES) / sizeof(char*);
@@ -680,6 +682,26 @@ tsumego get_tsumego(const char *name) {
 
   if (strcmp(name, "Eight is Alive") == 0) {
     return single_valued(s, 16 + BUTTON_BONUS + KO_THREAT_BONUS);
+  }
+
+  s = parse_state("\
+    x x x b . . b b xxxx xxxx \
+    x x x b . . . b xxxx xxxx \
+    x x x b b . b b xxxx xxxx \
+    x x x b b b b b xxxx xxxx \
+  ");
+  s.wide = true;
+
+  if (strcmp(name, "Rabbity Six Defense") == 0) {
+    return single_valued(s, 20 - BUTTON_BONUS);
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+
+  if (strcmp(name, "Rabbity Six Attack") == 0) {
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 15);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);

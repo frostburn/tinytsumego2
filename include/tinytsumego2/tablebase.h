@@ -31,11 +31,11 @@ typedef struct table_value {
 
 // Table containing solutions to every tsumego with a tablebase key
 typedef struct tsumego_table {
+  // The `wide` flag is inferred from the type. Edges are wide, corners and centers are not
   table_type type;
   int button;
   int ko_threats;
   int num_external;
-  // bool wide; // TODO
   bool opponent_targetted;
 
   // Always has `TABLEBASE_SIZE` entries but not all valid
@@ -54,7 +54,10 @@ size_t to_corner_tablebase_key(const state *s);
 // Build a game state from an enumeration of a corner tsumego
 state from_corner_tablebase_key(size_t key);
 
-// TODO: (Wide only)
+// Convert a TABLE_WIDTH x TABLE_HEIGHT edge tsumego into an enumerated index
+size_t to_edge_tablebase_key(const state *s);
+
+// Build a game state from an enumeration of an edge tsumego
 state from_edge_tablebase_key(size_t key);
 
 // TODO

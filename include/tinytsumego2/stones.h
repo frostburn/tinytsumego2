@@ -114,10 +114,16 @@ stones_t stones_mirror_d(stones_t stones);
 stones_t stones_snap(stones_t stones);
 
 // Return `true` if the stones form a single chain
-bool is_contiguous(stones_t stones);
+bool is_contiguous(const stones_t stones);
 
 // Return how far east `stones` extend
-int width_of(stones_t stones);
+int width_of(const stones_t stones);
 
 // Return how far south `stones` extend
-int height_of(stones_t stones);
+int height_of(const stones_t stones);
+
+// Return how many empty columns there are to the west of `stones`
+int offset_h(stones_t stones);
+
+// Return how many empty rows there are to the north of `stones`
+int offset_v(stones_t stones);
