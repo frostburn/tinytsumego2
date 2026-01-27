@@ -7,7 +7,7 @@ ADD_LIBRARY(
   state.c
   stones.c
   stones16.c
-  tablebase.c
+  tablebase/base.c
 )
 INSTALL(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include/tinytsumego2
