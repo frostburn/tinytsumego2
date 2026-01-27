@@ -18,10 +18,6 @@ size_t to_corner_tablebase_key(const state *s) {
     return INVALID_KEY;
   }
 
-  if (!can_be_tabulated(s)) {
-    return INVALID_KEY;
-  }
-
   state c = *s;
   snap(&c);
 
