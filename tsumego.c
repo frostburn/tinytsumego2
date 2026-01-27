@@ -716,6 +716,17 @@ tsumego get_tsumego(const char *name) {
     return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 15);
   }
 
+  s = parse_state("\
+    W W b 0 . 0 b - W W x x x x x x \
+    W W b b b b b b W W x x x x x x \
+    , W W W W W W W W , x x x x x x \
+  ");
+  s.wide = true;
+
+  if (strcmp(name, "Edge Debug") == 0) {
+    return single_valued(s, -8 + BUTTON_BONUS);
+  }
+
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);
   exit(EXIT_FAILURE);
 }

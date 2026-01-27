@@ -8,7 +8,7 @@ bool fits_edge(const state *s) {
   int height = height_of_16(eyespace);
   return (
     (width - x) <= TABLE_WIDTH &&
-    height >= TABLE_HEIGHT &&
+    height <= TABLE_HEIGHT &&
     (s->target & (WEST_WALL_16 << x)) &&
     (s->target & (WEST_WALL_16 << width)) &&
     (s->target & (NORTH_WALL_16 << (height * V_SHIFT_16)))
@@ -17,10 +17,6 @@ bool fits_edge(const state *s) {
 
 size_t to_edge_tablebase_key(const state *s) {
   if (!s->wide) {
-    return INVALID_KEY;
-  }
-
-  if (!can_be_tabulated(s)) {
     return INVALID_KEY;
   }
 
