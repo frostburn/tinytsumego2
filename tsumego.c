@@ -31,6 +31,7 @@ static const char* TSUMEGO_NAMES[] = {
   "Bent Four in the Corner (1 ko threat)",
   "Bent Four in the Corner (1 liberty)",
   "Bent Four in the Corner (2 liberties)",
+  "Bent Four Debug",
   "Bent Four in the Corner is Dead",
   "Bent Four in the Corner is Dead (defender has threats)",
   "Bent Four in the Corner is Dead (attacker tenuki)",
@@ -265,6 +266,16 @@ tsumego get_tsumego(const char *name) {
     return single_valued(s, -6 - BUTTON_BONUS);
   }
 
+  s.external |= single(4, 0) | single(4, 1);
+  s.player |= s.external | single(1, 0);
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  s.white_to_play = true;
+  if (strcmp(name, "Bent Four Debug") == 0) {
+    return single_valued(s, 6 - BUTTON_BONUS);
+  }
+
   // . 0 . @
   // 0 @ @ @
   // . @ @ @
@@ -275,6 +286,7 @@ tsumego get_tsumego(const char *name) {
   s.player = single(1, 0) | single(0, 1);
   s.opponent = s.visual_area ^ s.logical_area;
   s.immortal = 0;
+  s.external = 0;
   s.target = s.opponent;
 
   if (strcmp(name, "Bent Four in the Corner is Dead") == 0) {

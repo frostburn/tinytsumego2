@@ -18,8 +18,7 @@ int solve(tsumego t, bool verbose, tablebase *tb) {
     print_state(&root);
   }
 
-  game_graph gg = create_game_graph(&root);
-  gg.tablebase = tb;
+  game_graph gg = create_game_graph(&root, tb);
 
   solve_game_graph(&gg, verbose);
   node_proxy np = get_game_graph_node(&gg, &root);

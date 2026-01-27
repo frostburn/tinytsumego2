@@ -27,7 +27,7 @@ void test_straight_two_loss() {
   state root = straight_two();
   print_state(&root);
 
-  game_graph gg = create_game_graph(&root);
+  game_graph gg = create_game_graph(&root, NULL);
   solve_game_graph(&gg, true);
   node_proxy np = get_game_graph_node(&gg, &root);
   printf("%g, %g\n\n", np.low, np.high);
@@ -44,7 +44,7 @@ void test_straight_three_capture() {
   state root = straight_three();
   print_state(&root);
 
-  game_graph gg = create_game_graph(&root);
+  game_graph gg = create_game_graph(&root, NULL);
   solve_game_graph(&gg, true);
   node_proxy np = get_game_graph_node(&gg, &root);
   printf("%g, %g\n\n", np.low, np.high);

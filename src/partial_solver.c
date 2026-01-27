@@ -15,10 +15,11 @@ int compare_children(const void *a_, const void *b_) {
   return a->heuristic_penalty - b->heuristic_penalty;
 }
 
-game_graph create_game_graph(const state *root) {
+game_graph create_game_graph(const state *root, const tablebase *tb) {
   game_graph gg = {0};
 
   gg.root = *root;
+  gg.tablebase = tb;
 
   gg.bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
 

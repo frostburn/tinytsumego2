@@ -73,14 +73,14 @@ typedef struct game_graph {
   bool fix_loops;
 
   // Tablebase of known solutions
-  tablebase *tablebase;
+  const tablebase *tablebase;
 } game_graph;
 
 // Sort children by heuristic penalty using qsort
 int compare_children(const void *a_, const void *b_);
 
 // Create a game graph and place the root state at depth zero
-game_graph create_game_graph(const state *root);
+game_graph create_game_graph(const state *root, const tablebase *tb);
 
 // Print the contents of a game graph
 void print_game_graph(game_graph *gg);
