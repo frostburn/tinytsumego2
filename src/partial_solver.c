@@ -208,8 +208,9 @@ bool expand_children(game_graph *gg, node_proxy *np) {
       children[i].heuristic_penalty -= 100000;
     } else {
       move_result benson_result = apply_benson((state*)(children + i));
-      if (benson_result == TAKE_TARGET) {
-        children[i].move_result = benson_result;
+      move_result norm_result = normalize_immortal_regions((state*)(children + i));
+      if (benson_result == TAKE_TARGET || norm_result == TAKE_TARGET) {
+        children[i].move_result = TAKE_TARGET;
         children[i].heuristic_penalty -= 100000;
       } else if (benson_result == TARGET_LOST) {
         children[i].move_result = benson_result;

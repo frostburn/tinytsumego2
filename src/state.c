@@ -795,6 +795,42 @@ move_result apply_benson(state *s) {
   return result;
 }
 
+move_result normalize_immortal_regions(state *s) {
+  stones_t immortal = s->opponent & s->immortal;
+  if (!immortal) {
+    return NORMAL;
+  }
+  move_result result = NORMAL;
+  int num_regions;
+  stones_t potential_area = s->visual_area & ~immortal;
+  stones_t *regions = s->wide ? chains_16(potential_area, &num_regions) : chains(potential_area, &num_regions);
+  stones_t mask = s->wide ? ~cross_16(immortal) : ~cross(immortal);
+  for (int i = 0; i < num_regions; ++i) {
+    // Opposing immortal stones poison the region
+    if (regions[i] & s->immortal) {
+      continue;
+    }
+    // Must border immortal stones
+    if (!(regions[i] & ~mask)) {
+      continue;
+    }
+    // A living space needs two eyes and they cannot be connected
+    if (popcount(regions[i] & mask) < 3) {
+      // Capture everything inside
+      stones_t dead = s->player & regions[i];
+      s->player ^= dead;
+      s->opponent |= s->wide ? liberties_16(dead, regions[i]) : liberties(dead, regions[i]);
+      s->immortal |= s->opponent & regions[i];
+      s->logical_area &= ~regions[i];
+      if (dead & s->target) {
+        result = TAKE_TARGET;
+      }
+    }
+  }
+  free(regions);
+  return result;
+}
+
 bool is_legal(state *s) {
   if (s->passes < 0 || s->passes > 2) {
     return false;

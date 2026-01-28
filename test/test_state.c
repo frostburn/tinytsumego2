@@ -476,6 +476,25 @@ void test_wide_state() {
   print_state(&s);
 }
 
+void test_immortal_regions() {
+  state s = parse_state(" \
+        W . W b . . . b W \
+        W W W b b b b b W \
+  ");
+  normalize_immortal_regions(&s);
+  print_state(&s);
+  assert(!(s.logical_area & single(1, 0)));
+
+  s = parse_state(" \
+        . . x W @ . . @ W \
+        x x x W @ @ @ @ W \
+        x x x W W W W W W \
+  ");
+  normalize_immortal_regions(&s);
+  print_state(&s);
+  assert(s.logical_area & single(0, 0));
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -488,6 +507,7 @@ int main() {
   test_mirror();
   test_snap();
   test_wide_state();
+  test_immortal_regions();
 
   return EXIT_SUCCESS;
 }
