@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "tinytsumego2/bitmatrix.h"
 #include "tinytsumego2/state.h"
 
 void print_state(const state *s) {
@@ -679,21 +680,17 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   }
   num_regions = i;
 
-  bool **vital = malloc(num_chains * sizeof(bool*));
-  bool **adjacent = malloc(num_chains * sizeof(bool*));
-  for (int i = 0; i < num_chains; ++i) {
-    vital[i] = calloc(num_regions, sizeof(bool));
-    adjacent[i] = calloc(num_regions, sizeof(bool));
-  }
+  // Bitmatrix of vitality vertically stacked with a bitmatrix of adjacency
+  bitmatrix vital_adjacent = create_bitmatrix(num_regions, 2 * num_chains);
 
   for (int i = 0; i < num_chains; ++i) {
     stones_t libs = wide ? cross_16(black_chains[i]) : cross(black_chains[i]);
     for (int j = 0; j < num_regions; ++j) {
       if (!(regions[j] & ~white_mortal & ~libs)) {
-        vital[i][j] = true;
-        adjacent[i][j] = true;
+        bitmatrix_set(&vital_adjacent, j, i);  // set vital
+        bitmatrix_set(&vital_adjacent, j, i + num_chains);  // set adjacent
       } else if ((wide ? cross_16(regions[j]) : cross(regions[j])) & black_chains[i]) {
-        adjacent[i][j] = true;
+        bitmatrix_set(&vital_adjacent, j, i + num_chains);  // set adjacent
       }
     }
   }
@@ -703,36 +700,12 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   while (!done) {
     done = true;
     for (int i = 0; i < num_chains; ++i) {
-      int num_vital = 0;
-      for (int j = 0; j < num_regions; ++j) {
-        if (vital[i][j]) {
-          num_vital++;
-        }
-      }
+      int num_vital = bitmatrix_row_popcount(&vital_adjacent, i);
       if (num_vital < 2 && black_chains[i]) {
         done = false;
         black_chains[i] = 0ULL;
-        for (int j = 0; j < num_regions; ++j) {
-          if (adjacent[i][j]) {
-            for (int k = 0; k < num_chains; ++k) {
-              vital[k][j] = false;
-            }
-            regions[j] = 0ULL;
-          }
-        }
+        bitmatrix_nuke_columns(&vital_adjacent, i + num_chains);
       }
-    }
-  }
-
-  for (int j = 0; j < num_regions; ++j) {
-    int num_vital = 0;
-    for (int i = 0; i < num_chains; ++i) {
-      if (vital[i][j]) {
-        num_vital++;
-      }
-    }
-    if (!num_vital) {
-      regions[j] = 0ULL;
     }
   }
 
@@ -740,19 +713,15 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
   for (int i = 0; i < num_chains; ++i) {
     result |= black_chains[i];
   }
-  for (int j = 0; j < num_regions; ++j) {
-    result |= regions[j];
-  }
-
-  for (int i = 0; i < num_chains; ++i) {
-    free(vital[i]);
-    free(adjacent[i]);
-  }
-
   free(black_chains);
+
+  for (int j = 0; j < num_regions; ++j) {
+    if (bitmatrix_has_column(&vital_adjacent, j)) {
+      result |= regions[j];
+    }
+  }
   free(regions);
-  free(vital);
-  free(adjacent);
+  free_bitmatrix(&vital_adjacent);
 
   return result;
 }
