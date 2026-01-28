@@ -5,13 +5,12 @@
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/full_solver.h"
 
-// TODO: Make this (4) once the basic idea is validated
-#define TABLE_WIDTH (3)
+#define TABLE_WIDTH (4)
 #define TABLE_HEIGHT (3)
 
 // 3**(TABLE_WIDTH * TABLE_HEIGHT)
-// #define TABLEBASE_SIZE (531441UL) // 3**12
-#define TABLEBASE_SIZE (19683UL)  // 3**9
+#define TABLEBASE_SIZE (531441UL) // 3**12
+// #define TABLEBASE_SIZE (19683UL)  // 3**9
 
 #define INVALID_KEY (SIZE_MAX)
 
