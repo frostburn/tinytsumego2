@@ -133,7 +133,7 @@ stones_t hash_b(const state *s);
 move_result apply_benson(state *s);
 
 // Play out regions surrounded by immortal stones of the opponent.
-move_result normalize_immortal_regions(state *s);
+move_result normalize_immortal_regions(state *root, state *s);
 
 // Returns `true` if the state is legal. No chains without liberties etc.
 bool is_legal(state *s);

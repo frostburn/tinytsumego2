@@ -211,7 +211,7 @@ bool expand_children(game_graph *gg, node_proxy *np, const state *s) {
       children[i].heuristic_penalty -= 100000;
     } else {
       move_result benson_result = apply_benson((state*)(children + i));
-      move_result norm_result = normalize_immortal_regions((state*)(children + i));
+      move_result norm_result = normalize_immortal_regions(&(gg->root), (state*)(children + i));
       if (benson_result == TAKE_TARGET || norm_result == TAKE_TARGET) {
         children[i].move_result = TAKE_TARGET;
         children[i].heuristic_penalty -= 100000;

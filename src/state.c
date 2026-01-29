@@ -764,7 +764,7 @@ move_result apply_benson(state *s) {
   return result;
 }
 
-move_result normalize_immortal_regions(state *s) {
+move_result normalize_immortal_regions(state *root, state *s) {
   stones_t immortal = s->opponent & s->immortal;
   if (!immortal) {
     return NORMAL;
@@ -774,6 +774,7 @@ move_result normalize_immortal_regions(state *s) {
   stones_t potential_area = s->visual_area & ~immortal;
   stones_t *regions = s->wide ? chains_16(potential_area, &num_regions) : chains(potential_area, &num_regions);
   stones_t mask = s->wide ? ~cross_16(immortal) : ~cross(immortal);
+  stones_t root_mask = s->wide ? ~cross_16(flood_16(root->immortal, s->opponent)) : ~cross(flood(root->immortal, s->opponent));
   for (int i = 0; i < num_regions; ++i) {
     // Opposing immortal stones poison the region
     if (regions[i] & s->immortal) {
@@ -785,26 +786,31 @@ move_result normalize_immortal_regions(state *s) {
     }
     // A living space needs two eyes and they cannot be connected
     if (popcount(regions[i] & mask) < 3) {
-      if (s->target & regions[i]) {
+      s->logical_area &= ~regions[i];
+      if ((regions[i] & root_mask) && !(s->target & regions[i])) {
+        // Fill the region with a solid block of immortal stones
+        s->player &= ~regions[i];
+        s->immortal |= regions[i];
+        s->opponent |= regions[i];
+      } else {
         // Capture everything inside
         stones_t dead = s->player & regions[i];
         s->player ^= dead;
         s->opponent |= s->wide ? liberties_16(dead, regions[i]) : liberties(dead, regions[i]);
         s->immortal |= s->opponent & regions[i];
-        s->logical_area &= ~regions[i];
         if (dead & s->target) {
           result = TAKE_TARGET;
         }
-      } else {
-        // Seal the region with immortal stones
-        s->immortal |= regions[i];
-        s->opponent |= regions[i];
-        s->player &= ~regions[i];
-        s->logical_area &= ~regions[i];
       }
     }
   }
   free(regions);
+
+  // Normalize immortalized target stones
+  #ifdef NORMALIZE_AESTHETICS
+    s->target |= s->wide ? flood_16(s->target & s->opponent, s->opponent) : flood(s->target & s->opponent, s->opponent);
+  #endif
+
   return result;
 }
 

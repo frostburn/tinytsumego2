@@ -481,7 +481,7 @@ void test_immortal_regions() {
         W . W b . . . b W \
         W W W b b b b b W \
   ");
-  normalize_immortal_regions(&s);
+  normalize_immortal_regions(&s, &s);
   print_state(&s);
   assert(!(s.logical_area & single(1, 0)));
 
@@ -490,7 +490,7 @@ void test_immortal_regions() {
         x x x W @ @ @ @ W \
         x x x W W W W W W \
   ");
-  normalize_immortal_regions(&s);
+  normalize_immortal_regions(&s, &s);
   print_state(&s);
   assert(s.logical_area & single(0, 0));
 }

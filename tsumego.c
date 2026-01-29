@@ -699,10 +699,6 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 1;
 
   if (strcmp(name, "Eight is Alive") == 0) {
-    // 759144 nodes expanded (No tablebase)
-    // 19.781250*, 19.781250*
-    // 697821 nodes expanded (No tablebase)
-    // 17.781250*, 17.781250*
     return single_valued(s, 16 + BUTTON_BONUS + KO_THREAT_BONUS);
   }
 
