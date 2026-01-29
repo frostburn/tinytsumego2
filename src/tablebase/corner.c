@@ -1,16 +1,25 @@
 // #included in base.c
 
 // Make sure that the eyespace fits the table and that the target lining is to the east and south. Assumes s->wide == false
-bool fits_corner(const state *s) {
+bool fits_corner(state *s) {
   stones_t eyespace = s->logical_area ^ s->external;
   int width = width_of(eyespace);
   int height = height_of(eyespace);
-  return (
-    width <= TABLE_WIDTH &&
-    height <= TABLE_HEIGHT &&
-    (s->target & (WEST_WALL << width)) &&
-    (s->target & (NORTH_WALL << (height * V_SHIFT)))
-  );
+  if (
+    !(s->target & (WEST_WALL << width)) ||
+    !(s->target & (NORTH_WALL << (height * V_SHIFT)))
+  ) {
+    return false;
+  }
+  if (width <= TABLE_WIDTH && height <= TABLE_HEIGHT) {
+    return true;
+  }
+  // If it almost fits, it should be fine to cram it there sideways
+  if (width <= TABLE_HEIGHT && height <= TABLE_WIDTH) {
+    mirror_d(s);
+    return true;
+  }
+  return false;
 }
 
 size_t to_corner_tablebase_key(const state *s) {
@@ -32,7 +41,6 @@ size_t to_corner_tablebase_key(const state *s) {
         mirror_v(&c);
         snap(&c);
         if (!fits_corner(&c)) {
-          // TODO: Flip diagonally if table width != height
           return INVALID_KEY;
         }
       }
