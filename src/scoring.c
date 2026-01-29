@@ -30,6 +30,17 @@ float target_lost_score(const state *s) {
   return score_q7_to_float(target_lost_score_q7(s));
 }
 
+score_q7_t take_target_score_q7(const state *s) {
+  return (
+    TARGET_CAPTURED_SCORE_Q7 +
+    s->button * BUTTON_Q7 +
+    s->ko_threats * KO_THREAT_Q7
+  );
+}
+float take_target_score(const state *s) {
+  return score_q7_to_float(take_target_score_q7(s));
+}
+
 score_q7_t delay_capture_q7(score_q7_t my_score) {
   if (my_score < -BIG_SCORE_Q7) {
     return my_score + DELAY_Q7;

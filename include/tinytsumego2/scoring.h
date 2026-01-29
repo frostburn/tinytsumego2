@@ -42,6 +42,12 @@ float score(const state *s);
 score_q7_t target_lost_score_q7(const state *s);
 float target_lost_score(const state *s);
 
+// Big score for losing the target. Button and ko threat bonuses are included
+score_q7_t take_target_score_q7(const state *s);
+float take_target_score(const state *s);
+
 // Incentivize delaying if the target stones cannot be saved
 score_q7_t delay_capture_q7(score_q7_t my_score);
 float delay_capture(float my_score);
+
+// TODO: Consider renaming target scoring functions or move results

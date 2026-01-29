@@ -152,3 +152,6 @@ bool can_mirror_d(const state *s);
 
 // Snap state to the upper left corner. Assumes the state is legal
 void snap(state *s);
+
+// Compute the status of the target stones assuming the other player keeps passing
+move_result struggle(state *s);
