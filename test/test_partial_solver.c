@@ -29,7 +29,8 @@ void test_straight_two_loss() {
 
   game_graph gg = create_game_graph(&root, NULL);
   solve_game_graph(&gg, true);
-  node_proxy np = get_game_graph_node(&gg, &root);
+  size_t root_key = to_key(&root, &root);
+  node_proxy np = get_game_graph_node(&gg, root_key, &root);
   printf("%g, %g\n\n", np.low, np.high);
 
   print_game_graph(&gg);
@@ -46,7 +47,8 @@ void test_straight_three_capture() {
 
   game_graph gg = create_game_graph(&root, NULL);
   solve_game_graph(&gg, true);
-  node_proxy np = get_game_graph_node(&gg, &root);
+  size_t root_key = to_key(&root, &root);
+  node_proxy np = get_game_graph_node(&gg, root_key, &root);
   printf("%g, %g\n\n", np.low, np.high);
 
   print_game_graph(&gg);

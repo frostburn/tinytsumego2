@@ -519,6 +519,10 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
 
   if (strcmp(name, "Second L+1 Group Defense") == 0) {
+    // 5225437 nodes expanded (4x3 tablebase)
+    // -7.781250*, -7.781250*
+    // 5037354 nodes expanded (4x3 tablebase)
+    // -6.250000*, -5.781250*
     return single_valued(s, -6 + BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
@@ -695,6 +699,10 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 1;
 
   if (strcmp(name, "Eight is Alive") == 0) {
+    // 759144 nodes expanded (No tablebase)
+    // 19.781250*, 19.781250*
+    // 697821 nodes expanded (No tablebase)
+    // 17.781250*, 17.781250*
     return single_valued(s, 16 + BUTTON_BONUS + KO_THREAT_BONUS);
   }
 
