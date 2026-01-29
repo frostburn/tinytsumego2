@@ -49,7 +49,7 @@ int main(int argc, char * argv[]) {
     solve_full_graph(&fg, false);
 
     for (size_t i = 0; i < fg.num_nodes; ++i) {
-      value v = get_tablebase_value(&tb, fg.states + i);
+      value_range v = get_tablebase_value(&tb, fg.states + i);
       if (!isnan(v.low)) {
         if (v.low != fg.values[i].low || v.high != fg.values[i].high) {
           print_state(fg.states + i);

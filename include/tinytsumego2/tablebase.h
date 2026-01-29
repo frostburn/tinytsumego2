@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "tinytsumego2/state.h"
 #include "tinytsumego2/scoring.h"
-#include "tinytsumego2/full_solver.h"
 
 #define TABLE_WIDTH (4)
 #define TABLE_HEIGHT (3)
@@ -21,6 +20,14 @@ typedef enum table_type {
   EDGE,
   CENTER,
 } table_type;
+
+// Value range that may not have converged yet
+typedef struct value_range {
+  float low;
+  float high;
+  bool low_fixed;
+  bool high_fixed;
+} value_range;
 
 // Use 16-bit values to save space
 typedef struct table_value {
@@ -62,8 +69,8 @@ state from_edge_tablebase_key(size_t key);
 // TODO
 state from_center_tablebase_key(size_t key);
 
-// Get a value for a state according to the tablebase. Returns {NAN, NAN} on failure
-value get_tablebase_value(const tablebase *tb, const state *s);
+// Get a value for a state according to the tablebase. Returns {NAN, NAN, false, false} on failure
+value_range get_tablebase_value(const tablebase *tb, const state *s);
 
 // Write a single tsumego table to a file
 size_t write_tsumego_table(const tsumego_table *restrict tt, FILE *restrict stream);

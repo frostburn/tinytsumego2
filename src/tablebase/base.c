@@ -127,17 +127,17 @@ size_t to_tablebase_key(table_type type, const state *s) {
   return INVALID_KEY;
 }
 
-value get_tablebase_value(const tablebase *tb, const state *s) {
+value_range get_tablebase_value(const tablebase *tb, const state *s) {
   if (s->passes != 0) {
-    return (value) {NAN, NAN};
+    return (value_range) {NAN, NAN, false, false};
   }
   bool opponent_targetted = s->opponent & s->target;
   if (opponent_targetted) {
     if (s->player & s->target) {
-      return (value) {NAN, NAN};
+      return (value_range) {NAN, NAN, false, false};
     }
   } else if (!(s->player & s->target)) {
-    return (value) {NAN, NAN};
+    return (value_range) {NAN, NAN, false, false};
   }
   bool target_capture_only = false;
   state c = *s;
@@ -149,15 +149,15 @@ value get_tablebase_value(const tablebase *tb, const state *s) {
   if (can_be_pseudo_tabulated(&c)) {
     if (!can_be_hard_tabulated(&c)) {
       if (!manipulate_state(&c)) {
-        return (value) {NAN, NAN};
+        return (value_range) {NAN, NAN, false, false};
       }
       if (!can_be_hard_tabulated(&c)) {
-        return (value) {NAN, NAN};
+        return (value_range) {NAN, NAN, false, false};
       }
       target_capture_only = true;
     }
   } else {
-    return (value) {NAN, NAN};
+      return (value_range) {NAN, NAN, false, false};
   }
   // Baseline must use the original state
   float baseline = compensated_liberty_score(s);
@@ -178,17 +178,25 @@ value get_tablebase_value(const tablebase *tb, const state *s) {
       table_value v = tb->tables[i].values[key];
       if (v.low == INVALID_SCORE_Q7) {
         fprintf(stderr, "Unexpected tablebase miss\n");
-        return (value) {NAN, NAN};
+        return (value_range) {NAN, NAN, false, false};
       }
 
-      value result = (value) {
+      value_range result = (value_range) {
         score_q7_to_float(v.low),
-        score_q7_to_float(v.high)
+        score_q7_to_float(v.high),
+        true,
+        true
       };
 
       if (target_capture_only) {
-        if (abs(v.low) < BIG_SCORE_Q7 || abs(v.high) < BIG_SCORE_Q7) {
-          continue;
+        // These bounds could be improved, but at least we're signaling life
+        if (abs(v.low) < BIG_SCORE_Q7) {
+          result.low = -BIG_SCORE;
+          result.low_fixed = false;
+        }
+        if (abs(v.high) < BIG_SCORE_Q7) {
+          result.high = BIG_SCORE;
+          result.high_fixed = false;
         }
         return result;
       }
@@ -208,7 +216,7 @@ value get_tablebase_value(const tablebase *tb, const state *s) {
       return result;
     }
   }
-  return (value) {NAN, NAN};
+  return (value_range) {NAN, NAN, false, false};
 }
 
 size_t write_tsumego_table(const tsumego_table *restrict tt, FILE *restrict stream) {

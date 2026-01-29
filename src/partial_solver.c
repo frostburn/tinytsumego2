@@ -120,12 +120,12 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
   bool low_fixed = false;
   bool high_fixed = false;
   if (gg->tablebase) {
-    value v = get_tablebase_value(gg->tablebase, s);
+    value_range v = get_tablebase_value(gg->tablebase, s);
     if (!isnan(v.low)) {
       low = v.low;
       high = v.high;
-      low_fixed = true;
-      high_fixed = true;
+      low_fixed = v.low_fixed;
+      high_fixed = v.high_fixed;
     }
   }
 
