@@ -102,10 +102,10 @@ move_result make_move(state *s, const stones_t move);
 // Return the unique index identifying a child state of a root state
 // Assumes external liberties (if any) are arranged in a contiguous block
 // Only a single pass is allowed. Do not index leaf nodes of the tree!
-size_t to_key(state *root, state *child);
+size_t to_key(const state *root, const state *child);
 
 // Return the size of the key space of the given root state
-size_t keyspace_size(state *root);
+size_t keyspace_size(const state *root);
 
 // Compare two unique indices. Compatible with qsort.
 int compare_keys(const void *a_, const void *b_);

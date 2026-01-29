@@ -4,7 +4,7 @@
 #include "tinytsumego2/tablebase.h"
 
 #define MIN_CAPACITY (128)
-#define MAX_TAIL_SIZE (8192)
+#define MAX_TAIL_SIZE (4096)
 
 // Minimum number of re-visits before children are permanently expanded
 #define MIN_VISITS (4)
@@ -12,13 +12,14 @@
 // Child state of a parent state with heuristic scores attached
 struct child {
   state state;
+  size_t key;
   move_result move_result;
   int heuristic_penalty;
 };
 
 // Node in the game graph
 typedef struct node {
-  state state;
+  size_t key;
   int depth;
   float low;
   float high;
@@ -32,7 +33,7 @@ typedef struct node {
 
 // Copy of a node for ease of re-access
 typedef struct node_proxy {
-  state state;
+  size_t key;
   int depth;
   float low;
   float high;
@@ -86,13 +87,13 @@ game_graph create_game_graph(const state *root, const tablebase *tb);
 void print_game_graph(game_graph *gg);
 
 // Get a proxy for modifying nodes in a game graph. Allocates new nodes as needed
-node_proxy get_game_graph_node(game_graph *gg, const state *s);
+node_proxy get_game_graph_node(game_graph *gg, const size_t key, const state *s);
 
 // Commit modifications made to the proxy into the actual graph
 void update_game_graph_node(game_graph *gg, node_proxy *np);
 
 // Improve a lower or upper bound of a node in the game graph by partially expanding the graph as needed
-void improve_bound(game_graph *gg, node_proxy *np, bool lower);
+void improve_bound(game_graph *gg, node_proxy *np, const state *s, bool lower);
 
 // Expand the graph from the root node until its value range converges
 void solve_game_graph(game_graph *gg, bool verbose);

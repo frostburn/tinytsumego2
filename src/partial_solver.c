@@ -38,7 +38,11 @@ game_graph create_game_graph(const state *root, const tablebase *tb) {
   }
   gg.moves[j] = pass();
 
-  node_proxy np = get_game_graph_node(&gg, root);
+  // Print an error if the state is huge
+  keyspace_size(root);
+
+  size_t root_key = to_key(root, root);
+  node_proxy np = get_game_graph_node(&gg, root_key, root);
   np.depth = 0;
   update_game_graph_node(&gg, &np);
 
@@ -60,17 +64,17 @@ void print_game_graph(game_graph *gg) {
   }
 }
 
-node_proxy get_game_graph_node(game_graph *gg, const state *s) {
-  const stones_t a = hash_a(s);
-  const stones_t b = hash_b(s);
+node_proxy get_game_graph_node(game_graph *gg, const size_t key, const state *s) {
+  const stones_t a = key;
+  const stones_t b = 1234567 * key;
   // Pre-filter using bloom
   const bool maybe_seen = bloom_test(gg->bloom, a, b);
   if (maybe_seen) {
-    // Binary search the sorted head (abuses node ~ state)
-    node *existing = (node*) bsearch((void*) s, (void*) gg->nodes, gg->num_sorted, sizeof(node), compare);
+    // Binary search the sorted head (abuses node ~ size_t)
+    node *existing = (node*) bsearch((void*) &key, (void*) gg->nodes, gg->num_sorted, sizeof(node), compare_keys);
     if (existing) {
       return (node_proxy) {
-        existing->state,
+        existing->key,
         existing->depth,
         existing->low,
         existing->high,
@@ -86,9 +90,9 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
     }
     // Search tail linearly
     for (size_t i = gg->num_sorted; i < gg->num_nodes; ++i) {
-      if (compare((void*) (gg->nodes + i), (void*) s) == 0) {
+      if (gg->nodes[i].key == key) {
         return (node_proxy) {
-          gg->nodes[i].state,
+          gg->nodes[i].key,
           gg->nodes[i].depth,
           gg->nodes[i].low,
           gg->nodes[i].high,
@@ -107,12 +111,12 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
   }
   if (gg->num_nodes >= gg->nodes_capacity) {
     gg->num_sorted = gg->nodes_capacity;
-    qsort((void*) gg->nodes, gg->num_sorted, sizeof(node), compare);
+    qsort((void*) gg->nodes, gg->num_sorted, sizeof(node), compare_keys);
     gg->nodes_capacity <<= 1;
     gg->nodes = realloc(gg->nodes, gg->nodes_capacity * sizeof(node));
   } else if (gg->num_nodes > gg->num_sorted + MAX_TAIL_SIZE) {
     gg->num_sorted = gg->num_nodes;
-    qsort((void*) gg->nodes, gg->num_sorted, sizeof(node), compare);
+    qsort((void*) gg->nodes, gg->num_sorted, sizeof(node), compare_keys);
   }
 
   float low = -INFINITY;
@@ -130,7 +134,7 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
   }
 
   gg->nodes[gg->num_nodes++] = (node) {
-    *s,
+    key,
     INT_MAX,
     low,
     high,
@@ -144,7 +148,7 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
   bloom_insert(gg->bloom, a, b);
 
   return (node_proxy) {
-    *s,
+    key,
     INT_MAX,
     low,
     high,
@@ -161,7 +165,7 @@ node_proxy get_game_graph_node(game_graph *gg, const state *s) {
 
 void update_game_graph_node(game_graph *gg, node_proxy *np) {
   if (np->tag != gg->num_sorted) {
-    node *existing = (node*) bsearch((void*) &(np->state), (void*) gg->nodes, gg->num_sorted, sizeof(node), compare);
+    node *existing = (node*) bsearch((void*) &(np->key), (void*) gg->nodes, gg->num_sorted, sizeof(node), compare_keys);
     if (!existing) {
       fprintf(stderr, "Invalid proxy detected\n");
       exit(EXIT_FAILURE);
@@ -170,7 +174,7 @@ void update_game_graph_node(game_graph *gg, node_proxy *np) {
     np->tag = gg->num_sorted;
   }
   gg->nodes[np->index] = (node) {
-    np->state,
+    np->key,
     np->depth,
     np->low,
     np->high,
@@ -183,19 +187,18 @@ void update_game_graph_node(game_graph *gg, node_proxy *np) {
   };
 }
 
-bool expand_children(game_graph *gg, node_proxy *np) {
+bool expand_children(game_graph *gg, node_proxy *np, const state *s) {
   if (np->children != NULL) {
     return false;
   }
-  bool wide = np->state.wide;
+  bool wide = s->wide;
   struct child *children = malloc(gg->num_moves * sizeof(struct child));
-  state parent = np->state;
-  int num_player_immortal = popcount(parent.player & parent.immortal);
-  int num_opponent_immortal = popcount(parent.opponent & parent.immortal);
-  stones_t empty = parent.visual_area & ~(parent.player | parent.opponent);
+  int num_player_immortal = popcount(s->player & s->immortal);
+  int num_opponent_immortal = popcount(s->opponent & s->immortal);
+  stones_t empty = s->visual_area & ~(s->player | s->opponent);
   np->num_children = gg->num_moves;
   for (int i = 0; i < gg->num_moves; ++i) {
-    children[i].state = parent;
+    children[i].state = *s;
     children[i].move_result = make_move((state*)(children + i), gg->moves[i]);
     children[i].heuristic_penalty = 0;
     if (children[i].move_result == ILLEGAL) {
@@ -227,10 +230,13 @@ bool expand_children(game_graph *gg, node_proxy *np) {
   }
   qsort((void*) children, gg->num_moves, sizeof(struct child), compare_children);
   np->children = realloc(children, np->num_children * sizeof(struct child));
+  for (int i = 0; i < np->num_children; ++i) {
+    np->children[i].key = to_key(&(gg->root), &(np->children[i].state));
+  }
   return true;
 }
 
-void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
+void improve_bound(game_graph *gg, node_proxy *np, const state *s, bool lower) {
   if (lower && np->low_fixed) {
     return;
   }
@@ -254,7 +260,7 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
   bool low_fixed = true;
   bool evaluate_more = true;
 
-  bool owns_children = expand_children(gg, np);
+  bool owns_children = expand_children(gg, np, s);
   np->visits++;
   np->generation = gg->generation;
   update_game_graph_node(gg, np);
@@ -281,7 +287,7 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
       low = fmax(low, -child_score);
       high = fmax(high, -child_score);
     } else {
-      node_proxy cp = get_game_graph_node(gg, &child);
+      node_proxy cp = get_game_graph_node(gg, np->children[i].key, &child);
       if (cp.depth < np->depth && cp.generation == gg->generation) {
         // Loop detected
         if (gg->fix_loops) {
@@ -317,10 +323,10 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
       if (evaluate_more) {
         if (lower) {
           // Any improvement increases the lower bound. Pick based on heuristics
-          improve_bound(gg, &cp, false);
+          improve_bound(gg, &cp, &child, false);
         } else if (np->high == -cp.low) {
           // All of the most offending child nodes need to be improved to decrease the upper bound.
-          improve_bound(gg, &cp, true);
+          improve_bound(gg, &cp, &child, true);
           if (cp.low_fixed && np->high == -cp.low) {
             np->high_fixed = true;
             gg->updated = true;
@@ -344,7 +350,7 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
     if (np->children[i].move_result <= TAKE_TARGET) {
       continue;
     }
-    node_proxy cp = get_game_graph_node(gg, &(np->children[i].state));
+    node_proxy cp = get_game_graph_node(gg, np->children[i].key, &(np->children[i].state));
     low = fmax(low, -cp.high);
     high = fmax(high, -cp.low);
   }
@@ -371,17 +377,18 @@ void improve_bound(game_graph *gg, node_proxy *np, bool lower) {
 }
 
 void solve_game_graph(game_graph *gg, bool verbose) {
-  node_proxy np = get_game_graph_node(gg, &(gg->root));
+  size_t root_key = to_key(&(gg->root), &(gg->root));
+  node_proxy np = get_game_graph_node(gg, root_key, &(gg->root));
   while (!np.low_fixed || !np.high_fixed) {
     gg->generation++;
     gg->updated = false;
-    improve_bound(gg, &np, true);
+    improve_bound(gg, &np, &(gg->root), true);
     if (verbose) {
       printf("Generation %d (low): %f%s, %f%s\n", gg->generation, np.low, np.low_fixed ? "*" : "", np.high, np.high_fixed ? "*" : "");
     }
     gg->generation++;
     gg->updated = false;
-    improve_bound(gg, &np, false);
+    improve_bound(gg, &np, &(gg->root), false);
     if (verbose) {
       printf("Generation %d (high): %f%s, %f%s\n", gg->generation, np.low, np.low_fixed ? "*" : "", np.high, np.high_fixed ? "*" : "");
     }
