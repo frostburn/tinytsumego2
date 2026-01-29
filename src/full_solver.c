@@ -90,6 +90,10 @@ void expand_full_graph(full_graph *fg) {
       state child = parent;
       const move_result r = make_move(&child, fg->moves[i]);
       if (r > TAKE_TARGET) {
+        if (child.button < 0) {
+          // States with the button flipped only differ by a fixed amount
+          child.button = -child.button;
+        }
        add_full_graph_state(fg, &child);
       }
     }
@@ -110,11 +114,24 @@ void expand_full_graph(full_graph *fg) {
 }
 
 value get_full_graph_value(full_graph *fg, const state *s) {
-  state *offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_sorted, sizeof(state), compare);
+  state *offset;
+  float delta = 0;
+  if (s->button < 0) {
+    state c = *s;
+    c.button = -c.button;
+    delta = -2 * BUTTON_BONUS;
+    offset = (state*) bsearch((void*) &c, (void*) (fg->states), fg->num_sorted, sizeof(state), compare);
+  } else {
+    offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_sorted, sizeof(state), compare);
+  }
   if (!offset) {
     return (value){NAN, NAN};
   }
-  return fg->values[offset - fg->states];
+  value v = fg->values[offset - fg->states];
+  return (value) {
+    v.low + delta,
+    v.high + delta
+  };
 }
 
 void solve_full_graph(full_graph *fg, bool use_delay) {
