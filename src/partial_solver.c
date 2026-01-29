@@ -241,11 +241,21 @@ bool expand_children(game_graph *gg, node_proxy *np, const state *s) {
     } else {
       move_result benson_result = apply_benson((state*)(children + i));
       move_result norm_result = normalize_immortal_regions(&(gg->root), (state*)(children + i));
-      if (benson_result == TAKE_TARGET || norm_result == TAKE_TARGET) {
+      move_result struggle_result = struggle((state*)(children + i));
+      if (benson_result == TAKE_TARGET || norm_result == TAKE_TARGET || struggle_result == TAKE_TARGET) {
+        // Compensate the other player for losing the target due to a technicality.
+        // Obtain button earlier to skip this for optimal play.
+        if (children[i].state.button == 0) {
+          children[i].state.button = 1;
+        }
         children[i].move_result = TAKE_TARGET;
         children[i].heuristic_penalty -= 100000;
-      } else if (benson_result == TARGET_LOST) {
-        children[i].move_result = benson_result;
+      } else if (benson_result == TARGET_LOST || struggle_result == TARGET_LOST) {
+        // Technical self-knockout. Compensation doesn't seem to matter.
+        if (children[i].state.button == 0) {
+          children[i].state.button = -1;
+        }
+        children[i].move_result = TARGET_LOST;
         children[i].heuristic_penalty += 100000;
       }
       children[i].heuristic_penalty = jrand() % 1000 - popcount((wide ? cross_16(gg->moves[i]) : cross(gg->moves[i])) & empty) * 4000;
@@ -302,7 +312,7 @@ void improve_bound(game_graph *gg, node_proxy *np, const state *s, bool lower) {
       if (r == SECOND_PASS) {
         child_score = score(&child);
       } else if (r == TARGET_LOST) {
-        child_score = -target_lost_score(&child);
+        child_score = take_target_score(&child);
       } else {
         child_score = target_lost_score(&child);
       }

@@ -972,3 +972,66 @@ void snap(state *s) {
   s->immortal >>= shift;
   s->external >>= shift;
 }
+
+stones_t capture_loose_white_stones(stones_t visual_area, stones_t black, stones_t white, stones_t immortal, bool wide) {
+  // Capture everything
+  stones_t libs = wide ? liberties_16(white & ~immortal, visual_area & ~black) : liberties(white & ~immortal, visual_area & ~black);
+  black |= libs;
+
+  // Connect chains left in atari
+  stones_t empty = visual_area & ~(white & immortal);
+  bool done = false;
+  while (!done) {
+    done = true;
+    int num_chains;
+    stones_t *black_chains = wide ? chains_16(black, &num_chains) : chains(black, &num_chains);
+    for (int i = 0; i < num_chains; ++i) {
+      if (black_chains[i] & immortal) {
+        continue;
+      }
+      stones_t atari_libs = wide ? liberties_16(black_chains[i], empty) : liberties(black_chains[i], empty);
+      if (popcount(atari_libs) == 1) {
+        black |= atari_libs;
+        done = false;
+      }
+    }
+    free(black_chains);
+  }
+
+  // Note: May connect so much that no liberties are left
+  return black;
+}
+
+move_result struggle(state *s) {
+  if (!s->target) {
+    return NORMAL;
+  }
+  if (s->target & s->immortal) {
+    return NORMAL;
+  }
+  if (s->target & s->player) {
+    if (s->target & s->opponent) {
+      return NORMAL;
+    }
+    stones_t player = capture_loose_white_stones(s->visual_area, s->player, s->opponent, s->immortal | s->external, s->wide);
+    stones_t empty = s->logical_area & ~player;
+    int space = popcount(empty);
+    if (space < 2) {
+      return TAKE_TARGET;
+    }
+    if (space == 2 && (s->wide ? is_contiguous_16(empty) : is_contiguous(empty))) {
+      return TAKE_TARGET;
+    }
+  } else {
+    stones_t opponent = capture_loose_white_stones(s->visual_area, s->opponent, s->player, s->immortal | s->external, s->wide);
+    stones_t empty = s->logical_area & ~opponent;
+    int space = popcount(empty);
+    if (space < 2) {
+      return TARGET_LOST;
+    }
+    if (space == 2 && (s->wide ? is_contiguous_16(empty) : is_contiguous(empty))) {
+      return TARGET_LOST;
+    }
+  }
+  return NORMAL;
+}
