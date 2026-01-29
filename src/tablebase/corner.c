@@ -1,4 +1,4 @@
-//#included in base.c
+// #included in base.c
 
 // Make sure that the eyespace fits the table and that the target lining is to the east and south. Assumes s->wide == false
 bool fits_corner(const state *s) {
@@ -45,26 +45,23 @@ size_t to_corner_tablebase_key(const state *s) {
     return INVALID_KEY;
   }
 
-  // TODO: Block conversion
-  // TERNARY[(c.player & TABLE_MASK) | ((c.opponent & TABLE_MASK) << TABLE_WIDTH)] + 3**TABLE_WIDTH * TERNARY[...];
+  // Voids and creeping opposing immortal stones become player target stones
+  stones_t player = c.player | ~eyespace;
+  c.opponent &= ~player;
 
-  size_t key = 0;
-  for (int y = TABLE_HEIGHT - 1; y >= 0; --y) {
-    stones_t p = 1ULL << (TABLE_WIDTH - 1 + y * V_SHIFT);
-    for (int x = TABLE_WIDTH - 1; x >= 0; --x) {
-      key *= 3;
-      if (c.player & p) {
-        key += 1;
-      } else if (!(eyespace & p)) {
-        // Voids become player target stones
-        key += 1;
-      } else if (c.opponent & p) {
-        key += 2;
-      }
-      p >>= 1;
-    }
-  }
-  return key;
+  // Convert player/opponent quads into trits using a block table
+  size_t key  = (
+    TRITS4_TABLE[(player >> (2 * V_SHIFT)) & BITS4_MASK] +
+    TRITS4_TABLE[(c.opponent >> (2* V_SHIFT)) & BITS4_MASK] * 2
+  );
+  key = 81 * key + (
+    TRITS4_TABLE[(player >> V_SHIFT) & BITS4_MASK] +
+    TRITS4_TABLE[(c.opponent >> V_SHIFT) & BITS4_MASK] * 2
+  );
+  return 81 * key + (
+    TRITS4_TABLE[player & BITS4_MASK] +
+    TRITS4_TABLE[c.opponent & BITS4_MASK] * 2
+  );
 }
 
 state from_corner_tablebase_key(size_t key) {

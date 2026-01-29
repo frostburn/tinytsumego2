@@ -77,3 +77,6 @@ int offset_h_16(stones_t stones);
 
 // Return how many empty rows there are to the north of `stones`
 int offset_v_16(stones_t stones);
+
+// Shift stones to the left by the given `amount`
+stones_t move_west_16(stones_t stones, int amount);
