@@ -190,29 +190,30 @@ value_range get_tablebase_value(const tablebase *tb, const state *s) {
 
       if (target_capture_only) {
         // These bounds could be improved, but at least we're signaling life
-        if (abs(v.low) < BIG_SCORE_Q7) {
+        if (fabs(result.low) < BIG_SCORE) {
           result.low = -BIG_SCORE;
           result.low_fixed = false;
         }
-        if (abs(v.high) < BIG_SCORE_Q7) {
+        if (fabs(result.high) < BIG_SCORE) {
           result.high = BIG_SCORE;
           result.high_fixed = false;
         }
-        return result;
       }
 
       // Only delta-values are tabulated. Add in a baseline unless the target can be captured
+      if (fabs(result.low) < BIG_SCORE) {
+        result.low += baseline;
+      }
+      if (fabs(result.high) < BIG_SCORE) {
+        result.high += baseline;
+      }
+
       if (tb->tables[i].button != c.button) {
         // Compensate button ownership even for target captures
         result.low -= 2 * BUTTON_BONUS;
         result.high -= 2 * BUTTON_BONUS;
       }
-      if (abs(v.low) < BIG_SCORE_Q7) {
-        result.low += baseline;
-      }
-      if (abs(v.high) < BIG_SCORE_Q7) {
-        result.high += baseline;
-      }
+
       return result;
     }
   }
