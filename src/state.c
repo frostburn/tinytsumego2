@@ -787,7 +787,8 @@ move_result normalize_immortal_regions(state *root, state *s) {
     // A living space needs two eyes and they cannot be connected
     if (popcount(regions[i] & mask) < 3) {
       s->logical_area &= ~regions[i];
-      if ((regions[i] & root_mask) && !(s->target & regions[i])) {
+      if (false && (regions[i] & root_mask) && !(s->target & regions[i])) {
+        // Disabled for now. TODO: Figure out why solid blocks break partial_solver
         // Fill the region with a solid block of immortal stones
         s->player &= ~regions[i];
         s->immortal |= regions[i];
