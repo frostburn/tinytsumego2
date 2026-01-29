@@ -542,8 +542,10 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "L+2 Group with Descent Defense") == 0) {
-    // 1638579 nodes expanded (with tablebase)
+    // 1638579 nodes expanded (with 3x3 tablebase)
     // -3.750000*, -2.250000*
+    // 1523993 nodes expanded (with 4x3 tablebase)
+    // -3.750000*, -1.750000*
     return dual_valued(s, -4 + BUTTON_BONUS, -2 - BUTTON_BONUS);
   }
 

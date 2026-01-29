@@ -1,6 +1,16 @@
 #include <math.h>
 #include "tinytsumego2/tablebase.h"
 
+// 4-bit numbers expanded to 4-trit numbers with ones only
+static const size_t TRITS4_TABLE[] = {
+  0, 1, 3, 4,
+  9, 10, 12, 13,
+  27, 28, 30, 31,
+  36, 37, 39, 40
+};
+
+#define BITS4_MASK (15)
+
 #include "corner.c"
 #include "edge.c"
 
