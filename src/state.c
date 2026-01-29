@@ -785,14 +785,22 @@ move_result normalize_immortal_regions(state *s) {
     }
     // A living space needs two eyes and they cannot be connected
     if (popcount(regions[i] & mask) < 3) {
-      // Capture everything inside
-      stones_t dead = s->player & regions[i];
-      s->player ^= dead;
-      s->opponent |= s->wide ? liberties_16(dead, regions[i]) : liberties(dead, regions[i]);
-      s->immortal |= s->opponent & regions[i];
-      s->logical_area &= ~regions[i];
-      if (dead & s->target) {
-        result = TAKE_TARGET;
+      if (s->target & regions[i]) {
+        // Capture everything inside
+        stones_t dead = s->player & regions[i];
+        s->player ^= dead;
+        s->opponent |= s->wide ? liberties_16(dead, regions[i]) : liberties(dead, regions[i]);
+        s->immortal |= s->opponent & regions[i];
+        s->logical_area &= ~regions[i];
+        if (dead & s->target) {
+          result = TAKE_TARGET;
+        }
+      } else {
+        // Seal the region with immortal stones
+        s->immortal |= regions[i];
+        s->opponent |= regions[i];
+        s->player &= ~regions[i];
+        s->logical_area &= ~regions[i];
       }
     }
   }
