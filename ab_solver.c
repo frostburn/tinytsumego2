@@ -21,7 +21,8 @@ int solve(tsumego t, bool verbose, tablebase *tb) {
   game_graph gg = create_game_graph(&root, tb);
 
   solve_game_graph(&gg, verbose);
-  node_proxy np = get_game_graph_node(&gg, &root);
+  size_t root_key = to_key(&root, &root);
+  node_proxy np = get_game_graph_node(&gg, root_key, &root);
 
   if (verbose) {
     printf("%zu nodes expanded\n", gg.num_nodes);

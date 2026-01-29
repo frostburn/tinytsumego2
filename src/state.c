@@ -400,7 +400,7 @@ move_result make_move(state *s, stones_t move) {
   return result;
 }
 
-size_t to_key(state *root, state *child) {
+size_t to_key(const state *root, const state *child) {
   size_t key = 0;
   int j;
 
@@ -445,7 +445,7 @@ size_t to_key(state *root, state *child) {
   return key;
 }
 
-size_t keyspace_size(state *root) {
+size_t keyspace_size(const state *root) {
   const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
   size_t result = (
     2 * // Player to play
