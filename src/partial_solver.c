@@ -9,6 +9,8 @@
 
 // #define DEBUG_SEARCH
 
+#define KEY_HASHER (123456789ULL)
+
 int compare_children(const void *a_, const void *b_) {
   struct child *a = (struct child*) a_;
   struct child *b = (struct child*) b_;
@@ -66,7 +68,7 @@ void print_game_graph(game_graph *gg) {
 
 node_proxy get_game_graph_node(game_graph *gg, const size_t key, const state *s) {
   const stones_t a = key;
-  const stones_t b = 1234567 * key;
+  const stones_t b = KEY_HASHER * key;
   // Pre-filter using bloom
   const bool maybe_seen = bloom_test(gg->bloom, a, b);
   if (maybe_seen) {
@@ -130,6 +132,33 @@ node_proxy get_game_graph_node(game_graph *gg, const size_t key, const state *s)
       high = v.high;
       low_fixed = v.low_fixed;
       high_fixed = v.high_fixed;
+    }
+  }
+
+  if (s->button != 0) {
+    // See if the state is already there with the button flipped
+    state c = *s;
+    c.button = -c.button;
+    size_t c_key = to_key(&(gg->root), &c);
+    if (bloom_test(gg->bloom, c_key, KEY_HASHER * c_key)) {
+      float delta = s->button < 0 ? -2 * BUTTON_BONUS : 2 * BUTTON_BONUS;
+      node *existing = (node*) bsearch((void*) &c_key, (void*) gg->nodes, gg->num_sorted, sizeof(node), compare_keys);
+      if (existing) {
+        low = existing->low + delta;
+        high = existing->high + delta;
+        low_fixed = existing->low_fixed;
+        high_fixed = existing->high_fixed;
+      } else {
+        // Search tail linearly
+        for (size_t i = gg->num_sorted; i < gg->num_nodes; ++i) {
+          if (gg->nodes[i].key == c_key) {
+            low = gg->nodes[i].low + delta;
+            high = gg->nodes[i].high + delta;
+            low_fixed = gg->nodes[i].low_fixed;
+            high_fixed = gg->nodes[i].high_fixed;
+          }
+        }
+      }
     }
   }
 
