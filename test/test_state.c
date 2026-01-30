@@ -495,6 +495,18 @@ void test_immortal_regions() {
   assert(s.logical_area & single(0, 0));
 }
 
+void test_struggle() {
+  state s = parse_state("\
+    W . . . 0 0 . b b b x x x x x x \
+    W W b b b b b b W W x x x x x x \
+    , W W W W W W W W , x x x x x x \
+  ");
+  s.wide = true;
+  print_state(&s);
+  move_result r = struggle(&s);
+  assert(r == TAKE_TARGET);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -508,6 +520,7 @@ int main() {
   test_snap();
   test_wide_state();
   test_immortal_regions();
+  test_struggle();
 
   return EXIT_SUCCESS;
 }

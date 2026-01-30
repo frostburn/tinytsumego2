@@ -978,6 +978,10 @@ stones_t capture_loose_white_stones(stones_t visual_area, stones_t black, stones
   stones_t libs = wide ? liberties_16(white & ~immortal, visual_area & ~black) : liberties(white & ~immortal, visual_area & ~black);
   black |= libs;
 
+  // Fill borders
+  libs = wide ? liberties_16(white & immortal, visual_area) : liberties(white & immortal, visual_area);
+  black |= libs;
+
   // Connect chains left in atari
   stones_t empty = visual_area & ~(white & immortal);
   bool done = false;
