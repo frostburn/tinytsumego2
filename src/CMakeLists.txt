@@ -2,6 +2,7 @@ ADD_LIBRARY(
   tinytsumego2
   bitmatrix.c
   bloom.c
+  full_reader.c
   full_solver.c
   partial_solver.c
   scoring.c

@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/full_solver.h"
+#include "tinytsumego2/full_reader.h"
 
 #include "tsumego.c"
 
 #define MAX_DEMONSTRATION (100)
 
-int solve(tsumego t, bool verbose) {
+full_graph solve(tsumego t, bool verbose) {
   state root = t.state;
 
   full_graph fg = create_full_graph(&root);
@@ -44,18 +45,21 @@ int solve(tsumego t, bool verbose) {
     low_to_play = false;
   #endif
 
+  coord_f colof = root.wide ? column_of_16 : column_of;
+  coord_f rowof = root.wide ? row_of_16 : row_of;
+
   state s = root;
   for (int n = 0; n < MAX_DEMONSTRATION; ++n) {
     for (int j = 0; j < fg.num_moves; ++j) {
       state child = s;
       const move_result r = make_move(&child, fg.moves[j]);
       if (r == TAKE_TARGET) {
-        printf("%c%c: takes target (%f)\n",  column_of(fg.moves[j]), row_of(fg.moves[j]), target_lost_score(&child));
+        printf("%c%c: takes target (%f)\n",  colof(fg.moves[j]), rowof(fg.moves[j]), target_lost_score(&child));
       } else if (r == SECOND_PASS) {
-        printf("%c%c: game over (%f)\n",  column_of(fg.moves[j]), row_of(fg.moves[j]), score(&child));
+        printf("%c%c: game over (%f)\n",  colof(fg.moves[j]), rowof(fg.moves[j]), score(&child));
       } else if (r != ILLEGAL) {
         const value child_value = get_full_graph_value(&fg, &child);
-        printf("%c%c: %f, %f\n",  column_of(fg.moves[j]), row_of(fg.moves[j]), child_value.low, child_value.high);
+        printf("%c%c: %f, %f\n",  colof(fg.moves[j]), rowof(fg.moves[j]), child_value.low, child_value.high);
       }
     }
 
@@ -77,7 +81,7 @@ int solve(tsumego t, bool verbose) {
         }
       } else if (r != ILLEGAL) {
         const value child_value = get_full_graph_value(&fg, &child);
-        printf("%c%c: %f, %f\n",  column_of(fg.moves[j]), row_of(fg.moves[j]), child_value.low, child_value.high);
+        printf("%c%c: %f, %f\n",  colof(fg.moves[j]), rowof(fg.moves[j]), child_value.low, child_value.high);
 
         bool good;
         if (low_to_play) {
@@ -103,7 +107,6 @@ int solve(tsumego t, bool verbose) {
   }
 
   cleanup:
-  free_full_graph(&fg);
 
   if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
     fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low_delay, t.high_delay);
@@ -112,17 +115,25 @@ int solve(tsumego t, bool verbose) {
   assert(root_value.low == t.low_delay);
   assert(root_value.high == t.high_delay);
 
-  return EXIT_SUCCESS;
+  return fg;
 }
 
 int main(int argc, char *argv[]) {
   if (argc <= 1) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      solve(get_tsumego(TSUMEGO_NAMES[i]), false);
+      full_graph fg = solve(get_tsumego(TSUMEGO_NAMES[i]), false);
+      free_full_graph(&fg);
     }
     return EXIT_SUCCESS;
   } else {
-    return solve(get_tsumego(argv[1]), true);
+    tsumego t = get_tsumego(argv[1]);
+    full_graph fg = solve(t, true);
+    if (argc >= 3) {
+      printf("Saving result to %s\n", argv[2]);
+      FILE *f = fopen(argv[2], "wb");
+      write_full_graph(&(t.state), &fg, f);
+    }
+    free_full_graph(&fg);
   }
 }
