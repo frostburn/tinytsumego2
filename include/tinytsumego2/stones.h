@@ -95,6 +95,9 @@ char column_of(const stones_t stone);
 // Indicate the row of a single stone: '0' through '6' or 's' for pass()
 char row_of(const stones_t stone);
 
+// Function pointer type for easy swapping when dealing with wide stones
+typedef char (*coord_f)(const stones_t stone);
+
 // Break `stones` into individual chains. Returns a dynamically allocated array. Stores the number of chains in the second argument.
 stones_t *chains(stones_t stones, int *num_chains);
 
