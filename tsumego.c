@@ -567,8 +567,8 @@ tsumego get_tsumego(const char *name) {
     . . . . . x x x x \
     . . b W W x x x x \
     . . b W , x x x x \
-    b . b W , x x x x \
-    . b W , , x x x x \
+    @ . b W , x x x x \
+    . @ W , , x x x x \
     . W W , , x x x x \
     . W , W , x x x x \
   ");
@@ -584,11 +584,9 @@ tsumego get_tsumego(const char *name) {
     return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 12);
   }
 
-  s.logical_area ^= single(0, 3) ^ single(0, 4);
   s.opponent ^= single(0, 3) ^ single(0, 4);
-  s.target = s.opponent;
   if (strcmp(name, "Straight J Group Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 13);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 17);
   }
 
   temp = s.player;
@@ -602,8 +600,8 @@ tsumego get_tsumego(const char *name) {
     . . . . . . x x x \
     . . b b W W x x x \
     . . b W , , x x x \
-    b . b W , , x x x \
-    . b W , , , x x x \
+    @ . b W , , x x x \
+    . @ W , , , x x x \
     W W W , , , x x x \
   ");
 
@@ -616,7 +614,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = -1;
   if (strcmp(name, "J+1 Group with Descent Attack") == 0) {
-    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 14);
+    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 16);
   }
 
   s = parse_state("\
