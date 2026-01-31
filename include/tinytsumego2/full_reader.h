@@ -17,6 +17,9 @@ typedef struct full_graph_reader {
   // Root state for key generation
   state root;
 
+  // Was delay scoring used during solving
+  bool use_delay;
+
   // Valid moves according to the root state
   int num_moves;
   stones_t *moves;  // NOTE: (m)allocated in RAM

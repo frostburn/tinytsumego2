@@ -36,9 +36,9 @@ void test_straight_two_loss() {
   state root = straight_two();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root);
+  full_graph fg = create_full_graph(&root, true);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true, true);
+  solve_full_graph(&fg, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -56,9 +56,9 @@ void test_straight_three_capture() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root);
+  full_graph fg = create_full_graph(&root, true);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true, true);
+  solve_full_graph(&fg, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -74,9 +74,9 @@ void test_straight_three_capture_no_delay() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root);
+  full_graph fg = create_full_graph(&root, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, false, true);
+  solve_full_graph(&fg, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -92,9 +92,9 @@ void test_straight_two_loss_wide() {
   state root = straight_two_wide();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root);
+  full_graph fg = create_full_graph(&root, true);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true, true);
+  solve_full_graph(&fg, true);
 
   for (int i = 0; i < fg.num_moves; ++i) {
     print_stones_16(fg.moves[i]);

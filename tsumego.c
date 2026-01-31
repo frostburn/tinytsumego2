@@ -94,6 +94,17 @@ tsumego dual_valued(state s, float low, float high) {
   return (tsumego) {s, low, high, low, high};
 }
 
+// There's often tension between wasting ko-threats and delaying target capture
+tsumego tension_valued(state s, float no_delay, float delay_base, int delay) {
+  return (tsumego) {
+    s,
+    no_delay,
+    no_delay,
+    delay_base - delay * DELAY_BONUS,
+    delay_base - delay * DELAY_BONUS
+  };
+}
+
 tsumego get_tsumego(const char *name) {
   stones_t temp;
   state s;
@@ -383,10 +394,7 @@ tsumego get_tsumego(const char *name) {
 
   s.ko_threats = 1;
   if (strcmp(name, "Walkie Talkie Seven (1 ko threat)") == 0) {
-    // There's tension between wasting ko threats and delaying capture
-    float no_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
-    float with_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS - 11 * DELAY_BONUS;
-    return (tsumego) {s, no_delay, no_delay, with_delay, with_delay};
+    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS, 11);
   }
 
   s.external = rectangle(1, 3) << 5;
@@ -552,10 +560,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = 1;
   if (strcmp(name, "L+2 Group with Descent Attack") == 0) {
-    // There's tension between wasting ko threats and delaying capture
-    float no_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
-    float with_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS - 17 * DELAY_BONUS;
-    return (tsumego) {s, no_delay, no_delay, with_delay, with_delay};
+    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS, 17);
   }
 
   s = parse_state("   \
@@ -611,7 +616,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
   s.ko_threats = -1;
   if (strcmp(name, "J+1 Group with Descent Attack") == 0) {
-    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 14);
+    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 14);
   }
 
   s = parse_state("\
@@ -649,9 +654,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -2;
 
   if (strcmp(name, "Escape A") == 0) {
-    float no_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 2 * KO_THREAT_BONUS;
-    float with_delay = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 12 * DELAY_BONUS;
-    return (tsumego) {s, no_delay, no_delay, with_delay, with_delay};
+    return tension_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS - 2 * KO_THREAT_BONUS, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 12);
   }
 
   s = parse_state("                 \

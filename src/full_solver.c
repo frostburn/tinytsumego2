@@ -20,10 +20,11 @@ void print_full_graph(full_graph *fg) {
   }
 }
 
-full_graph create_full_graph(const state *root) {
+full_graph create_full_graph(const state *root, bool use_delay) {
   full_graph fg = {0};
 
   fg.root = *root;
+  fg.use_delay = use_delay;
 
   fg.seen = calloc(ceil_divz(keyspace_size(root), CHAR_BIT), sizeof(unsigned char));
 
@@ -123,7 +124,7 @@ value get_full_graph_value(full_graph *fg, const state *s) {
   };
 }
 
-void solve_full_graph(full_graph *fg, bool use_delay, bool verbose) {
+void solve_full_graph(full_graph *fg, bool verbose) {
   fg->values = malloc(fg->num_nodes * sizeof(value));
 
   // Initialize to unknown ranges
@@ -162,7 +163,7 @@ void solve_full_graph(full_graph *fg, bool use_delay, bool verbose) {
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
           const value child_value = get_full_graph_value(fg, &child);
-          if (use_delay) {
+          if (fg->use_delay) {
             low = fmax(low, -delay_capture(child_value.high));
             high = fmax(high, -delay_capture(child_value.low));
           } else {

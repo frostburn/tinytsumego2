@@ -15,6 +15,9 @@ typedef struct full_graph {
   // Root state for key generation
   state root;
 
+  // Use delay tactics during solving
+  bool use_delay;
+
   // Valid moves according to the root state
   int num_moves;
   stones_t *moves;
@@ -41,8 +44,8 @@ typedef struct full_graph {
 // Print the contents of a full game graph
 void print_full_graph(full_graph *fg);
 
-// Create a full game graph on based a root state and schedule it for expansion
-full_graph create_full_graph(const state *root);
+// Create a full game graph based on a root state and schedule it for expansion.  The second argument controls the bonus for delaying inevitable target loss.
+full_graph create_full_graph(const state *root, bool use_delay);
 
 // Add a state to the game graph and schedule it for expansion if it's a new one
 void add_full_graph_state(full_graph *fg, const state *s);
@@ -53,8 +56,8 @@ void expand_full_graph(full_graph *fg);
 // Get the value range of a state in a game graph
 value get_full_graph_value(full_graph *fg, const state *s);
 
-// Apply negamax to an expanded full game graph until it converges. The second argument controls the bonus for delaying inevitable target loss
-void solve_full_graph(full_graph *fg, bool use_delay, bool verbose);
+// Apply negamax to an expanded full game graph until it converges
+void solve_full_graph(full_graph *fg, bool verbose);
 
 // Free memory allocated by a full game graph
 void free_full_graph(full_graph *fg);

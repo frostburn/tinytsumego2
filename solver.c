@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/full_solver.h"
 #include "tinytsumego2/full_reader.h"
@@ -11,10 +12,10 @@
 
 #define MAX_DEMONSTRATION (100)
 
-full_graph solve(tsumego t, bool verbose) {
+full_graph solve(tsumego t, bool use_delay, bool verbose) {
   state root = t.state;
 
-  full_graph fg = create_full_graph(&root);
+  full_graph fg = create_full_graph(&root, use_delay);
   expand_full_graph(&fg);
 
   if (verbose) {
@@ -22,7 +23,7 @@ full_graph solve(tsumego t, bool verbose) {
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
-  solve_full_graph(&fg, true, verbose);
+  solve_full_graph(&fg, verbose);
 
   value root_value = get_full_graph_value(&fg, &root);
   float low = root_value.low;
@@ -85,9 +86,9 @@ full_graph solve(tsumego t, bool verbose) {
 
         bool good;
         if (low_to_play) {
-          good = (-delay_capture(child_value.high) == low);
+          good = use_delay ? (-delay_capture(child_value.high) == low) : -child_value.high == low;
         } else {
-          good = (-delay_capture(child_value.low) == high);
+          good = use_delay ? (-delay_capture(child_value.low) == high) : -child_value.low == high;
         }
 
         if (good) {
@@ -108,29 +109,53 @@ full_graph solve(tsumego t, bool verbose) {
 
   cleanup:
 
-  if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
-    fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low_delay, t.high_delay);
-  }
+  if (use_delay) {
+    if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
+      fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low_delay, t.high_delay);
+    }
 
-  assert(root_value.low == t.low_delay);
-  assert(root_value.high == t.high_delay);
+    assert(root_value.low == t.low_delay);
+    assert(root_value.high == t.high_delay);
+  } else {
+    if (root_value.low != t.low || root_value.high != t.high) {
+      fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low, t.high);
+    }
+
+    assert(root_value.low == t.low);
+    assert(root_value.high == t.high);
+  }
 
   return fg;
 }
 
 int main(int argc, char *argv[]) {
-  if (argc <= 1) {
+  int arg_count = argc;
+  bool use_delay = true;
+  int c;
+  while ((c = getopt(argc, argv, "d")) != -1) {
+    switch (c) {
+      case 'd':
+        use_delay = false;
+        arg_count--;
+        break;
+      default:
+        abort();
+    }
+  }
+
+  if (arg_count <= 1) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      full_graph fg = solve(get_tsumego(TSUMEGO_NAMES[i]), false);
+      full_graph fg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, false);
       free_full_graph(&fg);
     }
     return EXIT_SUCCESS;
   } else {
-    full_graph fg = solve(get_tsumego(argv[1]), true);
-    if (argc >= 3) {
-      printf("Saving result to %s\n", argv[2]);
-      FILE *f = fopen(argv[2], "wb");
+    full_graph fg = solve(get_tsumego(argv[optind]), use_delay, true);
+    if (arg_count >= 3) {
+      char *filename = argv[optind + 1];
+      printf("Saving result to %s\n", filename);
+      FILE *f = fopen(filename, "wb");
       write_full_graph(&fg, f);
     }
     free_full_graph(&fg);

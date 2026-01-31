@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
         printf("\n");
       } else if (r != ILLEGAL) {
         value child_value = get_full_graph_reader_value(&fgr, &child);
-        bool low_good = (v.high == -delay_capture(child_value.low));
-        bool high_good = (v.low == -delay_capture(child_value.high));
+        bool low_good = fgr.use_delay ? (v.high == -delay_capture(child_value.low)) : v.high == -child_value.low;
+        bool high_good = fgr.use_delay ? (v.low == -delay_capture(child_value.high)) : v.low == -child_value.high;
         if (sign < 0) {
           float temp = child_value.low;
           child_value.low = -child_value.high;

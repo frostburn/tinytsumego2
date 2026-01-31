@@ -10,6 +10,7 @@
 
 size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
   size_t total = fwrite(&(fg->root), sizeof(state), 1, stream);
+  total += fwrite(&(fg->use_delay), sizeof(bool), 1, stream);
   total += fwrite(&(fg->num_moves), sizeof(int), 1, stream);
   total += fwrite(fg->moves, sizeof(stones_t), fg->num_moves, stream);
   total += fwrite(&(fg->num_nodes), sizeof(size_t), 1, stream);
@@ -48,7 +49,10 @@ full_graph_reader load_full_graph_reader(const char *filename) {
   result.root = ((state*) map)[0];
   map += sizeof(state);
 
-  result.num_moves = ((int *) map)[0];
+  result.use_delay = ((bool*) map)[0];
+  map += sizeof(bool);
+
+  result.num_moves = ((int*) map)[0];
   map += sizeof(int);
 
   result.moves = malloc(result.num_moves * sizeof(stones_t));
@@ -57,7 +61,7 @@ full_graph_reader load_full_graph_reader(const char *filename) {
   }
   map += result.num_moves * sizeof(stones_t);
 
-  result.num_nodes = ((size_t *) map)[0];
+  result.num_nodes = ((size_t*) map)[0];
   map += sizeof(size_t);
 
   result.nodes = (light_node *) map;
