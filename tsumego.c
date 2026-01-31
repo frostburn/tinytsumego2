@@ -47,8 +47,8 @@ static const char* TSUMEGO_NAMES[] = {
   "Rectangle Eight in the Corner",
   "Rectangle Eight in the Corner (defender has threats)",
   "Square Nine in the Corner",
-  // "Carpenter's Square",  // TODO: Tweak layout
-  // "Carpenter's Square (defender has threats)",  // TODO: Tweak layout
+  "Carpenter's Square",
+  "Carpenter's Square (defender has threats)",
   "L Group",
   "First L+1 Group Defense",
   "First L+1 Group Attack",
@@ -473,12 +473,12 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = 0;
 
   if (strcmp(name, "Carpenter's Square") == 0) {
-    return single_valued(s, 0);
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 11);
   }
 
-  s.ko_threats = -2;
+  s.ko_threats = -1;
   if (strcmp(name, "Carpenter's Square (defender has threats)") == 0) {
-    return single_valued(s, 0);
+    return single_valued(s, 14 - BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
   if (strcmp(name, "L Group") == 0) {
