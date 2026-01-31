@@ -46,7 +46,7 @@ int main(int argc, char * argv[]) {
   void fn(state *s) {
     full_graph fg = create_full_graph(s);
     expand_full_graph(&fg);
-    solve_full_graph(&fg, false);
+    solve_full_graph(&fg, false, false);
 
     for (size_t i = 0; i < fg.num_nodes; ++i) {
       value_range v = get_tablebase_value(&tb, fg.states + i);

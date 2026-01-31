@@ -1,8 +1,12 @@
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/bloom.h"
 #include "tinytsumego2/full_solver.h"
 #include "tinytsumego2/scoring.h"
+
+size_t ceil_divz(size_t x, size_t y) {
+  return (x + y - 1) / y;
+}
 
 void print_full_graph(full_graph *fg) {
   for (size_t i = 0; i < fg->num_nodes; ++i) {
@@ -19,7 +23,9 @@ void print_full_graph(full_graph *fg) {
 full_graph create_full_graph(const state *root) {
   full_graph fg = {0};
 
-  fg.bloom = calloc(BLOOM_SIZE, sizeof(unsigned char));
+  fg.root = *root;
+
+  fg.seen = calloc(ceil_divz(keyspace_size(root), CHAR_BIT), sizeof(unsigned char));
 
   fg.nodes_capacity = MIN_CAPACITY;
   fg.states = malloc(fg.nodes_capacity * sizeof(state));
@@ -45,35 +51,19 @@ full_graph create_full_graph(const state *root) {
 }
 
 void add_full_graph_state(full_graph *fg, const state *s) {
-  const stones_t a = hash_a(s);
-  const stones_t b = hash_b(s);
-  // Pre-filter using bloom
-  const bool maybe_seen = bloom_test(fg->bloom, a, b);
-  if (maybe_seen) {
-    // Binary search the sorted head
-    void *existing = bsearch((void*) s, (void*) fg->states, fg->num_sorted, sizeof(state), compare);
-    if (existing) {
-      return;
-    }
-    // Search tail linearly
-    for (size_t i = fg->num_sorted; i < fg->num_nodes; ++i) {
-      if (compare((void*) (fg->states + i), (void*) s) == 0) {
-        return;
-      }
-    }
-    // False positive hit on bloom. Carry on
+  const size_t key = to_key(&(fg->root), s);
+  const unsigned char bit = 1 << (key & 7);
+  const size_t index = key >> 3;
+  if (fg->seen[index] & bit) {
+    return;
   }
+  fg->seen[index] |= bit;
+
   if (fg->num_nodes >= fg->nodes_capacity) {
-    fg->num_sorted = fg->nodes_capacity;
-    qsort((void*) fg->states, fg->num_sorted, sizeof(state), compare);
     fg->nodes_capacity <<= 1;
     fg->states = realloc(fg->states, fg->nodes_capacity * sizeof(state));
-  } else if (fg->num_nodes > fg->num_sorted + MAX_TAIL_SIZE) {
-    fg->num_sorted = fg->num_nodes;
-    qsort((void*) fg->states, fg->num_sorted, sizeof(state), compare);
   }
   fg->states[fg->num_nodes++] = *s;
-  bloom_insert(fg->bloom, a, b);
 
   fg->queue_length++;
   if (fg->queue_length > fg->queue_capacity) {
@@ -99,8 +89,8 @@ void expand_full_graph(full_graph *fg) {
     }
   }
 
-  free(fg->bloom);
-  fg->bloom = NULL;
+  free(fg->seen);
+  fg->seen = NULL;
 
   free(fg->queue);
   fg->queue_capacity = 0;
@@ -109,8 +99,7 @@ void expand_full_graph(full_graph *fg) {
 
   fg->nodes_capacity = fg->num_nodes;
   fg->states = realloc(fg->states, fg->nodes_capacity * sizeof(state));
-  fg->num_sorted = fg->num_nodes;
-  qsort((void*) fg->states, fg->num_sorted, sizeof(state), compare);
+  qsort((void*) fg->states, fg->num_nodes, sizeof(state), compare);
 }
 
 value get_full_graph_value(full_graph *fg, const state *s) {
@@ -120,9 +109,9 @@ value get_full_graph_value(full_graph *fg, const state *s) {
     state c = *s;
     c.button = -c.button;
     delta = -2 * BUTTON_BONUS;
-    offset = (state*) bsearch((void*) &c, (void*) (fg->states), fg->num_sorted, sizeof(state), compare);
+    offset = (state*) bsearch((void*) &c, (void*) (fg->states), fg->num_nodes, sizeof(state), compare);
   } else {
-    offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_sorted, sizeof(state), compare);
+    offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare);
   }
   if (!offset) {
     return (value){NAN, NAN};
@@ -134,7 +123,7 @@ value get_full_graph_value(full_graph *fg, const state *s) {
   };
 }
 
-void solve_full_graph(full_graph *fg, bool use_delay) {
+void solve_full_graph(full_graph *fg, bool use_delay, bool verbose) {
   fg->values = malloc(fg->num_nodes * sizeof(value));
 
   // Initialize to unknown ranges
@@ -142,9 +131,9 @@ void solve_full_graph(full_graph *fg, bool use_delay) {
     fg->values[i] = (value){-INFINITY, INFINITY};
   }
 
-  bool did_update = true;
-  while (did_update) {
-    did_update = false;
+  size_t num_updated = 1;
+  while (num_updated) {
+    num_updated = 0;
     for (size_t i = 0; i < fg->num_nodes; ++i) {
       // Don't evaluate if the range cannot be tightened
       if (fg->values[i].low == fg->values[i].high) {
@@ -179,8 +168,12 @@ void solve_full_graph(full_graph *fg, bool use_delay) {
       }
       if (fg->values[i].low != low || fg->values[i].high != high) {
         fg->values[i] = (value) {low, high};
-        did_update = true;
+        num_updated++;
       }
+    }
+    if (verbose) {
+      value v = get_full_graph_value(fg, &(fg->root));
+      printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
     }
   }
 }
@@ -190,8 +183,8 @@ void free_full_graph(full_graph *fg) {
   fg->num_moves = 0;
   fg->moves = NULL;
 
-  free(fg->bloom);
-  fg->bloom = NULL;
+  free(fg->seen);
+  fg->seen = NULL;
 
   free(fg->queue);
   fg->queue_capacity = 0;
@@ -201,7 +194,6 @@ void free_full_graph(full_graph *fg) {
   free(fg->states);
   fg->num_nodes = 0;
   fg->nodes_capacity = 0;
-  fg->num_sorted = 0;
   fg->states = NULL;
 
   free(fg->values);

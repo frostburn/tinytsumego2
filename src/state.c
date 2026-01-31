@@ -439,8 +439,10 @@ size_t to_key(const state *root, const state *child) {
   }
 
   // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & child->player);
-  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & child->opponent);
+  stones_t player = root->white_to_play == child->white_to_play ? child->player : child->opponent;
+  stones_t opponent = root->white_to_play == child->white_to_play ? child->opponent : child->player;
+  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & player);
+  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & opponent);
 
   return key;
 }

@@ -38,7 +38,7 @@ typedef struct full_graph_reader {
 } full_graph_reader;
 
 // Write a solved full_graph instance to a stream in a format expected by the reader
-size_t write_full_graph(const state *restrict root, const full_graph *restrict fg, FILE *restrict stream);
+size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream);
 
 // Load a full_graph_reader from the given file
 full_graph_reader load_full_graph_reader(const char *filename);
