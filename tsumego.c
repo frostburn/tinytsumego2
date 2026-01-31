@@ -49,6 +49,7 @@ static const char* TSUMEGO_NAMES[] = {
   "Square Nine in the Corner",
   "Carpenter's Square",
   "Carpenter's Square (defender has threats)",
+  "Carpenter's Square (1 liberty)",
   "L Group",
   "First L+1 Group Defense",
   "First L+1 Group Attack",
@@ -479,6 +480,14 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
   if (strcmp(name, "Carpenter's Square (defender has threats)") == 0) {
     return single_valued(s, 14 - BUTTON_BONUS - KO_THREAT_BONUS);
+  }
+
+  s.ko_threats = 0;
+  s.external |= single(4, 2);
+  s.immortal ^= s.external;
+  s.logical_area |= s.external;
+  if (strcmp(name, "Carpenter's Square (1 liberty)") == 0) {
+    return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 19);
   }
 
   if (strcmp(name, "L Group") == 0) {

@@ -82,7 +82,6 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
         }
       } else if (r != ILLEGAL) {
         const value child_value = get_full_graph_value(&fg, &child);
-        printf("%c%c: %f, %f\n",  colof(fg.moves[j]), rowof(fg.moves[j]), child_value.low, child_value.high);
 
         bool good;
         if (low_to_play) {

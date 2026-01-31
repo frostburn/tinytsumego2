@@ -132,6 +132,7 @@ void solve_full_graph(full_graph *fg, bool verbose) {
     fg->values[i] = (value){-INFINITY, INFINITY};
   }
 
+  size_t last_updated = 0;
   size_t num_updated = 1;
   while (num_updated) {
     num_updated = 0;
@@ -179,7 +180,10 @@ void solve_full_graph(full_graph *fg, bool verbose) {
     }
     if (verbose) {
       value v = get_full_graph_value(fg, &(fg->root));
-      printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
+      if (num_updated != last_updated) {
+        printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
+      }
+      last_updated = num_updated;
     }
   }
 }
