@@ -140,8 +140,13 @@ void solve_full_graph(full_graph *fg, bool use_delay, bool verbose) {
         continue;
       }
       // Perform negamax
-      float low = -INFINITY;
+      float low = fg->values[i].low;
       float high = -INFINITY;
+
+      // Delay tactics can cause an infinite loop.
+      // This would be the smallest exception to low = -INFINITY;
+      // if (fg->values[i].low > -BIG_SCORE && fg->values[i].low < 1 - BIG_SCORE)
+      //   low = fg->values[i].low;
 
       for (int j = 0; j < fg->num_moves; ++j) {
         state child = fg->states[i];
