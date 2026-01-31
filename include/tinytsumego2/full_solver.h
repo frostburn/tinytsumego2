@@ -12,6 +12,9 @@ typedef struct value {
 } value;
 
 typedef struct full_graph {
+  // Root state for key generation
+  state root;
+
   // Valid moves according to the root state
   int num_moves;
   stones_t *moves;
@@ -21,13 +24,12 @@ typedef struct full_graph {
   size_t queue_capacity;
   state *queue;
 
-  // Graph access is screened using a bloom filter
-  unsigned char *bloom;
+  // Graph access is screened using a bit set
+  unsigned char *seen;
 
-  // Nodes are partially sorted
+  // Nodes are fully sorted once the graph has been expanded
   size_t num_nodes;
   size_t nodes_capacity;
-  size_t num_sorted;
 
   // States are obtained by fully expanding a root state
   state *states;
@@ -52,7 +54,7 @@ void expand_full_graph(full_graph *fg);
 value get_full_graph_value(full_graph *fg, const state *s);
 
 // Apply negamax to an expanded full game graph until it converges. The second argument controls the bonus for delaying inevitable target loss
-void solve_full_graph(full_graph *fg, bool use_delay);
+void solve_full_graph(full_graph *fg, bool use_delay, bool verbose);
 
 // Free memory allocated by a full game graph
 void free_full_graph(full_graph *fg);

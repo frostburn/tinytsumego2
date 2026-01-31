@@ -22,7 +22,7 @@ full_graph solve(tsumego t, bool verbose) {
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
-  solve_full_graph(&fg, true);
+  solve_full_graph(&fg, true, verbose);
 
   value root_value = get_full_graph_value(&fg, &root);
   float low = root_value.low;
@@ -127,12 +127,11 @@ int main(int argc, char *argv[]) {
     }
     return EXIT_SUCCESS;
   } else {
-    tsumego t = get_tsumego(argv[1]);
-    full_graph fg = solve(t, true);
+    full_graph fg = solve(get_tsumego(argv[1]), true);
     if (argc >= 3) {
       printf("Saving result to %s\n", argv[2]);
       FILE *f = fopen(argv[2], "wb");
-      write_full_graph(&(t.state), &fg, f);
+      write_full_graph(&fg, f);
     }
     free_full_graph(&fg);
   }

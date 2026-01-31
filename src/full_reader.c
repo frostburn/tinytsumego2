@@ -8,8 +8,8 @@
 #include <sys/stat.h>
 #include "tinytsumego2/full_reader.h"
 
-size_t write_full_graph(const state *restrict root, const full_graph *restrict fg, FILE *restrict stream) {
-  size_t total = fwrite(root, sizeof(state), 1, stream);
+size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
+  size_t total = fwrite(&(fg->root), sizeof(state), 1, stream);
   total += fwrite(&(fg->num_moves), sizeof(int), 1, stream);
   total += fwrite(fg->moves, sizeof(stones_t), fg->num_moves, stream);
   total += fwrite(&(fg->num_nodes), sizeof(size_t), 1, stream);
@@ -18,7 +18,7 @@ size_t write_full_graph(const state *restrict root, const full_graph *restrict f
 
   light_node *nodes = malloc(fg->num_nodes * sizeof(light_node));
   for (size_t i = 0; i < fg->num_nodes; ++i) {
-    nodes[i].key = to_key(root, fg->states + i);
+    nodes[i].key = to_key(&(fg->root), fg->states + i);
     nodes[i].low = float_to_score_q7(fg->values[i].low);
     nodes[i].high = float_to_score_q7(fg->values[i].high);
   }

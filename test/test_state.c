@@ -41,6 +41,22 @@ state bent_four_in_the_corner_is_dead() {
   return s;
 }
 
+state bent_four_in_the_corner() {
+  state s = (state){0};
+
+  s.visual_area = rectangle(6, 3);
+  s.external = single(4, 0) | single(4, 1);
+  s.logical_area = rectangle(3, 1) | single(0, 1) | s.external;
+  s.opponent = (rectangle(2, 3) << 4);
+  s.player = rectangle(4, 3) ^ s.logical_area ^ s.external;
+  s.immortal = s.opponent ^ s.external;
+  s.opponent |= single(1, 0);
+  s.target = s.player;
+  s.white_to_play = true;
+
+  return s;
+}
+
 void test_rectangle_six_no_liberties_capture_mainline() {
   state s = rectangle_six();
   move_result r;
@@ -507,6 +523,53 @@ void test_struggle() {
   assert(r == TAKE_TARGET);
 }
 
+void test_bent_four_keyspace_coverage() {
+  state root = bent_four_in_the_corner();
+  print_state(&root);
+
+  state *states = malloc(100 * sizeof(state));
+  states[0] = root;
+  int num_states = 1;
+  int index = 0;
+
+  while (index < num_states) {
+    state parent = states[index++];
+    for (int i = 0; i < 64; ++i) {
+      state child = parent;
+      const move_result r = make_move(&child, 1ULL << i);
+      if (r > TAKE_TARGET) {
+        bool novel = true;
+        for (int j = 0; j < num_states; ++j) {
+          if (equals(&child, states + j)) {
+            novel = false;
+            break;
+          }
+        }
+        if (novel) {
+          states[num_states++] = child;
+        }
+      }
+    }
+  }
+
+  printf("%d states expanded\n", num_states);
+  assert(num_states == 47);
+
+  for (int i = 0; i < num_states; ++i) {
+    size_t my_key = to_key(&root, states + i);
+    for (int j = 0; j < i; ++j) {
+      size_t your_key = to_key(&root, states + j);
+      if (my_key == your_key) {
+        print_state(states + i);
+        print_state(states + j);
+      }
+      assert(my_key != your_key);
+    }
+  }
+
+  free(states);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -521,6 +584,7 @@ int main() {
   test_wide_state();
   test_immortal_regions();
   test_struggle();
+  test_bent_four_keyspace_coverage();
 
   return EXIT_SUCCESS;
 }
