@@ -12,7 +12,7 @@
 
 #define MAX_DEMONSTRATION (100)
 
-full_graph solve(tsumego t, bool use_delay, bool verbose) {
+full_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
   state root = t.state;
 
   bool use_struggle = !use_delay;
@@ -24,7 +24,6 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
-  bool root_only = !use_delay;
   solve_full_graph(&fg, root_only, verbose);
 
   value root_value = get_full_graph_value(&fg, &root);
@@ -138,11 +137,16 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
 int main(int argc, char *argv[]) {
   int arg_count = argc;
   bool use_delay = true;
+  bool prune = false;
   int c;
-  while ((c = getopt(argc, argv, "d")) != -1) {
+  while ((c = getopt(argc, argv, "dp")) != -1) {
     switch (c) {
       case 'd':
         use_delay = false;
+        arg_count--;
+        break;
+      case 'p':
+        prune = true;
         arg_count--;
         break;
       default:
@@ -153,12 +157,22 @@ int main(int argc, char *argv[]) {
   if (arg_count <= 1) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      full_graph fg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, false);
+      full_graph fg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, prune, false);
+      if (prune) {
+        size_t old_size = fg.num_nodes;
+        prune_full_graph(&fg);
+        printf("Pruned from %zu to %zu nodes\n\n", old_size, fg.num_nodes);
+      }
       free_full_graph(&fg);
     }
     return EXIT_SUCCESS;
   } else {
-    full_graph fg = solve(get_tsumego(argv[optind]), use_delay, true);
+    full_graph fg = solve(get_tsumego(argv[optind]), use_delay, prune, true);
+    if (prune) {
+      size_t old_size = fg.num_nodes;
+      prune_full_graph(&fg);
+      printf("Pruned from %zu to %zu nodes\n", old_size, fg.num_nodes);
+    }
     if (arg_count >= 3) {
       char *filename = argv[optind + 1];
       printf("Saving result to %s\n", filename);

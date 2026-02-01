@@ -65,5 +65,8 @@ value get_full_graph_value(full_graph *fg, const state *s);
 // Second argument stops iteration once the root value has converged.
 void solve_full_graph(full_graph *fg, bool root_only, bool verbose);
 
+// Remove non-optimal paths from the graph. Only keep enough nodes to prove bounds on the root state value
+void prune_full_graph(full_graph *fg);
+
 // Free memory allocated by a full game graph
 void free_full_graph(full_graph *fg);
