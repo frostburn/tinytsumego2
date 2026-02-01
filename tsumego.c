@@ -70,6 +70,7 @@ static const char* TSUMEGO_NAMES[] = {
   "Eight is Alive",
   "Rabbity Six Defense",
   "Rabbity Six Attack",
+  "Double Ko Seki",
   "Carpenter's Square",
   "Carpenter's Square (defender has threats)",
   "Carpenter's Square (1 liberty)"
@@ -737,6 +738,20 @@ tsumego get_tsumego(const char *name) {
 
   if (strcmp(name, "Edge Debug") == 0) {
     return single_valued(s, -8 + BUTTON_BONUS);
+  }
+
+  s = parse_state("   \
+    . w @ . b W , , , \
+    w w w b b W , , , \
+    . w b b W W , , , \
+    0 b . b W , , , , \
+    b b b b W , , , , \
+    W W W W W , , , , \
+    , , , , , , , , , \
+  ");
+
+  if (strcmp(name, "Double Ko Seki") == 0) {
+    return (tsumego) {s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS, TARGET_CAPTURED_SCORE + BUTTON_BONUS, -72.25, 72.75};
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);
