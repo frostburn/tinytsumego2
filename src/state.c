@@ -671,6 +671,36 @@ int compare(const void *a_, const void *b_) {
     return 0;
 }
 
+int compare_simple(const void *a_, const void *b_) {
+    state *a = (state*) a_;
+    state *b = (state*) b_;
+    if (a->player < b->player) {
+        return -1;
+    }
+    if (a->player > b->player) {
+        return 1;
+    }
+
+    if (a->opponent < b->opponent) {
+        return -1;
+    }
+    if (a->opponent > b->opponent) {
+        return 1;
+    }
+
+    if (a->external < b->external) {
+        return -1;
+    }
+    if (a->external > b->external) {
+        return 1;
+    }
+
+    int a_mush = (!!a->white_to_play) + 2 * a->button + 4 * a->ko_threats;
+    int b_mush = (!!b->white_to_play) + 2 * b->button + 4 * b->ko_threats;
+
+    return b_mush - a_mush;
+}
+
 stones_t hash_a(const state *s) {
   stones_t result = s->passes;
   result = (result << 4) | s->ko_threats;

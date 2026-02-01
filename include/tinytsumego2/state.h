@@ -130,6 +130,9 @@ bool equals(const state *a, const state *b);
 // Compare two child states of a common root state. Compatible with qsort.
 int compare(const void *a_, const void *b_);
 
+// Compare two simple child states of a common root state. Compatible with qsort.
+int compare_simple(const void *a_, const void *b_);
+
 // Get a hash of a state. Collisions can happen but child states of a common root state should hash reasonably well.
 stones_t hash_a(const state *s);
 

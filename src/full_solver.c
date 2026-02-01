@@ -136,7 +136,7 @@ void expand_full_graph(full_graph *fg) {
 
   fg->nodes_capacity = fg->num_nodes;
   fg->states = realloc(fg->states, fg->nodes_capacity * sizeof(state));
-  qsort((void*) fg->states, fg->num_nodes, sizeof(state), compare);
+  qsort((void*) fg->states, fg->num_nodes, sizeof(state), compare_simple);
 }
 
 value get_full_graph_value(full_graph *fg, const state *s) {
@@ -177,9 +177,9 @@ value get_full_graph_value(full_graph *fg, const state *s) {
     state c = *s;
     c.button = -c.button;
     delta = -2 * BUTTON_BONUS;
-    offset = (state*) bsearch((void*) &c, (void*) (fg->states), fg->num_nodes, sizeof(state), compare);
+    offset = (state*) bsearch((void*) &c, (void*) (fg->states), fg->num_nodes, sizeof(state), compare_simple);
   } else {
-    offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare);
+    offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare_simple);
   }
   if (!offset) {
     if (fg->use_struggle) {
