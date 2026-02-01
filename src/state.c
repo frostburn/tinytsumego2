@@ -416,7 +416,7 @@ size_t to_key(const state *root, const state *child) {
   j = 0;
   for (int i = 0; i < 64; ++i) {
     const stones_t p = 1ULL << i;
-    if (p & root->logical_area) {
+    if (p & effective_area) {
       j++;
       if (p & child->ko) {
         key += j;

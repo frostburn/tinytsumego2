@@ -529,6 +529,7 @@ void test_struggle() {
 void test_bent_four_keyspace_coverage() {
   state root = bent_four_in_the_corner();
   print_state(&root);
+  size_t size = keyspace_size(&root);
 
   state *states = malloc(100 * sizeof(state));
   states[0] = root;
@@ -540,6 +541,7 @@ void test_bent_four_keyspace_coverage() {
     for (int i = 0; i < 64; ++i) {
       state child = parent;
       const move_result r = make_move(&child, 1ULL << i);
+      assert(compare(&child, &child) == 0);
       if (r > TAKE_TARGET) {
         bool novel = true;
         for (int j = 0; j < num_states; ++j) {
@@ -560,17 +562,32 @@ void test_bent_four_keyspace_coverage() {
 
   for (int i = 0; i < num_states; ++i) {
     size_t my_key = to_key(&root, states + i);
+    assert(my_key < size);
     for (int j = 0; j < i; ++j) {
       size_t your_key = to_key(&root, states + j);
       if (my_key == your_key) {
         print_state(states + i);
         print_state(states + j);
       }
+      assert(compare(states + i, states + j) != 0);
       assert(my_key != your_key);
     }
   }
 
   free(states);
+}
+
+void test_bent_four_debug_keys() {
+  state root = (state) {16547391ULL, 8727ULL, 3939336ULL, 12607538ULL, 0ULL, 3939336ULL, 12599328ULL, 8208ULL, 0, 0, 0, true, false};
+  state a = (state) {16547391ULL, 519ULL, 12607538ULL, 3939337ULL, 512ULL, 3939336ULL, 12607536ULL, 0ULL, 0, 0, 1, false, false};
+  state b = (state) {16547391ULL, 519ULL, 12607538ULL, 3939337ULL, 0ULL, 3939336ULL, 12607536ULL, 0ULL, 1, 0, 1, false, false};
+
+  print_state(&root);
+  print_state(&a);
+  print_state(&b);
+
+  assert(compare(&a, &b) != 0);
+  assert(to_key(&root, &a) != to_key(&root, &b));
 }
 
 int main() {
@@ -588,6 +605,7 @@ int main() {
   test_immortal_regions();
   test_struggle();
   test_bent_four_keyspace_coverage();
+  test_bent_four_debug_keys();
 
   return EXIT_SUCCESS;
 }
