@@ -286,6 +286,12 @@ void solve_full_graph(full_graph *fg, bool root_only, bool verbose) {
           high = fmax(high, -child_score);
         } else if (r != ILLEGAL) {
           const value child_value = get_full_graph_value(fg, &child);
+
+          // Not strictly necessary, but nice to have when doing a re-evaluation of a pruned graph
+          if (isnan(child_value.low)) {
+            high = INFINITY;
+          }
+
           if (fg->use_delay) {
             low = fmax(low, -delay_capture(child_value.high));
             high = fmax(high, -delay_capture(child_value.low));
@@ -314,6 +320,120 @@ void solve_full_graph(full_graph *fg, bool root_only, bool verbose) {
       }
     }
   }
+}
+
+#define LOW_MARK (-1)
+#define HIGH_MARK (-2)
+
+#define STRUGGLE_BOILERPLATE \
+if (fg->use_struggle) {\
+  move_result status = normalize_immortal_regions(&(fg->root), &child);\
+  if (status > TAKE_TARGET) {\
+    status = struggle(&child);\
+  }\
+  if (status <= TAKE_TARGET) {\
+    continue;\
+  }\
+}\
+
+void mark_high_path(full_graph *fg, state *s);
+
+// Mark nodes that are essential for maintaining a low value (preserves equally good moves; technically only one is required)
+void mark_low_path(full_graph *fg, state *s) {
+  // Non-simple state. Mark grandchildren.
+  if (s->passes > 0 || s->ko) {
+    for (int j = 0; j < fg->num_moves; ++j) {
+      state child = *s;
+      const move_result r = make_move(&child, fg->moves[j]);
+      if (r > TAKE_TARGET) {
+        STRUGGLE_BOILERPLATE
+        child.button = abs(child.button);
+        mark_high_path(fg, &child);
+      }
+    }
+    return;
+  }
+
+  // Simple node in the graph. Refresh to get the actual node.
+  s = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare_simple);
+
+  // Already covered this iteration. Bail out
+  if (s->passes < 0) {
+    return;
+  }
+
+  s->passes = LOW_MARK;
+
+  value v = fg->values[s - fg->states];
+  for (int j = 0; j < fg->num_moves; ++j) {
+    state child = *s;
+    const move_result r = make_move(&child, fg->moves[j]);
+    if (r > TAKE_TARGET) {
+      STRUGGLE_BOILERPLATE
+      value child_value = get_full_graph_value(fg, &child);
+      if (v.low == (fg->use_delay ? -delay_capture(child_value.high) : -child_value.high)) {
+        child.button = abs(child.button);
+        mark_high_path(fg, &child);
+      }
+    }
+  }
+}
+
+// Mark nodes that are essential for maintaining a high value i.e. all child nodes
+void mark_high_path(full_graph *fg, state *s) {
+  // Non-simple state. Mark grandchildren.
+  if (s->passes > 0 || s->ko) {
+    for (int j = 0; j < fg->num_moves; ++j) {
+      state child = *s;
+      const move_result r = make_move(&child, fg->moves[j]);
+      if (r > TAKE_TARGET) {
+        STRUGGLE_BOILERPLATE
+        child.button = abs(child.button);
+        mark_low_path(fg, &child);
+      }
+    }
+    return;
+  }
+
+  // Simple node in the graph. Refresh to get the actual node.
+  s = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare_simple);
+
+  // Already covered this iteration. Bail out
+  if (s->passes <= HIGH_MARK) {
+    return;
+  }
+
+  s->passes = HIGH_MARK;
+
+  for (int j = 0; j < fg->num_moves; ++j) {
+    state child = *s;
+    const move_result r = make_move(&child, fg->moves[j]);
+    if (r > TAKE_TARGET) {
+      STRUGGLE_BOILERPLATE
+      child.button = abs(child.button);
+      mark_low_path(fg, &child);
+    }
+  }
+}
+
+void prune_full_graph(full_graph *fg) {
+  state root = fg->root;
+  root.button = abs(root.button);
+  mark_low_path(fg, &root);
+  mark_high_path(fg, &root);
+
+  // Prune unmarked nodes and clear marks
+  size_t j = 0;
+  for (size_t i = 0; i < fg->num_nodes; ++i) {
+    if (fg->states[i].passes < 0) {
+      fg->states[i].passes = 0;
+      fg->values[j] = fg->values[i];
+      fg->states[j++] = fg->states[i];
+    }
+  }
+  fg->num_nodes = j;
+  fg->states = realloc(fg->states, fg->num_nodes * sizeof(state));
+  fg->values = realloc(fg->values, fg->num_nodes * sizeof(value));
 }
 
 void free_full_graph(full_graph *fg) {

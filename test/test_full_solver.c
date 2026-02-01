@@ -67,6 +67,20 @@ void test_straight_three_capture() {
   assert(v.low == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
   assert(v.high == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
 
+  assert(fg.num_nodes == 34);
+
+  prune_full_graph(&fg);
+  assert(fg.num_nodes == 22);
+
+  print_full_graph(&fg);
+
+  solve_full_graph(&fg, true, true);
+  print_full_graph(&fg);
+
+  v = get_full_graph_value(&fg, &root);
+  assert(v.low == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
+  assert(v.high == TARGET_CAPTURED_SCORE - 3 * DELAY_BONUS - BUTTON_BONUS);
+
   free_full_graph(&fg);
 }
 
