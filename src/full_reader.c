@@ -9,6 +9,11 @@
 #include "tinytsumego2/full_reader.h"
 
 size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
+  if (fg->use_struggle) {
+    // TODO
+    fprintf(stderr, "Saving struggled graphs not supported yet\n");
+    exit(EXIT_FAILURE);
+  }
   size_t total = fwrite(&(fg->root), sizeof(state), 1, stream);
   total += fwrite(&(fg->use_delay), sizeof(bool), 1, stream);
   total += fwrite(&(fg->num_moves), sizeof(int), 1, stream);
