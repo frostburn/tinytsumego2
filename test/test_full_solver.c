@@ -38,7 +38,7 @@ void test_straight_two_loss() {
 
   full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true);
+  solve_full_graph(&fg, false, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -58,7 +58,7 @@ void test_straight_three_capture() {
 
   full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true);
+  solve_full_graph(&fg, true, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -76,7 +76,7 @@ void test_straight_three_capture_no_delay() {
 
   full_graph fg = create_full_graph(&root, false, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true);
+  solve_full_graph(&fg, false, true);
 
   value v = get_full_graph_value(&fg, &root);
 
@@ -94,7 +94,7 @@ void test_straight_two_loss_wide() {
 
   full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, true);
+  solve_full_graph(&fg, false, true);
 
   for (int i = 0; i < fg.num_moves; ++i) {
     print_stones_16(fg.moves[i]);
@@ -116,11 +116,11 @@ void test_straight_two_loss_struggle() {
   state root = straight_two();
   full_graph fg = create_full_graph(&root, false, false);
   expand_full_graph(&fg);
-  solve_full_graph(&fg, false);
+  solve_full_graph(&fg, false, false);
 
   full_graph fgs = create_full_graph(&root, false, true);
   expand_full_graph(&fgs);
-  solve_full_graph(&fgs, false);
+  solve_full_graph(&fgs, false, false);
 
   printf("%zu nodes vs. %zu nodes\n", fg.num_nodes, fgs.num_nodes);
 

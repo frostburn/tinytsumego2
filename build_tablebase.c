@@ -72,7 +72,7 @@ void populate_table(tsumego_table *tt) {
 
   expand_full_graph(&fg);
 
-  solve_full_graph(&fg, false);
+  solve_full_graph(&fg, false, false);
 
   print_state(&root);
   value root_value = get_full_graph_value(&fg, &root);

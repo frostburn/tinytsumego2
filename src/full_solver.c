@@ -216,7 +216,7 @@ value get_full_graph_value(full_graph *fg, const state *s) {
   };
 }
 
-void solve_full_graph(full_graph *fg, bool verbose) {
+void solve_full_graph(full_graph *fg, bool root_only, bool verbose) {
   fg->values = malloc(fg->num_nodes * sizeof(value));
 
   // Initialize to unknown ranges
@@ -306,6 +306,12 @@ void solve_full_graph(full_graph *fg, bool verbose) {
         printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
       }
       last_updated = num_updated;
+    }
+    if (root_only) {
+      value v = get_full_graph_value(fg, &(fg->root));
+      if (v.low == v.high) {
+        break;
+      }
     }
   }
 }

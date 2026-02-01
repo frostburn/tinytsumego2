@@ -24,7 +24,8 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
     printf("Solution space size = %zu\n", fg.num_nodes);
   }
 
-  solve_full_graph(&fg, verbose);
+  bool root_only = !use_delay;
+  solve_full_graph(&fg, root_only, verbose);
 
   value root_value = get_full_graph_value(&fg, &root);
   float low = root_value.low;
