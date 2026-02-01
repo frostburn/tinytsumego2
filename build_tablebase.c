@@ -38,7 +38,7 @@ void populate_table(tsumego_table *tt) {
     root.opponent = temp;
   }
 
-  full_graph fg = create_full_graph(&root, false);
+  full_graph fg = create_full_graph(&root, false, false);
 
   // Many buttonless states cannot be reached naturally
   for (size_t key = 0; key < TABLEBASE_SIZE; ++key) {

@@ -20,11 +20,17 @@ void print_full_graph(full_graph *fg) {
   }
 }
 
-full_graph create_full_graph(const state *root, bool use_delay) {
+full_graph create_full_graph(const state *root, bool use_delay, bool use_struggle) {
+  if (use_delay && use_struggle) {
+    fprintf(stderr, "Struggle not compatible with delay tactics\n");
+    exit(EXIT_FAILURE);
+  }
+
   full_graph fg = {0};
 
   fg.root = *root;
   fg.use_delay = use_delay;
+  fg.use_struggle = use_struggle;
 
   fg.seen = calloc(ceil_divz(keyspace_size(root), CHAR_BIT), sizeof(unsigned char));
 
@@ -79,7 +85,18 @@ void expand_full_graph(full_graph *fg) {
     state parent = fg->queue[--fg->queue_length];
     for (int i = 0; i < fg->num_moves; ++i) {
       state child = parent;
-      const move_result r = make_move(&child, fg->moves[i]);
+      move_result r = make_move(&child, fg->moves[i]);
+      if (fg->use_struggle && r > TAKE_TARGET) {
+        move_result status = normalize_immortal_regions(&(fg->root), &child);
+        if (status <= TAKE_TARGET) {
+          r = status;
+        } else {
+          status = struggle(&child);
+          if (status <= TAKE_TARGET) {
+            r = status;
+          }
+        }
+      }
       if (r > TAKE_TARGET) {
         if (child.button < 0) {
           // States with the button flipped only differ by a fixed amount
@@ -115,6 +132,31 @@ value get_full_graph_value(full_graph *fg, const state *s) {
     offset = (state*) bsearch((void*) s, (void*) (fg->states), fg->num_nodes, sizeof(state), compare);
   }
   if (!offset) {
+    if (fg->use_struggle) {
+      state c = *s;
+      move_result status = normalize_immortal_regions(&(fg->root), &c);
+      if (status > TAKE_TARGET) {
+        status = struggle(&c);
+      }
+      if (status == TAKE_TARGET) {
+        if (!c.button) {
+          c.button = 1;
+        }
+        float c_score = target_lost_score(&c);
+        return (value){c_score, c_score};
+      }
+      if (status == TARGET_LOST) {
+        if (!c.button) {
+          c.button = 1;
+        }
+        float c_score = take_target_score(&c);
+        return (value){c_score, c_score};
+      }
+      if (status == SECOND_PASS) {
+        float c_score = score(&c);
+        return (value){c_score, c_score};
+      }
+    }
     return (value){NAN, NAN};
   }
   value v = fg->values[offset - fg->states];
@@ -153,6 +195,36 @@ void solve_full_graph(full_graph *fg, bool verbose) {
       for (int j = 0; j < fg->num_moves; ++j) {
         state child = fg->states[i];
         const move_result r = make_move(&child, fg->moves[j]);
+        if (fg->use_struggle && r > TAKE_TARGET) {
+          move_result status = normalize_immortal_regions(&(fg->root), &child);
+          if (status > TAKE_TARGET) {
+            status = struggle(&child);
+          }
+          if (status == TAKE_TARGET) {
+            if (!child.button) {
+              child.button = 1;
+            }
+            float child_score = target_lost_score(&child);
+            low = fmax(low, -child_score);
+            high = fmax(high, -child_score);
+            continue;
+          }
+          if (status == TARGET_LOST) {
+            if (!child.button) {
+              child.button = -1;
+            }
+            float child_score = take_target_score(&child);
+            low = fmax(low, -child_score);
+            high = fmax(high, -child_score);
+            continue;
+          }
+          if (status == SECOND_PASS) {
+            float child_score = score(&child);
+            low = fmax(low, -child_score);
+            high = fmax(high, -child_score);
+            continue;
+          }
+        }
         if (r == SECOND_PASS) {
           float child_score = score(&child);
           low = fmax(low, -child_score);

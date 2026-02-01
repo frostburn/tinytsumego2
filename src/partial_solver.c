@@ -253,7 +253,7 @@ bool expand_children(game_graph *gg, node_proxy *np, const state *s) {
       } else if (benson_result == TARGET_LOST || struggle_result == TARGET_LOST) {
         // Technical self-knockout. Compensation doesn't seem to matter.
         if (children[i].state.button == 0) {
-          children[i].state.button = -1;
+          children[i].state.button = 1;
         }
         children[i].move_result = TARGET_LOST;
         children[i].heuristic_penalty += 100000;
