@@ -26,13 +26,18 @@ full_graph create_full_graph(const state *root, bool use_delay, bool use_struggl
     exit(EXIT_FAILURE);
   }
 
+  if (root->ko || root->passes) {
+    fprintf(stderr, "The root state may not have an active ko or previous passes\n");
+    exit(EXIT_FAILURE);
+  }
+
   full_graph fg = {0};
 
   fg.root = *root;
   fg.use_delay = use_delay;
   fg.use_struggle = use_struggle;
 
-  fg.seen = calloc(ceil_divz(keyspace_size(root), CHAR_BIT), sizeof(unsigned char));
+  fg.seen = calloc(ceil_divz(tight_keyspace_size(root), CHAR_BIT), sizeof(unsigned char));
 
   fg.nodes_capacity = MIN_CAPACITY;
   fg.states = malloc(fg.nodes_capacity * sizeof(state));
@@ -52,13 +57,28 @@ full_graph create_full_graph(const state *root, bool use_delay, bool use_struggl
   }
   fg.moves[j] = pass();
 
-  add_full_graph_state(&fg, root);
+  if (root->button < 0) {
+    state c = *root;
+    c.button = -c.button;
+    add_full_graph_state(&fg, &c);
+  } else {
+    add_full_graph_state(&fg, root);
+  }
 
   return fg;
 }
 
+void enqueue_full_graph_state(full_graph *fg, const state *s) {
+  fg->queue_length++;
+  if (fg->queue_length > fg->queue_capacity) {
+    fg->queue_capacity <<= 1;
+    fg->queue = realloc(fg->queue, fg->queue_capacity * sizeof(state));
+  }
+  fg->queue[fg->queue_length - 1] = *s;
+}
+
 void add_full_graph_state(full_graph *fg, const state *s) {
-  const size_t key = to_key(&(fg->root), s);
+  const size_t key = to_tight_key(&(fg->root), s);
   const unsigned char bit = 1 << (key & 7);
   const size_t index = key >> 3;
   if (fg->seen[index] & bit) {
@@ -72,12 +92,7 @@ void add_full_graph_state(full_graph *fg, const state *s) {
   }
   fg->states[fg->num_nodes++] = *s;
 
-  fg->queue_length++;
-  if (fg->queue_length > fg->queue_capacity) {
-    fg->queue_capacity <<= 1;
-    fg->queue = realloc(fg->queue, fg->queue_capacity * sizeof(state));
-  }
-  fg->queue[fg->queue_length - 1] = *s;
+  enqueue_full_graph_state(fg, s);
 }
 
 void expand_full_graph(full_graph *fg) {
@@ -102,7 +117,11 @@ void expand_full_graph(full_graph *fg) {
           // States with the button flipped only differ by a fixed amount
           child.button = -child.button;
         }
-       add_full_graph_state(fg, &child);
+        if (child.passes || child.ko) {
+          enqueue_full_graph_state(fg, &child);
+        } else {
+          add_full_graph_state(fg, &child);
+        }
       }
     }
   }
@@ -121,6 +140,37 @@ void expand_full_graph(full_graph *fg) {
 }
 
 value get_full_graph_value(full_graph *fg, const state *s) {
+  if (s->passes || s->ko) {
+    // Compensate for keyspace tightness using negamax
+    float low = -INFINITY;
+    float high = -INFINITY;
+
+    for (int j = 0; j < fg->num_moves; ++j) {
+      state child = *s;
+      const move_result r = make_move(&child, fg->moves[j]);
+      if (r == SECOND_PASS) {
+        float child_score = score(&child);
+        low = fmax(low, -child_score);
+        high = fmax(high, -child_score);
+      }
+      else if (r == TAKE_TARGET) {
+        float child_score = target_lost_score(&child);
+        low = fmax(low, -child_score);
+        high = fmax(high, -child_score);
+      } else if (r != ILLEGAL) {
+        const value child_value = get_full_graph_value(fg, &child);
+        if (fg->use_delay) {
+          low = fmax(low, -delay_capture(child_value.high));
+          high = fmax(high, -delay_capture(child_value.low));
+        } else {
+          low = fmax(low, -child_value.high);
+          high = fmax(high, -child_value.low);
+        }
+      }
+    }
+    return (value){low, high};
+  }
+
   state *offset;
   float delta = 0;
   if (s->button < 0) {

@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "tinytsumego2/full_reader.h"
+#include "tinytsumego2/scoring.h"
 
 size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
   if (fg->use_struggle) {
@@ -24,7 +25,7 @@ size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
 
   light_node *nodes = malloc(fg->num_nodes * sizeof(light_node));
   for (size_t i = 0; i < fg->num_nodes; ++i) {
-    nodes[i].key = to_key(&(fg->root), fg->states + i);
+    nodes[i].key = to_tight_key(&(fg->root), fg->states + i);
     nodes[i].low = float_to_score_q7(fg->values[i].low);
     nodes[i].high = float_to_score_q7(fg->values[i].high);
   }
@@ -91,10 +92,41 @@ void unload_full_graph_reader(full_graph_reader *fgr) {
 }
 
 value get_full_graph_reader_value(const full_graph_reader *fgr, const state *s) {
+  if (s->passes || s->ko) {
+    // Compensate for keyspace tightness using negamax
+    float low = -INFINITY;
+    float high = -INFINITY;
+
+    for (int j = 0; j < fgr->num_moves; ++j) {
+      state child = *s;
+      const move_result r = make_move(&child, fgr->moves[j]);
+      if (r == SECOND_PASS) {
+        float child_score = score(&child);
+        low = fmax(low, -child_score);
+        high = fmax(high, -child_score);
+      }
+      else if (r == TAKE_TARGET) {
+        float child_score = target_lost_score(&child);
+        low = fmax(low, -child_score);
+        high = fmax(high, -child_score);
+      } else if (r != ILLEGAL) {
+        const value child_value = get_full_graph_reader_value(fgr, &child);
+        if (fgr->use_delay) {
+          low = fmax(low, -delay_capture(child_value.high));
+          high = fmax(high, -delay_capture(child_value.low));
+        } else {
+          low = fmax(low, -child_value.high);
+          high = fmax(high, -child_value.low);
+        }
+      }
+    }
+    return (value){low, high};
+  }
+
   if (s->button < 0) {
     state c = *s;
     c.button = -c.button;
-    size_t key = to_key(&(fgr->root), &c);
+    size_t key = to_tight_key(&(fgr->root), &c);
     light_node *ln = (light_node*) bsearch((void*) &key, (void*) fgr->nodes, fgr->num_nodes, sizeof(light_node), compare_keys);
     if (!ln) {
       return (value){NAN, NAN};
@@ -105,7 +137,7 @@ value get_full_graph_reader_value(const full_graph_reader *fgr, const state *s) 
     };
   }
 
-  size_t key = to_key(&(fgr->root), s);
+  size_t key = to_tight_key(&(fgr->root), s);
   light_node *ln = (light_node*) bsearch((void*) &key, (void*) fgr->nodes, fgr->num_nodes, sizeof(light_node), compare_keys);
   if (!ln) {
     return (value){NAN, NAN};

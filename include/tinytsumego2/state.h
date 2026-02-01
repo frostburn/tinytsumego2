@@ -107,6 +107,14 @@ size_t to_key(const state *root, const state *child);
 // Return the size of the key space of the given root state
 size_t keyspace_size(const state *root);
 
+// Return a unique index of a simple child state of a root state.
+// No passes or ko allowed.
+// Button must be owned by the player if taken.
+size_t to_tight_key(const state *root, const state *child);
+
+// Return the size of the simple key space of the given root state
+size_t tight_keyspace_size(const state *root);
+
 // Compare two unique indices. Compatible with qsort.
 int compare_keys(const void *a_, const void *b_);
 

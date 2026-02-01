@@ -468,6 +468,58 @@ size_t keyspace_size(const state *root) {
   return result;
 }
 
+size_t to_tight_key(const state *root, const state *child) {
+  size_t key = 0;
+
+  key = key * 2 + !!child->white_to_play;
+  key = key * 2 + child->button;
+  key = key * (abs(root->ko_threats) + 1) + abs(child->ko_threats);
+
+  stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
+
+  // Encode stones in ternary
+  for (int i = 0; i < 64; ++i) {
+    const stones_t p = 1ULL << i;
+    if (p & effective_area) {
+      key *= 3;
+      if (p & child->player) {
+        key += 1;
+      } else if (p & child->opponent) {
+        key += 2;
+      }
+    }
+  }
+
+  // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
+  stones_t player = root->white_to_play == child->white_to_play ? child->player : child->opponent;
+  stones_t opponent = root->white_to_play == child->white_to_play ? child->opponent : child->player;
+  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & player);
+  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & opponent);
+
+  return key;
+}
+
+size_t tight_keyspace_size(const state *root) {
+  const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
+  size_t result = (
+    2 * // Player to play
+    2 * // Button availability
+    (abs(root->ko_threats) + 1) * // Number of the remaining "external" ko threats
+    // Passes ignored
+    // Ko ignored
+    (popcount(root->external & root->player) + 1) * // Number of external liberties filled by the player
+    (popcount(root->external & root->opponent) + 1) // Number of external liberties filled by the opponent
+  );
+  // Ternary encoding of stones
+  for (size_t i = 0; i < num_moves; ++i) {
+    if (result >= SIZE_MAX / 3) {
+      fprintf(stderr, "Warning: Tight keyspace overflow\n");
+    }
+    result *= 3;
+  }
+  return result;
+}
+
 int compare_keys(const void *a_, const void *b_) {
   size_t a = *((size_t*) a_);
   size_t b = *((size_t*) b_);
