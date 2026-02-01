@@ -154,4 +154,4 @@ bool can_mirror_d(const state *s);
 void snap(state *s);
 
 // Compute the status of the target stones assuming the other player keeps passing
-move_result struggle(state *s);
+move_result struggle(const state *s);

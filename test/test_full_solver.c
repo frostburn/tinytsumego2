@@ -36,7 +36,7 @@ void test_straight_two_loss() {
   state root = straight_two();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -56,7 +56,7 @@ void test_straight_three_capture() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -74,7 +74,7 @@ void test_straight_three_capture_no_delay() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, false);
+  full_graph fg = create_full_graph(&root, false, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -92,7 +92,7 @@ void test_straight_two_loss_wide() {
   state root = straight_two_wide();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 

@@ -18,6 +18,9 @@ typedef struct full_graph {
   // Use delay tactics during solving
   bool use_delay;
 
+  // Use the struggle algorithm to prune dead targets (less memory / more compute trade-off)
+  bool use_struggle;
+
   // Valid moves according to the root state
   int num_moves;
   stones_t *moves;
@@ -44,8 +47,10 @@ typedef struct full_graph {
 // Print the contents of a full game graph
 void print_full_graph(full_graph *fg);
 
-// Create a full game graph based on a root state and schedule it for expansion.  The second argument controls the bonus for delaying inevitable target loss.
-full_graph create_full_graph(const state *root, bool use_delay);
+// Create a full game graph based on a root state and schedule it for expansion.
+// The second argument controls the bonus for delaying inevitable target loss.
+// The third argument controls culling of states where the target is dead.
+full_graph create_full_graph(const state *root, bool use_delay, bool use_struggle);
 
 // Add a state to the game graph and schedule it for expansion if it's a new one
 void add_full_graph_state(full_graph *fg, const state *s);
