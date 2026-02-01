@@ -15,7 +15,8 @@
 full_graph solve(tsumego t, bool use_delay, bool verbose) {
   state root = t.state;
 
-  full_graph fg = create_full_graph(&root, use_delay);
+  bool use_struggle = !use_delay;
+  full_graph fg = create_full_graph(&root, use_delay, use_struggle);
   expand_full_graph(&fg);
 
   if (verbose) {
@@ -51,6 +52,7 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
 
   state s = root;
   for (int n = 0; n < MAX_DEMONSTRATION; ++n) {
+    bool found = false;
     for (int j = 0; j < fg.num_moves; ++j) {
       state child = s;
       const move_result r = make_move(&child, fg.moves[j]);
@@ -91,6 +93,7 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
         }
 
         if (good) {
+          found = true;
           s = child;
           low_to_play = !low_to_play;
           low = child_value.low;
@@ -103,6 +106,10 @@ full_graph solve(tsumego t, bool use_delay, bool verbose) {
           break;
         }
       }
+    }
+    if (!found) {
+      fprintf(stderr, "Next move not found\n");
+      goto cleanup;
     }
   }
 

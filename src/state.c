@@ -1008,7 +1008,7 @@ stones_t capture_loose_white_stones(stones_t visual_area, stones_t black, stones
   return black;
 }
 
-move_result struggle(state *s) {
+move_result struggle(const state *s) {
   if (!s->target) {
     return NORMAL;
   }
@@ -1023,9 +1023,15 @@ move_result struggle(state *s) {
     stones_t empty = s->logical_area & ~player;
     int space = popcount(empty);
     if (space < 2) {
+      if (s->passes) {
+        return SECOND_PASS;
+      }
       return TAKE_TARGET;
     }
     if (space == 2 && (s->wide ? is_contiguous_16(empty) : is_contiguous(empty))) {
+      if (s->passes) {
+        return SECOND_PASS;
+      }
       return TAKE_TARGET;
     }
   } else {

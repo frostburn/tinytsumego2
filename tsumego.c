@@ -47,9 +47,6 @@ static const char* TSUMEGO_NAMES[] = {
   "Rectangle Eight in the Corner",
   "Rectangle Eight in the Corner (defender has threats)",
   "Square Nine in the Corner",
-  "Carpenter's Square",
-  "Carpenter's Square (defender has threats)",
-  "Carpenter's Square (1 liberty)",
   "L Group",
   "First L+1 Group Defense",
   "First L+1 Group Attack",
@@ -72,7 +69,10 @@ static const char* TSUMEGO_NAMES[] = {
   "Seven on the Second Line Attack",
   "Eight is Alive",
   "Rabbity Six Defense",
-  "Rabbity Six Attack"
+  "Rabbity Six Attack",
+  "Carpenter's Square",
+  "Carpenter's Square (defender has threats)",
+  "Carpenter's Square (1 liberty)"
 };
 
 const size_t NUM_TSUMEGO = sizeof(TSUMEGO_NAMES) / sizeof(char*);

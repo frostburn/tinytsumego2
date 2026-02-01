@@ -36,7 +36,7 @@ void test_straight_two_loss() {
   state root = straight_two();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -56,7 +56,7 @@ void test_straight_three_capture() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -74,7 +74,7 @@ void test_straight_three_capture_no_delay() {
   state root = straight_three();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, false);
+  full_graph fg = create_full_graph(&root, false, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -92,7 +92,7 @@ void test_straight_two_loss_wide() {
   state root = straight_two_wide();
   print_state(&root);
 
-  full_graph fg = create_full_graph(&root, true);
+  full_graph fg = create_full_graph(&root, true, false);
   expand_full_graph(&fg);
   solve_full_graph(&fg, true);
 
@@ -112,10 +112,37 @@ void test_straight_two_loss_wide() {
   free_full_graph(&fg);
 }
 
+void test_straight_two_loss_struggle() {
+  state root = straight_two();
+  full_graph fg = create_full_graph(&root, false, false);
+  expand_full_graph(&fg);
+  solve_full_graph(&fg, false);
+
+  full_graph fgs = create_full_graph(&root, false, true);
+  expand_full_graph(&fgs);
+  solve_full_graph(&fgs, false);
+
+  printf("%zu nodes vs. %zu nodes\n", fg.num_nodes, fgs.num_nodes);
+
+  for (size_t i = 0; i < fg.num_nodes; ++i) {
+    value v = fg.values[i];
+    value vs = get_full_graph_value(&fgs, fg.states + i);
+    printf("%zu: %f, %f vs. %f, %f\n", i, v.low, v.high, vs.low, vs.high);
+    if (v.low != vs.low || v.high != vs.high) {
+      print_state(fg.states + i);
+    }
+    assert(v.low == vs.low && v.high == vs.high);
+  }
+
+  free_full_graph(&fg);
+  free_full_graph(&fgs);
+}
+
 int main() {
   test_straight_two_loss();
   test_straight_three_capture();
   test_straight_three_capture_no_delay();
   test_straight_two_loss_wide();
+  test_straight_two_loss_struggle();
   return EXIT_SUCCESS;
 }
