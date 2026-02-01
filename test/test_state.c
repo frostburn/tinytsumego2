@@ -53,6 +53,7 @@ state bent_four_in_the_corner() {
   s.opponent |= single(1, 0);
   s.target = s.player;
   s.white_to_play = true;
+  s.ko_threats = 1;
 
   return s;
 }
@@ -161,7 +162,8 @@ void test_rectangle_six_no_liberties_capture_refutation() {
 void test_rectangle_six_keyspace() {
   state root = rectangle_six();
   size_t size = keyspace_size(&root);
-  assert(size == 183708);
+  printf("size = %zu\n", size);
+  assert(size == 122472);
 
   size_t root_key = to_key(&root, &root);
 
@@ -189,7 +191,8 @@ void test_rectangle_six_external_liberties_keyspace() {
   print_state(&root);
 
   size_t size = keyspace_size(&root);
-  assert(size == 734832);
+  printf("size = %zu\n", size);
+  assert(size == 489888);
 
   size_t root_key = to_key(&root, &root);
 
@@ -553,7 +556,7 @@ void test_bent_four_keyspace_coverage() {
   }
 
   printf("%d states expanded\n", num_states);
-  assert(num_states == 47);
+  assert(num_states == 55);
 
   for (int i = 0; i < num_states; ++i) {
     size_t my_key = to_key(&root, states + i);

@@ -406,7 +406,7 @@ size_t to_key(const state *root, const state *child) {
 
   key = key * 2 + !!child->white_to_play;
   key = key * 3 + child->button + 1;
-  key = key * (2 * abs(root->ko_threats) + 1) + child->ko_threats + abs(root->ko_threats);
+  key = key * (abs(root->ko_threats) + 1) + abs(child->ko_threats);
   key = key * 2 + child->passes;
 
   stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
@@ -452,7 +452,7 @@ size_t keyspace_size(const state *root) {
   size_t result = (
     2 * // Player to play
     3 * // Button ownership
-    (2 * abs(root->ko_threats) + 1) * // Number and ownership of the remaining "external" ko threats
+    (abs(root->ko_threats) + 1) * // Number of the remaining "external" ko threats
     2 * // Passes
     (num_moves + 1) * // Location (or absence) of the illegal ko square
     (popcount(root->external & root->player) + 1) * // Number of external liberties filled by the player
