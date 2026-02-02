@@ -6,6 +6,7 @@ ADD_LIBRARY(
   full_solver.c
   partial_solver.c
   scoring.c
+  shape.c
   state.c
   stones.c
   stones16.c
