@@ -2,11 +2,12 @@
 #include <stdbool.h>
 #include "tinytsumego2/state.h"
 #include "tinytsumego2/scoring.h"
+#include "tinytsumego2/keyspace.h"
 
 // An implicit game graph. All enumerable game states are evaluated even if they're not reachable from the root.
 typedef struct complete_graph {
-  // Root state for key generation
-  state root;
+  // Pre-computed key generator
+  tight_keyspace keyspace;
 
   // Use delay tactics during solving
   bool use_delay;
