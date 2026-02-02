@@ -112,6 +112,9 @@ size_t keyspace_size(const state *root);
 // Button must be owned by the player if taken.
 size_t to_tight_key(const state *root, const state *child);
 
+// Reconstruct a simple state based on its unique index w.r.t. a root state.
+state from_tight_key(const state *root, size_t key);
+
 // Return the size of the simple key space of the given root state
 size_t tight_keyspace_size(const state *root);
 

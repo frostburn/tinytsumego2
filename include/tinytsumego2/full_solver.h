@@ -1,16 +1,12 @@
 #pragma once
 #include <stdbool.h>
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/scoring.h"
 
 #define MIN_CAPACITY (128)
 #define MAX_TAIL_SIZE (8192)
 
-// Score range for a given game state. States with loops may not converge to a single score.
-typedef struct value {
-  float low;
-  float high;
-} value;
-
+// A game graph that is constructed before solving it
 typedef struct full_graph {
   // Root state for key generation
   state root;

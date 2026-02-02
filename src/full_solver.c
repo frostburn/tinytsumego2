@@ -275,6 +275,7 @@ void solve_full_graph(full_graph *fg, bool root_only, bool verbose) {
             continue;
           }
         }
+        // Strictly speaking a second pass should be impossible due to key space tightness
         if (r == SECOND_PASS) {
           float child_score = score(&child);
           low = fmax(low, -child_score);

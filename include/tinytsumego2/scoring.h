@@ -51,3 +51,9 @@ score_q7_t delay_capture_q7(score_q7_t my_score);
 float delay_capture(float my_score);
 
 // TODO: Consider renaming target scoring functions or move results
+
+// Score range for a given game state. States with loops may not converge to a single score.
+typedef struct value {
+  float low;
+  float high;
+} value;
