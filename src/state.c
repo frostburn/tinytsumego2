@@ -499,6 +499,86 @@ size_t to_tight_key(const state *root, const state *child) {
   return key;
 }
 
+state from_tight_key(const state *root, size_t key) {
+  state result = *root;
+  result.player = 0;
+  result.opponent = 0;
+
+  size_t m = (popcount(root->external & root->opponent) + 1);
+  size_t num_external = key % m;
+  key /= m;
+
+  for (size_t i = num_external + 1; i < m; ++i) {
+    result.external ^= LAST_STONE >> (clz(result.external & root->opponent));
+  }
+
+  m = (popcount(root->external & root->player) + 1);
+  num_external = key % m;
+  key /= m;
+
+  for (size_t i = num_external + 1; i < m; ++i) {
+    result.external ^= LAST_STONE >> (clz(result.external & root->player));
+  }
+
+  stones_t special = root->target | root->immortal | root->external;
+  stones_t effective_area = root->logical_area & ~special;
+
+  for (int i = 63; i >= 0; --i) {
+    const stones_t p = 1ULL << i;
+    if (p & effective_area) {
+      switch (key % 3) {
+        case 1:
+          result.player |= p;
+          break;
+        case 2:
+          result.opponent |= p;
+          break;
+      }
+      key /= 3;
+    }
+  }
+
+  m = abs(root->ko_threats) + 1;
+  result.ko_threats = key % m;
+  key /= m;
+
+  result.button = key & 1;
+  key >>= 1;
+
+  result.white_to_play = key;
+
+  if (result.white_to_play == root->white_to_play) {
+    result.player |= root->player & special;
+    result.opponent |= root->opponent & special;
+    if (root->ko_threats < 0) {
+      result.ko_threats = -result.ko_threats;
+    }
+  } else {
+    result.player |= root->opponent & special;
+    result.opponent |= root->player & special;
+    if (root->ko_threats > 0) {
+      result.ko_threats = -result.ko_threats;
+    }
+  }
+
+  if (result.wide) {
+    result.target |= flood_16(result.target & result.player, result.player);
+    result.target |= flood_16(result.target & result.opponent, result.opponent);
+    result.immortal |= flood_16(result.immortal & result.player, result.player);
+    result.immortal |= flood_16(result.immortal & result.opponent, result.opponent);
+  } else {
+    result.target |= flood(result.target & result.player, result.player);
+    result.target |= flood(result.target & result.opponent, result.opponent);
+    result.immortal |= flood(result.immortal & result.player, result.player);
+    result.immortal |= flood(result.immortal & result.opponent, result.opponent);
+  }
+
+  result.logical_area &= ~(result.target | result.immortal);
+  result.logical_area |= result.external;
+
+  return result;
+}
+
 size_t tight_keyspace_size(const state *root) {
   const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
   size_t result = (

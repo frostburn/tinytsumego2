@@ -590,6 +590,48 @@ void test_bent_four_debug_keys() {
   assert(to_key(&root, &a) != to_key(&root, &b));
 }
 
+void test_rectangle_tight_keys() {
+  state root = rectangle_six();
+  // Normalize representation
+  root.logical_area &= ~(root.target | root.immortal);
+  print_state(&root);
+  size_t key = to_tight_key(&root, &root);
+  assert(key < tight_keyspace_size(&root));
+
+  state s = from_tight_key(&root, key);
+  print_state(&s);
+  assert(equals(&root, &s));
+
+  state child = root;
+  make_move(&child, single(1, 0));
+  s = from_tight_key(&root, to_tight_key(&root, &child));
+  print_state(&s);
+  assert(equals(&child, &s));
+}
+
+void test_bent_four_tight_keyspace() {
+  state root = bent_four_in_the_corner();
+  print_state(&root);
+
+  size_t num_nodes = tight_keyspace_size(&root);
+
+  state *states = malloc(num_nodes * sizeof(state));
+
+  for (size_t i = 0; i < num_nodes; ++i) {
+    states[i] = from_tight_key(&root, i);
+    for (size_t j = 0; j < i; ++j) {
+      if (equals(states + i, states + j)) {
+        printf("%zu != %zu\n", i, j);
+        from_tight_key(&root, j);
+        print_state(states + i);
+        print_state(states + j);
+      }
+      assert(!equals(states + i, states + j));
+    }
+  }
+  free(states);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -606,6 +648,8 @@ int main() {
   test_struggle();
   test_bent_four_keyspace_coverage();
   test_bent_four_debug_keys();
+  test_rectangle_tight_keys();
+  test_bent_four_tight_keyspace();
 
   return EXIT_SUCCESS;
 }

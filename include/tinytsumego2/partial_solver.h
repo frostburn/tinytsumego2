@@ -47,6 +47,7 @@ typedef struct node_proxy {
   size_t tag;
 } node_proxy;
 
+// A game graph that is constructed during solving
 typedef struct game_graph {
   // Root state
   state root;
