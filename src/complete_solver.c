@@ -4,8 +4,7 @@
 #include "tinytsumego2/complete_solver.h"
 
 void print_complete_graph(complete_graph *cg) {
-  size_t num_nodes = tight_keyspace_size(&(cg->root));
-  for (size_t i = 0; i < num_nodes; ++i) {
+  for (size_t i = 0; i < cg->keyspace.size; ++i) {
     value v = cg->values[i];
     printf(
       "#%zu: %f, %f\n",
@@ -24,7 +23,7 @@ complete_graph create_complete_graph(const state *root, bool use_delay) {
 
   complete_graph cg = {0};
 
-  cg.root = *root;
+  cg.keyspace = create_tight_keyspace(root);
   cg.use_delay = use_delay;
 
   cg.num_moves = popcount(root->logical_area) + 1;
@@ -39,7 +38,7 @@ complete_graph create_complete_graph(const state *root, bool use_delay) {
   }
   cg.moves[j] = pass();
 
-  cg.values = malloc(tight_keyspace_size(root) * sizeof(value));
+  cg.values = malloc(cg.keyspace.size * sizeof(value));
 
   return cg;
 }
@@ -82,9 +81,9 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
     state c = *s;
     c.button = -c.button;
     delta = -2 * BUTTON_BONUS;
-    key = to_tight_key(&(cg->root), &c);
+    key = to_tight_key_fast(&(cg->keyspace), &c);
   } else {
-    key = to_tight_key(&(cg->root), s);
+    key = to_tight_key_fast(&(cg->keyspace), s);
   }
   value v = cg->values[key];
   return (value) {
@@ -94,10 +93,8 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
 }
 
 void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
-  size_t num_nodes = tight_keyspace_size(&(cg->root));
-
   // Initialize to unknown ranges
-  for (size_t i = 0; i < num_nodes; ++i) {
+  for (size_t i = 0; i < cg->keyspace.size; ++i) {
     cg->values[i] = (value){-INFINITY, INFINITY};
   }
 
@@ -105,7 +102,7 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   size_t num_updated = 1;
   while (num_updated) {
     num_updated = 0;
-    for (size_t i = 0; i < num_nodes; ++i) {
+    for (size_t i = 0; i < cg->keyspace.size; ++i) {
       // Don't evaluate if the range cannot be tightened
       if (cg->values[i].low == cg->values[i].high) {
         continue;
@@ -119,7 +116,7 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
       // if (cg->values[i].low > -BIG_SCORE && cg->values[i].low < 1 - BIG_SCORE)
       //   low = cg->values[i].low;
 
-      state parent = from_tight_key(&(cg->root), i);
+      state parent = from_tight_key(&(cg->keyspace.root), i);
       for (int j = 0; j < cg->num_moves; ++j) {
         state child = parent;
         const move_result r = make_move(&child, cg->moves[j]);
@@ -145,14 +142,14 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
       }
     }
     if (verbose) {
-      value v = get_complete_graph_value(cg, &(cg->root));
+      value v = get_complete_graph_value(cg, &(cg->keyspace.root));
       if (num_updated != last_updated) {
         printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
       }
       last_updated = num_updated;
     }
     if (root_only) {
-      value v = get_complete_graph_value(cg, &(cg->root));
+      value v = get_complete_graph_value(cg, &(cg->keyspace.root));
       if (v.low == v.high) {
         break;
       }
@@ -161,6 +158,8 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
 }
 
 void free_complete_graph(complete_graph *cg) {
+  free_tight_keyspace(&(cg->keyspace));
+
   free(cg->moves);
   cg->num_moves = 0;
   cg->moves = NULL;

@@ -478,7 +478,7 @@ size_t to_tight_key(const state *root, const state *child) {
   stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
 
   // Encode stones in ternary
-  for (int i = 0; i < 64; ++i) {
+  for (int i = 63; i >= 0; --i) {
     const stones_t p = 1ULL << i;
     if (p & effective_area) {
       key *= 3;
@@ -523,7 +523,7 @@ state from_tight_key(const state *root, size_t key) {
   stones_t special = root->target | root->immortal | root->external;
   stones_t effective_area = root->logical_area & ~special;
 
-  for (int i = 63; i >= 0; --i) {
+  for (int i = 0; i < 64; ++i) {
     const stones_t p = 1ULL << i;
     if (p & effective_area) {
       switch (key % 3) {

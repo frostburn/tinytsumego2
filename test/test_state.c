@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/keyspace.h"
 
 state rectangle_six() {
   state s;
@@ -55,6 +56,16 @@ state bent_four_in_the_corner() {
   s.white_to_play = true;
   s.ko_threats = 1;
 
+  return s;
+}
+
+state straight_nine_wide() {
+  state s = {0};
+  s.visual_area = rectangle_16(10, 2);
+  s.logical_area = rectangle_16(9, 1);
+  s.target = s.visual_area ^ s.logical_area;
+  s.player = s.target;
+  s.wide = true;
   return s;
 }
 
@@ -595,7 +606,7 @@ void test_rectangle_tight_keys() {
   // Normalize representation
   root.logical_area &= ~(root.target | root.immortal);
   print_state(&root);
-  size_t key = to_tight_key(&root, &root);
+  const size_t key = to_tight_key(&root, &root);
   assert(key < tight_keyspace_size(&root));
 
   state s = from_tight_key(&root, key);
@@ -604,14 +615,24 @@ void test_rectangle_tight_keys() {
 
   state child = root;
   make_move(&child, single(1, 0));
-  s = from_tight_key(&root, to_tight_key(&root, &child));
+  const size_t child_key = to_tight_key(&root, &child);
+  s = from_tight_key(&root, child_key);
   print_state(&s);
   assert(equals(&child, &s));
+
+  tight_keyspace tks = create_tight_keyspace(&root);
+  const size_t fast_key = to_tight_key_fast(&tks, &root);
+  assert(key == fast_key);
+  const size_t fast_child_key = to_tight_key_fast(&tks, &child);
+  assert(child_key == fast_child_key);
+  free_tight_keyspace(&tks);
 }
 
 void test_bent_four_tight_keyspace() {
   state root = bent_four_in_the_corner();
   print_state(&root);
+
+  tight_keyspace tks = create_tight_keyspace(&root);
 
   size_t num_nodes = tight_keyspace_size(&root);
 
@@ -619,6 +640,8 @@ void test_bent_four_tight_keyspace() {
 
   for (size_t i = 0; i < num_nodes; ++i) {
     states[i] = from_tight_key(&root, i);
+    size_t key = to_tight_key_fast(&tks, states + i);
+    assert(key == i);
     for (size_t j = 0; j < i; ++j) {
       if (equals(states + i, states + j)) {
         printf("%zu != %zu\n", i, j);
@@ -630,6 +653,38 @@ void test_bent_four_tight_keyspace() {
     }
   }
   free(states);
+  free_tight_keyspace(&tks);
+}
+
+void test_wide_keyspace() {
+  state root = straight_nine_wide();
+  print_state(&root);
+
+  tight_keyspace tks = create_tight_keyspace(&root);
+
+  size_t num_nodes = tight_keyspace_size(&root);
+
+  state *states = malloc(num_nodes * sizeof(state));
+
+  for (size_t i = 0; i < num_nodes; ++i) {
+    states[i] = from_tight_key(&root, i);
+    size_t key = to_tight_key_fast(&tks, states + i);
+    assert(key == i);
+    for (size_t j = 0; j < i; ++j) {
+      if (j > 100) {
+        break;
+      }
+      if (equals(states + i, states + j)) {
+        printf("%zu != %zu\n", i, j);
+        from_tight_key(&root, j);
+        print_state(states + i);
+        print_state(states + j);
+      }
+      assert(!equals(states + i, states + j));
+    }
+  }
+  free(states);
+  free_tight_keyspace(&tks);
 }
 
 int main() {
@@ -650,6 +705,7 @@ int main() {
   test_bent_four_debug_keys();
   test_rectangle_tight_keys();
   test_bent_four_tight_keyspace();
+  test_wide_keyspace();
 
   return EXIT_SUCCESS;
 }

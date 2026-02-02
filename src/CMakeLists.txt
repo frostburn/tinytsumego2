@@ -5,6 +5,7 @@ ADD_LIBRARY(
   complete_solver.c
   full_reader.c
   full_solver.c
+  keyspace.c
   partial_solver.c
   scoring.c
   shape.c
