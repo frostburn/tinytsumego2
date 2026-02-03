@@ -503,6 +503,7 @@ state from_tight_key(const state *root, size_t key) {
   state result = *root;
   result.player = 0;
   result.opponent = 0;
+  result.immortal |= result.external;
 
   size_t m = (popcount(root->external & root->opponent) + 1);
   size_t num_external = key % m;
@@ -519,6 +520,8 @@ state from_tight_key(const state *root, size_t key) {
   for (size_t i = num_external + 1; i < m; ++i) {
     result.external ^= LAST_STONE >> (clz(result.external & root->player));
   }
+
+  result.immortal ^= result.external;
 
   stones_t special = root->target | root->immortal | root->external;
   stones_t effective_area = root->logical_area & ~special;
@@ -1006,7 +1009,7 @@ bool is_legal(state *s) {
     if (cs[i] & s->immortal) {
       continue;
     }
-    if (!popcount(s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty))) {
+    if (!(s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty))) {
       return false;
     }
   }
@@ -1023,7 +1026,7 @@ bool is_legal(state *s) {
       continue;
     }
     stones_t libs = s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty);
-    if (!popcount(libs)) {
+    if (!libs) {
       return false;
     }
 

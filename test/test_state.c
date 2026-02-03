@@ -687,6 +687,46 @@ void test_wide_keyspace() {
   free_tight_keyspace(&tks);
 }
 
+void test_legality() {
+  state s = parse_state(" \
+        b b . b b W x x x \
+        b b b b b W x x x \
+        b b b b b - x x x \
+  ");
+  stones_t temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  s.white_to_play = true;
+  s.passes = 1;
+  s.ko_threats = 1;
+  s.button = 1;
+
+  state expected = (state) {16547391ULL, 8388612ULL, 8405024ULL, 8142363ULL, 0ULL, 8142363ULL, 16416ULL, 8388608ULL, 1, 1, 1, true, false};
+
+  print_state(&s);
+  assert(is_legal(&s));
+  assert(equals(&s, &expected));
+
+  print_stones(s.external);
+
+  make_move(&s, s.external);
+  print_state(&s);
+  assert(is_legal(&s));
+
+  state root = (state) {16547391ULL, 8408623ULL, 8138768ULL, 8405024ULL, 0ULL, 8138768ULL, 0ULL, 8405024ULL, 0, -1, -1, false, false};
+  tight_keyspace tks = create_tight_keyspace(&root);
+
+  s.button = abs(s.button);
+  size_t key = to_tight_key_fast(&tks, &s);
+  size_t slow_key = to_tight_key(&root, &s);
+  printf("%zu ?= %zu\n", key, slow_key);
+
+  state f = from_tight_key(&root, key);
+  print_state(&f);
+
+  assert(is_legal(&f));
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -706,6 +746,7 @@ int main() {
   test_rectangle_tight_keys();
   test_bent_four_tight_keyspace();
   test_wide_keyspace();
+  test_legality();
 
   return EXIT_SUCCESS;
 }

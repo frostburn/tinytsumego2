@@ -95,7 +95,12 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
 void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   // Initialize to unknown ranges
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
-    cg->values[i] = (value){-INFINITY, INFINITY};
+    state s = from_tight_key(&(cg->keyspace.root), i);
+    if (is_legal(&s)) {
+      cg->values[i] = (value){-INFINITY, INFINITY};
+    } else {
+      cg->values[i] = (value){NAN, NAN};
+    }
   }
 
   size_t last_updated = 0;
@@ -103,6 +108,10 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   while (num_updated) {
     num_updated = 0;
     for (size_t i = 0; i < cg->keyspace.size; ++i) {
+      // Skip illegal states
+      if (isnan(cg->values[i].low)) {
+        continue;
+      }
       // Don't evaluate if the range cannot be tightened
       if (cg->values[i].low == cg->values[i].high) {
         continue;
