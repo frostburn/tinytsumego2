@@ -20,6 +20,12 @@ typedef struct tight_keyspace {
   tritter *tritters;
   size_t player_external_m;
   size_t opponent_external_m;
+
+  size_t prefix_m;
+  state *prefixes;
+  int num_blocks;
+  stones_t **player_blocks;
+  stones_t **opponent_blocks;
 } tight_keyspace;
 
 // Create a keyspace helper for a root state
@@ -27,6 +33,9 @@ tight_keyspace create_tight_keyspace(const state *root);
 
 // Convert a child state of the original root state to a unique index
 size_t to_tight_key_fast(const tight_keyspace *tks, const state *s);
+
+// Recover a simple state from its unique index
+state from_tight_key_fast(const tight_keyspace *tks, size_t key);
 
 // Release associated resources
 void free_tight_keyspace(tight_keyspace *tks);

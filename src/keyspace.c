@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include "tinytsumego2/keyspace.h"
+#include "tinytsumego2/util.h"
+
+#define TRIT_BLOCK_SIZE (8)
+#define TRIT_BLOCK_M (6561)
 
 tight_keyspace create_tight_keyspace(const state *root) {
   tight_keyspace result = {0};
@@ -39,6 +43,43 @@ tight_keyspace create_tight_keyspace(const state *root) {
   result.player_external_m = popcount(root->external & root->player) + 1;
   result.opponent_external_m = popcount(root->external & root->opponent) + 1;
 
+  // Key inversion
+  result.prefix_m = 4 * result.ko_m * result.player_external_m * result.opponent_external_m;
+  result.prefixes = malloc(result.prefix_m * sizeof(state));
+  for (size_t key = 0; key < result.prefix_m; ++key) {
+    result.prefixes[key] = from_tight_key(root, key);
+  }
+
+  int effective_size = popcount(effective_area);
+  result.num_blocks = ceil_div(effective_size, TRIT_BLOCK_SIZE);
+  result.player_blocks = malloc(result.num_blocks * sizeof(stones_t*));
+  result.opponent_blocks = malloc(result.num_blocks * sizeof(stones_t*));
+  m = result.prefix_m;
+  int i;
+  for (i = 0; i < effective_size / TRIT_BLOCK_SIZE; i++) {
+    result.player_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
+    result.opponent_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
+    for (size_t j = 0; j < TRIT_BLOCK_M; ++j) {
+      state s = from_tight_key(root, j * m);
+      result.player_blocks[i][j] = s.player & effective_area;
+      result.opponent_blocks[i][j] = s.opponent & effective_area;
+    }
+    m *= TRIT_BLOCK_M;
+  }
+  size_t tail_m = 1;
+  for (int i = 0; i < effective_size % TRIT_BLOCK_SIZE; ++i) {
+    tail_m *= 3;
+  }
+  if (tail_m != 1) {
+    result.player_blocks[i] = malloc(tail_m * sizeof(stones_t));
+    result.opponent_blocks[i] = malloc(tail_m * sizeof(stones_t));
+    for (size_t j = 0; j < tail_m; ++j) {
+      state s = from_tight_key(root, j * m);
+      result.player_blocks[i][j] = s.player & effective_area;
+      result.opponent_blocks[i][j] = s.opponent & effective_area;
+    }
+  }
+
   return result;
 }
 
@@ -61,8 +102,7 @@ static const size_t TRITS8_TABLE[] = {
 };
 
 size_t to_tight_key_fast(const tight_keyspace *tks, const state *s) {
-  size_t key = ((!!s->white_to_play) << 1) | s->button;
-  key = key * tks->ko_m + abs(s->ko_threats);
+  size_t key = 0;
 
   for (int i = tks->num_tritters - 1; i >= 0; --i) {
     key *= tks->tritters[i].m;
@@ -76,11 +116,38 @@ size_t to_tight_key_fast(const tight_keyspace *tks, const state *s) {
   key = key * tks->player_external_m + popcount(s->external & player);
   key = key * tks->opponent_external_m + popcount(s->external & opponent);
 
+  key = key * tks->ko_m + abs(s->ko_threats);
+  key = (key << 2) | ((s->button) << 1) | !!s->white_to_play;
+
   return key;
+}
+
+state from_tight_key_fast(const tight_keyspace *tks, size_t key) {
+  state result = tks->prefixes[key % tks->prefix_m];
+  key /= tks->prefix_m;
+  for (int i = 0; i < tks->num_blocks; ++i) {
+    size_t k = key % TRIT_BLOCK_M;
+    result.player |= tks->player_blocks[i][k];
+    result.opponent |= tks->opponent_blocks[i][k];
+    key /= TRIT_BLOCK_M;
+  }
+  return result;
 }
 
 void free_tight_keyspace(tight_keyspace *tks) {
   tks->num_tritters = 0;
   free(tks->tritters);
   tks->tritters = NULL;
+
+  free(tks->prefixes);
+  tks->prefixes = NULL;
+
+  for (int i = 0; i < tks->num_blocks; ++i) {
+    free(tks->player_blocks[i]);
+    free(tks->opponent_blocks[i]);
+  }
+  free(tks->player_blocks);
+  tks->player_blocks = NULL;
+  free(tks->opponent_blocks);
+  tks->opponent_blocks = NULL;
 }

@@ -1,8 +1,5 @@
 #include "tinytsumego2/bitmatrix.h"
-
-int ceil_div(int x, int y) {
-  return (x + y - 1) / y;
-}
+#include "tinytsumego2/util.h"
 
 bitmatrix create_bitmatrix(int width, int height) {
   bitmatrix result = (bitmatrix) {width, height, ceil_div(width, UINT_BITS), NULL};

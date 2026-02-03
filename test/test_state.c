@@ -616,11 +616,18 @@ void test_rectangle_tight_keys() {
   state child = root;
   make_move(&child, single(1, 0));
   const size_t child_key = to_tight_key(&root, &child);
-  s = from_tight_key(&root, child_key);
-  print_state(&s);
-  assert(equals(&child, &s));
+  state tc = from_tight_key(&root, child_key);
+  print_state(&tc);
+  assert(equals(&child, &tc));
 
   tight_keyspace tks = create_tight_keyspace(&root);
+  state fs = from_tight_key_fast(&tks, key);
+  print_state(&fs);
+  assert(equals(&s, &fs));
+  state fc = from_tight_key_fast(&tks, child_key);
+  print_state(&fc);
+  assert(equals(&child, &fc));
+
   const size_t fast_key = to_tight_key_fast(&tks, &root);
   assert(key == fast_key);
   const size_t fast_child_key = to_tight_key_fast(&tks, &child);
@@ -640,6 +647,8 @@ void test_bent_four_tight_keyspace() {
 
   for (size_t i = 0; i < num_nodes; ++i) {
     states[i] = from_tight_key(&root, i);
+    state s = from_tight_key_fast(&tks, i);
+    assert(equals(&s, states + i));
     size_t key = to_tight_key_fast(&tks, states + i);
     assert(key == i);
     for (size_t j = 0; j < i; ++j) {
@@ -668,6 +677,8 @@ void test_wide_keyspace() {
 
   for (size_t i = 0; i < num_nodes; ++i) {
     states[i] = from_tight_key(&root, i);
+    state s = from_tight_key_fast(&tks, i);
+    assert(equals(&s, states + i));
     size_t key = to_tight_key_fast(&tks, states + i);
     assert(key == i);
     for (size_t j = 0; j < i; ++j) {
