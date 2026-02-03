@@ -36,9 +36,6 @@ ADD_SUBDIRECTORY(src)
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(test)
 
-ADD_EXECUTABLE(demo demo.c)
-TARGET_LINK_LIBRARIES(demo tinytsumego2)
-
 ADD_EXECUTABLE(solver solver.c)
 TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
 
