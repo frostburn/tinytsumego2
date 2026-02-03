@@ -81,7 +81,20 @@ int clz(const stones_t stones);
 stones_t liberties(const stones_t stones, const stones_t empty);
 
 // Flood fill `target` starting from `source` and return the contiguous chain of stones
-stones_t flood(register stones_t source, register const stones_t target);
+inline stones_t flood(register stones_t source, register const stones_t target) {
+  source &= target;
+  register stones_t temp;
+  do {
+    temp = source;
+    source |= (
+      ((source & WEST_BLOCK) << H_SHIFT) |
+      ((source >> H_SHIFT) & WEST_BLOCK) |
+      (source << V_SHIFT) |
+      (source >> V_SHIFT)
+    ) & target;
+  } while (temp != source);
+  return source;
+}
 
 // Expand `stones` in a "cross" pattern
 stones_t cross(const stones_t stones);
