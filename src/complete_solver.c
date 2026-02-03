@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "tinytsumego2/complete_solver.h"
 
+#define MAX_COMPENSATION_DEPTH (6)
+
 void print_complete_graph(complete_graph *cg) {
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
     value v = cg->values[i];
@@ -43,7 +45,10 @@ complete_graph create_complete_graph(const state *root, bool use_delay) {
   return cg;
 }
 
-value get_complete_graph_value(complete_graph *cg, const state *s) {
+value get_complete_graph_value_(complete_graph *cg, const state *s, int depth) {
+  if (!depth) {
+    return (value){-INFINITY, INFINITY};
+  }
   if (s->passes || s->ko) {
     // Compensate for keyspace tightness using negamax
     float low = -INFINITY;
@@ -62,7 +67,7 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
         low = fmax(low, -child_score);
         high = fmax(high, -child_score);
       } else if (r != ILLEGAL) {
-        const value child_value = get_complete_graph_value(cg, &child);
+        const value child_value = get_complete_graph_value_(cg, &child, depth - 1);
         if (cg->use_delay) {
           low = fmax(low, -delay_capture(child_value.high));
           high = fmax(high, -delay_capture(child_value.low));
@@ -90,6 +95,10 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
     v.low + delta,
     v.high + delta
   };
+}
+
+value get_complete_graph_value(complete_graph *cg, const state *s) {
+  return get_complete_graph_value_(cg, s, MAX_COMPENSATION_DEPTH);
 }
 
 void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
