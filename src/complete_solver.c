@@ -4,6 +4,7 @@
 #include "tinytsumego2/complete_solver.h"
 
 #define MAX_COMPENSATION_DEPTH (6)
+#define MAX_INITIALIZATION_DEPTH (1024)
 
 void print_complete_graph(complete_graph *cg) {
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
@@ -101,14 +102,49 @@ value get_complete_graph_value(complete_graph *cg, const state *s) {
   return get_complete_graph_value_(cg, s, MAX_COMPENSATION_DEPTH);
 }
 
+void initialize_from(complete_graph *cg, const state *s, int depth) {
+  if (!depth) {
+    return;
+  }
+  if (!s->passes && !s->ko) {
+    size_t key = to_tight_key_fast(&(cg->keyspace), s);
+    if (!isnan(cg->values[key].low)) {
+      return;
+    }
+    cg->values[key] = (value){-INFINITY, INFINITY};
+  }
+
+  for (int j = 0; j < cg->num_moves; ++j) {
+    state child = *s;
+    const move_result r = make_move(&child, cg->moves[j]);
+    if (r > TAKE_TARGET) {
+      if (child.button < 0) {
+        child.button = -child.button;
+      }
+      initialize_from(cg, &child, depth - 1);
+    }
+  }
+}
+
 void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   // Initialize to unknown ranges
-  for (size_t i = 0; i < cg->keyspace.size; ++i) {
-    state s = from_tight_key_fast(&(cg->keyspace), i);
-    if (is_legal(&s)) {
-      cg->values[i] = (value){-INFINITY, INFINITY};
-    } else {
+  if (root_only) {
+    for (size_t i = 0; i < cg->keyspace.size; ++i) {
       cg->values[i] = (value){NAN, NAN};
+    }
+    state root = cg->keyspace.root;
+    if (root.button < 0) {
+      root.button = -root.button;
+    }
+    initialize_from(cg, &root, MAX_INITIALIZATION_DEPTH);
+  } else {
+    for (size_t i = 0; i < cg->keyspace.size; ++i) {
+      state s = from_tight_key_fast(&(cg->keyspace), i);
+      if (is_legal(&s)) {
+        cg->values[i] = (value){-INFINITY, INFINITY};
+      } else {
+        cg->values[i] = (value){NAN, NAN};
+      }
     }
   }
 
@@ -117,7 +153,7 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   while (num_updated) {
     num_updated = 0;
     for (size_t i = 0; i < cg->keyspace.size; ++i) {
-      // Skip illegal states
+      // Skip illegal/irrelevant states
       if (isnan(cg->values[i].low)) {
         continue;
       }

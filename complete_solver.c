@@ -134,11 +134,16 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
 int main(int argc, char *argv[]) {
   int arg_count = argc;
   bool use_delay = true;
+  bool root_only = false;
   int c;
-  while ((c = getopt(argc, argv, "d")) != -1) {
+  while ((c = getopt(argc, argv, "dr")) != -1) {
     switch (c) {
       case 'd':
         use_delay = false;
+        arg_count--;
+        break;
+      case 'r':
+        root_only = true;
         arg_count--;
         break;
       default:
@@ -149,12 +154,12 @@ int main(int argc, char *argv[]) {
   if (arg_count <= 1) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      complete_graph cg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, false, false);
+      complete_graph cg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, root_only, false);
       free_complete_graph(&cg);
     }
     return EXIT_SUCCESS;
   } else {
-    complete_graph cg = solve(get_tsumego(argv[optind]), use_delay, false, true);
+    complete_graph cg = solve(get_tsumego(argv[optind]), use_delay, root_only, true);
     // if (arg_count >= 3) {
     //   char *filename = argv[optind + 1];
     //   printf("Saving result to %s\n", filename);
