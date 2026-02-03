@@ -10,6 +10,7 @@ ADD_LIBRARY(
   scoring.c
   shape.c
   state.c
+  status.c
   stones.c
   stones16.c
   tablebase/base.c

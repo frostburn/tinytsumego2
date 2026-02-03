@@ -2,6 +2,7 @@
 #include <string.h>
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/shape.h"
 
 typedef struct tsumego {
   state state;
@@ -47,6 +48,8 @@ static const char* TSUMEGO_NAMES[] = {
   "Rectangle Eight in the Corner",
   "Rectangle Eight in the Corner (defender has threats)",
   "Square Nine in the Corner",
+  "Notcher 133SS Attack",
+  "Notcher 133SS Defense",
   "L Group",
   "First L+1 Group Defense",
   "First L+1 Group Attack",
@@ -752,6 +755,18 @@ tsumego get_tsumego(const char *name) {
 
   if (strcmp(name, "Double Ko Seki") == 0) {
     return (tsumego) {s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS, TARGET_CAPTURED_SCORE + BUTTON_BONUS, -72.25, 72.75};
+  }
+
+  s = notcher("133SS");
+  if (strcmp(name, "Notcher 133SS Defense") == 0) {
+    return single_valued(s, -8 + BUTTON_BONUS);
+  }
+
+  temp = s.player;
+  s.player = s.opponent;
+  s.opponent = temp;
+  if (strcmp(name, "Notcher 133SS Attack") == 0) {
+    return single_valued(s, 14 - BUTTON_BONUS);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);
