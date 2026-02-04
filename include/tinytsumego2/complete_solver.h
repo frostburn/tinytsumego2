@@ -17,7 +17,7 @@ typedef struct complete_graph {
   stones_t *moves;
 
   // The values are indexed by tight keys
-  value *values;
+  table_value *values;
 } complete_graph;
 
 // Print the contents of a complete game graph

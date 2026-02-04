@@ -8,7 +8,7 @@
 
 void print_complete_graph(complete_graph *cg) {
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
-    value v = cg->values[i];
+    value v = table_value_to_value(cg->values[i]);
     printf(
       "#%zu: %f, %f\n",
       i,
@@ -41,65 +41,73 @@ complete_graph create_complete_graph(const state *root, bool use_delay) {
   }
   cg.moves[j] = pass();
 
-  cg.values = malloc(cg.keyspace.size * sizeof(value));
+  cg.values = malloc(cg.keyspace.size * sizeof(table_value));
 
   return cg;
 }
 
-value get_complete_graph_value_(complete_graph *cg, const state *s, int depth) {
+table_value get_complete_graph_value_(complete_graph *cg, const state *s, int depth) {
   if (!depth) {
-    return (value){-INFINITY, INFINITY};
+    return MAX_RANGE_Q7;
   }
   if (s->passes || s->ko) {
     // Compensate for keyspace tightness using negamax
-    float low = -INFINITY;
-    float high = -INFINITY;
+    score_q7_t low = SCORE_Q7_MIN;
+    score_q7_t high = SCORE_Q7_MIN;
 
     for (int j = 0; j < cg->num_moves; ++j) {
       state child = *s;
       const move_result r = make_move(&child, cg->moves[j]);
       if (r == SECOND_PASS) {
-        float child_score = score(&child);
-        low = fmax(low, -child_score);
-        high = fmax(high, -child_score);
+        score_q7_t child_score = -score_q7(&child);
+        if (child_score > low) low = child_score;
+        if (child_score > high) high = child_score;
       }
       else if (r == TAKE_TARGET) {
-        float child_score = target_lost_score(&child);
-        low = fmax(low, -child_score);
-        high = fmax(high, -child_score);
+        score_q7_t child_score = -target_lost_score_q7(&child);
+        if (child_score > low) low = child_score;
+        if (child_score > high) high = child_score;
       } else if (r != ILLEGAL) {
-        const value child_value = get_complete_graph_value_(cg, &child, depth - 1);
+        table_value child_value = get_complete_graph_value_(cg, &child, depth - 1);
         if (cg->use_delay) {
-          low = fmax(low, -delay_capture(child_value.high));
-          high = fmax(high, -delay_capture(child_value.low));
+          child_value.low = -delay_capture_q7(child_value.low);
+          child_value.high = -delay_capture_q7(child_value.high);
         } else {
-          low = fmax(low, -child_value.high);
-          high = fmax(high, -child_value.low);
+          child_value.low = -child_value.low;
+          child_value.high = -child_value.high;
         }
+        if (child_value.high > low) low = child_value.high;
+        if (child_value.low > high) high = child_value.low;
       }
     }
-    return (value){low, high};
+    return (table_value){low, high};
   }
 
   size_t key;
-  float delta = 0;
+  score_q7_t delta = 0;
   if (s->button < 0) {
     state c = *s;
     c.button = -c.button;
-    delta = -2 * BUTTON_BONUS;
+    delta = -2 * BUTTON_Q7;
     key = to_tight_key_fast(&(cg->keyspace), &c);
   } else {
     key = to_tight_key_fast(&(cg->keyspace), s);
   }
-  value v = cg->values[key];
-  return (value) {
-    v.low + delta,
-    v.high + delta
-  };
+  table_value v = cg->values[key];
+  if (v.low == SCORE_Q7_NAN) {
+    return NAN_RANGE_Q7;
+  }
+  if (v.low != SCORE_Q7_MIN) {
+    v.low += delta;
+  }
+  if (v.high != SCORE_Q7_MAX) {
+    v.high += delta;
+  }
+  return v;
 }
 
 value get_complete_graph_value(complete_graph *cg, const state *s) {
-  return get_complete_graph_value_(cg, s, MAX_COMPENSATION_DEPTH);
+  return table_value_to_value(get_complete_graph_value_(cg, s, MAX_COMPENSATION_DEPTH));
 }
 
 void initialize_from(complete_graph *cg, const state *s, int depth) {
@@ -108,10 +116,10 @@ void initialize_from(complete_graph *cg, const state *s, int depth) {
   }
   if (!s->passes && !s->ko) {
     size_t key = to_tight_key_fast(&(cg->keyspace), s);
-    if (!isnan(cg->values[key].low)) {
+    if (cg->values[key].low != SCORE_Q7_NAN) {
       return;
     }
-    cg->values[key] = (value){-INFINITY, INFINITY};
+    cg->values[key] = MAX_RANGE_Q7;
   }
 
   for (int j = 0; j < cg->num_moves; ++j) {
@@ -130,7 +138,7 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
   // Initialize to unknown ranges
   if (root_only) {
     for (size_t i = 0; i < cg->keyspace.size; ++i) {
-      cg->values[i] = (value){NAN, NAN};
+      cg->values[i] = NAN_RANGE_Q7;
     }
     state root = cg->keyspace.root;
     if (root.button < 0) {
@@ -141,9 +149,9 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
     for (size_t i = 0; i < cg->keyspace.size; ++i) {
       state s = from_tight_key_fast(&(cg->keyspace), i);
       if (is_legal(&s)) {
-        cg->values[i] = (value){-INFINITY, INFINITY};
+        cg->values[i] = MAX_RANGE_Q7;
       } else {
-        cg->values[i] = (value){NAN, NAN};
+        cg->values[i] = NAN_RANGE_Q7;
       }
     }
   }
@@ -154,21 +162,16 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
     num_updated = 0;
     for (size_t i = 0; i < cg->keyspace.size; ++i) {
       // Skip illegal/irrelevant states
-      if (isnan(cg->values[i].low)) {
+      if (cg->values[i].low == SCORE_Q7_NAN) {
         continue;
       }
       // Don't evaluate if the range cannot be tightened
       if (cg->values[i].low == cg->values[i].high) {
         continue;
       }
-      // Perform negamax
-      float low = cg->values[i].low;
-      float high = -INFINITY;
-
-      // Delay tactics can cause an infinite loop.
-      // This would be the smallest exception to low = -INFINITY;
-      // if (cg->values[i].low > -BIG_SCORE && cg->values[i].low < 1 - BIG_SCORE)
-      //   low = cg->values[i].low;
+      // Perform negamax (with memory to break delay shuffling)
+      score_q7_t low = cg->values[i].low;
+      score_q7_t high = SCORE_Q7_MIN;
 
       state parent = from_tight_key_fast(&(cg->keyspace), i);
       for (int j = 0; j < cg->num_moves; ++j) {
@@ -176,22 +179,24 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
         const move_result r = make_move(&child, cg->moves[j]);
         // Second pass cannot happen here due to keyspace tightness
         if (r == TAKE_TARGET) {
-          float child_score = target_lost_score(&child);
-          low = fmax(low, -child_score);
-          high = fmax(high, -child_score);
+          score_q7_t child_score = -target_lost_score_q7(&child);
+          if (child_score > low) low = child_score;
+          if (child_score > high) high = child_score;
         } else if (r != ILLEGAL) {
-          const value child_value = get_complete_graph_value(cg, &child);
+          table_value child_value = get_complete_graph_value_(cg, &child, MAX_COMPENSATION_DEPTH);
           if (cg->use_delay) {
-            low = fmax(low, -delay_capture(child_value.high));
-            high = fmax(high, -delay_capture(child_value.low));
+            child_value.low = -delay_capture_q7(child_value.low);
+            child_value.high = -delay_capture_q7(child_value.high);
           } else {
-            low = fmax(low, -child_value.high);
-            high = fmax(high, -child_value.low);
+            child_value.low = -child_value.low;
+            child_value.high = -child_value.high;
           }
+          if (child_value.high > low) low = child_value.high;
+          if (child_value.low > high) high = child_value.low;
         }
       }
       if (cg->values[i].low != low || cg->values[i].high != high) {
-        cg->values[i] = (value) {low, high};
+        cg->values[i] = (table_value) {low, high};
         num_updated++;
       }
     }

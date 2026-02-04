@@ -1,4 +1,5 @@
 #pragma once
+#include <limits.h>
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
 
@@ -24,6 +25,11 @@
 // Saving up abstract "external" ko-threats is incentivized
 #define KO_THREAT_Q7 (FLOAT_TO_SCORE_Q7 / 32)
 #define KO_THREAT_BONUS (KO_THREAT_Q7 / (float) FLOAT_TO_SCORE_Q7)
+
+// Limits and special values
+#define SCORE_Q7_MAX (SHRT_MAX)
+#define SCORE_Q7_MIN (-SHRT_MAX)
+#define SCORE_Q7_NAN (-32768)
 
 // Two bits of the fractional part saved up for comparison shenanigans and potential future use.
 
@@ -57,3 +63,14 @@ typedef struct value {
   float low;
   float high;
 } value;
+
+// Use 16-bit values to save space
+typedef struct table_value {
+  score_q7_t low;
+  score_q7_t high;
+} table_value;
+
+value table_value_to_value(table_value v);
+
+static const table_value MAX_RANGE_Q7 = (table_value) {SCORE_Q7_MIN, SCORE_Q7_MAX};
+static const table_value NAN_RANGE_Q7 = (table_value) {SCORE_Q7_NAN, SCORE_Q7_NAN};

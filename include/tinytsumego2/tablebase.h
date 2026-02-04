@@ -29,12 +29,6 @@ typedef struct value_range {
   bool high_fixed;
 } value_range;
 
-// Use 16-bit values to save space
-typedef struct table_value {
-  score_q7_t low;
-  score_q7_t high;
-} table_value;
-
 // Table containing solutions to every tsumego with a tablebase key
 typedef struct tsumego_table {
   // The `wide` flag is inferred from the type. Edges are wide, corners and centers are not
