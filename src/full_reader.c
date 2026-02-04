@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include "tinytsumego2/full_reader.h"
 #include "tinytsumego2/scoring.h"
+#include "tinytsumego2/util.h"
 
 size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
   if (fg->use_struggle) {
@@ -34,16 +35,6 @@ size_t write_full_graph(const full_graph *restrict fg, FILE *restrict stream) {
   total += fwrite(nodes, sizeof(light_node), fg->num_nodes, stream);
   free(nodes);
   return total;
-}
-
-char* file_to_mmap(const char *filename, struct stat *sb, int *fd) {
-  stat(filename, sb);
-  *fd = open(filename, O_RDONLY);
-  assert(*fd != -1);
-  char *map;
-  map = (char*) mmap(NULL, sb->st_size, PROT_READ, MAP_SHARED, *fd, 0);
-  madvise(map, sb->st_size, MADV_RANDOM);
-  return map;
 }
 
 full_graph_reader load_full_graph_reader(const char *filename) {

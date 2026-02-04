@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "tinytsumego2/complete_solver.h"
 
-#define MAX_COMPENSATION_DEPTH (6)
 #define MAX_INITIALIZATION_DEPTH (1024)
 
 void print_complete_graph(complete_graph *cg) {

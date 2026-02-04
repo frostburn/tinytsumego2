@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/complete_solver.h"
+#include "tinytsumego2/complete_reader.h"
 
 #include "tsumego.c"
 
@@ -160,12 +161,12 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
   } else {
     complete_graph cg = solve(get_tsumego(argv[optind]), use_delay, root_only, true);
-    // if (arg_count >= 3) {
-    //   char *filename = argv[optind + 1];
-    //   printf("Saving result to %s\n", filename);
-    //   FILE *f = fopen(filename, "wb");
-    //   write_complete_graph(&cg, f);
-    // }
+    if (arg_count >= 3) {
+      char *filename = argv[optind + 1];
+      printf("Saving result to %s\n", filename);
+      FILE *f = fopen(filename, "wb");
+      write_complete_graph(&cg, f);
+    }
     free_complete_graph(&cg);
   }
 }
