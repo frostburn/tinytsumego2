@@ -62,3 +62,6 @@ TARGET_LINK_LIBRARIES(verify_tablebase tinytsumego2 m)
 
 ADD_EXECUTABLE(explore_solution explore_solution.c)
 TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
+
+ADD_EXECUTABLE(explore_complete_solution explore_complete_solution.c)
+TARGET_LINK_LIBRARIES(explore_complete_solution tinytsumego2 m)

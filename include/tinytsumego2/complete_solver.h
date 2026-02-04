@@ -4,6 +4,8 @@
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/keyspace.h"
 
+#define MAX_COMPENSATION_DEPTH (6)
+
 // An implicit game graph. All enumerable game states are evaluated even if they're not reachable from the root.
 typedef struct complete_graph {
   // Pre-computed key generator
