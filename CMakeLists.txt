@@ -36,32 +36,11 @@ ADD_SUBDIRECTORY(src)
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(test)
 
-ADD_EXECUTABLE(solver solver.c)
-TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
-
 ADD_EXECUTABLE(complete_solver complete_solver.c)
 TARGET_LINK_LIBRARIES(complete_solver tinytsumego2 m)
 
 ADD_EXECUTABLE(tabulate_notchers tabulate_notchers.c)
 TARGET_LINK_LIBRARIES(tabulate_notchers tinytsumego2 m)
-
-ADD_EXECUTABLE(ab_solver ab_solver.c)
-TARGET_LINK_LIBRARIES(ab_solver jkiss tinytsumego2 m)
-
-ADD_EXECUTABLE(mc_solver mc_solver.c)
-TARGET_LINK_LIBRARIES(mc_solver jkiss tinytsumego2 m)
-
-ADD_EXECUTABLE(enumerate_eyespaces enumerate_eyespaces.c)
-TARGET_LINK_LIBRARIES(enumerate_eyespaces tinytsumego2)
-
-ADD_EXECUTABLE(build_tablebase build_tablebase.c)
-TARGET_LINK_LIBRARIES(build_tablebase tinytsumego2 m)
-
-ADD_EXECUTABLE(verify_tablebase verify_tablebase.c)
-TARGET_LINK_LIBRARIES(verify_tablebase tinytsumego2 m)
-
-ADD_EXECUTABLE(explore_solution explore_solution.c)
-TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
 
 ADD_EXECUTABLE(explore_complete_solution explore_complete_solution.c)
 TARGET_LINK_LIBRARIES(explore_complete_solution tinytsumego2 m)

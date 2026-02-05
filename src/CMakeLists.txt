@@ -4,17 +4,13 @@ ADD_LIBRARY(
   bloom.c
   complete_reader.c
   complete_solver.c
-  full_reader.c
-  full_solver.c
   keyspace.c
-  partial_solver.c
   scoring.c
   shape.c
   state.c
   status.c
   stones.c
   stones16.c
-  tablebase/base.c
   util.c
 )
 INSTALL(
