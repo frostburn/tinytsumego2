@@ -63,6 +63,7 @@ const char* tsumego_status_string(tsumego_status ts) {
   return KO_KO;
 }
 
+// TODO: Promote to an actual complete_graph method
 state navigate_principal_path(complete_graph *cg, state s) {
   bool low_color = s.white_to_play;
   value v = get_complete_graph_value(cg, &s);

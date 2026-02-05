@@ -11,8 +11,8 @@ typedef struct complete_graph {
   // Pre-computed key generator
   tight_keyspace keyspace;
 
-  // Use delay tactics during solving
-  bool use_delay;
+  // Tactics used during solving
+  tactics tactics;
 
   // Valid moves according to the root state
   int num_moves;
@@ -27,7 +27,7 @@ void print_complete_graph(complete_graph *cg);
 
 // Create a complete game graph based on a root state.
 // The second argument controls the bonus for delaying inevitable target loss.
-complete_graph create_complete_graph(const state *root, bool use_delay);
+complete_graph create_complete_graph(const state *root, tactics ts);
 
 // Get the value range of a state in the game graph
 value get_complete_graph_value(complete_graph *cg, const state *s);

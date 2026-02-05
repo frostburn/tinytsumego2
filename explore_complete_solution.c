@@ -53,9 +53,10 @@ int main(int argc, char *argv[]) {
         printf("\n");
       } else if (r != ILLEGAL) {
         value child_value = get_complete_graph_reader_value(&cgr, &child);
-        bool low_good = cgr.use_delay ? (v.high == -delay_capture(child_value.low)) : v.high == -child_value.low;
-        bool high_good = cgr.use_delay ? (v.low == -delay_capture(child_value.high)) : v.low == -child_value.high;
-        if (sign < 0) {
+        child_value = apply_tactics(cgr.tactics, r, &child, child_value);
+        bool low_good = (v.high == child_value.low);
+        bool high_good = (v.low == child_value.high);
+        if (sign > 0) {
           float temp = child_value.low;
           child_value.low = -child_value.high;
           child_value.high = -temp;
