@@ -1,8 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25.1)
 PROJECT(tinytsumego2 LANGUAGES C)
 
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -26,6 +26,7 @@ SET(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
 
 INCLUDE_DIRECTORIES(
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/api"
     "${CMAKE_CURRENT_SOURCE_DIR}/jkiss/include"
 )
 LINK_DIRECTORIES(${LIBRARY_OUTPUT_PATH})
@@ -44,3 +45,11 @@ TARGET_LINK_LIBRARIES(tabulate_notchers tinytsumego2 m)
 
 ADD_EXECUTABLE(explore_solution explore_solution.c)
 TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
+
+CONFIGURE_FILE (api/tinytsumego2.h.in ${CMAKE_CURRENT_SOURCE_DIR}/api/tinytsumego2.h @ONLY)
+
+ADD_LIBRARY(tinytsumego SHARED lib.c)
+SET_TARGET_PROPERTIES(tinytsumego PROPERTIES
+    SOVERSION 1
+    PUBLIC_HEADER api/tinytsumego2.h)
+TARGET_LINK_LIBRARIES(tinytsumego jkiss tinytsumego2 m)
