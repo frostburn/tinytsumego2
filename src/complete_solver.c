@@ -6,6 +6,17 @@
 #define MAX_INITIALIZATION_DEPTH (1024)
 
 void print_complete_graph(complete_graph *cg) {
+  switch (cg->tactics) {
+    case NONE:
+      printf("No special tactics\n");
+      break;
+    case DELAY:
+      printf("Delay tactics used\n");
+      break;
+    case FORCING:
+      printf("Forcing tactics used\n");
+      break;
+  }
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
     value v = table_value_to_value(cg->values[i]);
     printf(
@@ -17,7 +28,7 @@ void print_complete_graph(complete_graph *cg) {
   }
 }
 
-complete_graph create_complete_graph(const state *root, bool use_delay) {
+complete_graph create_complete_graph(const state *root, tactics ts) {
   if (root->ko || root->passes) {
     fprintf(stderr, "The root state may not have an active ko or previous passes\n");
     exit(EXIT_FAILURE);
@@ -26,7 +37,7 @@ complete_graph create_complete_graph(const state *root, bool use_delay) {
   complete_graph cg = {0};
 
   cg.keyspace = create_tight_keyspace(root);
-  cg.use_delay = use_delay;
+  cg.tactics = ts;
 
   cg.num_moves = popcount(root->logical_area) + 1;
   cg.moves = malloc(cg.num_moves * sizeof(stones_t));
@@ -57,27 +68,19 @@ table_value get_complete_graph_value_(complete_graph *cg, const state *s, int de
     for (int j = 0; j < cg->num_moves; ++j) {
       state child = *s;
       const move_result r = make_move(&child, cg->moves[j]);
-      if (r == SECOND_PASS) {
-        score_q7_t child_score = -score_q7(&child);
-        if (child_score > low) low = child_score;
-        if (child_score > high) high = child_score;
+      table_value child_value;
+      if (r <= TAKE_TARGET) {
+        child_value = score_terminal_q7(r, &child);
+      } else {
+        child_value = apply_tactics_q7(
+          cg->tactics,
+          r,
+          &child,
+          get_complete_graph_value_(cg, &child, depth - 1)
+        );
       }
-      else if (r == TAKE_TARGET) {
-        score_q7_t child_score = -target_lost_score_q7(&child);
-        if (child_score > low) low = child_score;
-        if (child_score > high) high = child_score;
-      } else if (r != ILLEGAL) {
-        table_value child_value = get_complete_graph_value_(cg, &child, depth - 1);
-        if (cg->use_delay) {
-          child_value.low = -delay_capture_q7(child_value.low);
-          child_value.high = -delay_capture_q7(child_value.high);
-        } else {
-          child_value.low = -child_value.low;
-          child_value.high = -child_value.high;
-        }
-        if (child_value.high > low) low = child_value.high;
-        if (child_value.low > high) high = child_value.low;
-      }
+      if (child_value.high > low) low = child_value.high;
+      if (child_value.low > high) high = child_value.low;
     }
     return (table_value){low, high};
   }
@@ -176,23 +179,19 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
       for (int j = 0; j < cg->num_moves; ++j) {
         state child = parent;
         const move_result r = make_move(&child, cg->moves[j]);
-        // Second pass cannot happen here due to keyspace tightness
-        if (r == TAKE_TARGET) {
-          score_q7_t child_score = -target_lost_score_q7(&child);
-          if (child_score > low) low = child_score;
-          if (child_score > high) high = child_score;
-        } else if (r != ILLEGAL) {
-          table_value child_value = get_complete_graph_value_(cg, &child, MAX_COMPENSATION_DEPTH);
-          if (cg->use_delay) {
-            child_value.low = -delay_capture_q7(child_value.low);
-            child_value.high = -delay_capture_q7(child_value.high);
-          } else {
-            child_value.low = -child_value.low;
-            child_value.high = -child_value.high;
-          }
-          if (child_value.high > low) low = child_value.high;
-          if (child_value.low > high) high = child_value.low;
+        table_value child_value;
+        if (r <= TAKE_TARGET) {
+          child_value = score_terminal_q7(r, &child);
+        } else {
+          child_value = apply_tactics_q7(
+            cg->tactics,
+            r,
+            &child,
+            get_complete_graph_value_(cg, &child, MAX_COMPENSATION_DEPTH)
+          );
         }
+        if (child_value.high > low) low = child_value.high;
+        if (child_value.low > high) high = child_value.low;
       }
       if (cg->values[i].low != low || cg->values[i].high != high) {
         cg->values[i] = (table_value) {low, high};

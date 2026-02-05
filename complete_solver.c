@@ -12,10 +12,10 @@
 
 #define MAX_DEMONSTRATION (100)
 
-complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
+complete_graph solve(tsumego t, tactics ts, bool root_only, bool play_high, bool verbose) {
   state root = t.state;
 
-  complete_graph cg = create_complete_graph(&root, use_delay);
+  complete_graph cg = create_complete_graph(&root, ts);
 
   if (verbose) {
     print_state(&root);
@@ -40,10 +40,7 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
   }
   cg.moves[0] = pass();
 
-  bool low_to_play = true;
-  #ifdef ATTACKER_PLAYS_HIGH
-    low_to_play = false;
-  #endif
+  bool low_to_play = !play_high;
 
   coord_f colof = root.wide ? column_of_16 : column_of;
   coord_f rowof = root.wide ? row_of_16 : row_of;
@@ -59,8 +56,22 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
       } else if (r == SECOND_PASS) {
         printf("%c%c: game over (%f)\n",  colof(cg.moves[j]), rowof(cg.moves[j]), score(&child));
       } else if (r != ILLEGAL) {
-        const value child_value = get_complete_graph_value(&cg, &child);
-        printf("%c%c: %f, %f\n",  colof(cg.moves[j]), rowof(cg.moves[j]), child_value.low, child_value.high);
+        const value next_value = get_complete_graph_value(&cg, &child);
+        const value child_value = apply_tactics(
+          cg.tactics,
+          r,
+          &child,
+          next_value
+        );
+        printf(
+          "%c%c: (%f, %f) -> (%f, %f)\n",
+           colof(cg.moves[j]),
+           rowof(cg.moves[j]),
+           next_value.low,
+           next_value.high,
+           child_value.low,
+           child_value.high
+        );
       }
     }
 
@@ -81,21 +92,22 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
           continue;
         }
       } else if (r != ILLEGAL) {
-        const value child_value = get_complete_graph_value(&cg, &child);
+        const value next_value = get_complete_graph_value(&cg, &child);
+        const value child_value = apply_tactics(
+          cg.tactics,
+          r,
+          &child,
+          next_value
+        );
 
-        bool good;
-        if (low_to_play) {
-          good = use_delay ? (-delay_capture(child_value.high) == low) : -child_value.high == low;
-        } else {
-          good = use_delay ? (-delay_capture(child_value.low) == high) : -child_value.low == high;
-        }
+        bool good = (low_to_play ? low == child_value.high : high == child_value.low);
 
         if (good) {
           found = true;
           s = child;
           low_to_play = !low_to_play;
-          low = child_value.low;
-          high = child_value.high;
+          low = next_value.low;
+          high = next_value.high;
           if (r == KO_THREAT_AND_RETAKE) {
             printf("Ko threat made and answered...\n");
           }
@@ -113,20 +125,22 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
 
   cleanup:
 
-  if (use_delay) {
+  if (ts == DELAY) {
     if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
       fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low_delay, t.high_delay);
     }
 
     assert(root_value.low == t.low_delay);
     assert(root_value.high == t.high_delay);
-  } else {
+  } else if (ts == NONE) {
     if (root_value.low != t.low || root_value.high != t.high) {
       fprintf(stderr, "%f, %f =! %f, %f\n", root_value.low, root_value.high, t.low, t.high);
     }
 
     assert(root_value.low == t.low);
     assert(root_value.high == t.high);
+  } else if (ts == FORCING) {
+    printf("Root value = (%f, %f)\n\n", root_value.low, root_value.high);
   }
 
   return cg;
@@ -134,13 +148,22 @@ complete_graph solve(tsumego t, bool use_delay, bool root_only, bool verbose) {
 
 int main(int argc, char *argv[]) {
   int arg_count = argc;
-  bool use_delay = true;
+  tactics ts = NONE;
   bool root_only = false;
+  bool play_high = false;
   int c;
-  while ((c = getopt(argc, argv, "dr")) != -1) {
+  while ((c = getopt(argc, argv, "dfhr")) != -1) {
     switch (c) {
       case 'd':
-        use_delay = false;
+        ts = DELAY;
+        arg_count--;
+        break;
+      case 'f':
+        ts = FORCING;
+        arg_count--;
+        break;
+      case 'h':
+        play_high = true;
         arg_count--;
         break;
       case 'r':
@@ -155,12 +178,12 @@ int main(int argc, char *argv[]) {
   if (arg_count <= 1) {
     for (size_t i = 0; i < NUM_TSUMEGO; ++i) {
       printf("%s\n", TSUMEGO_NAMES[i]);
-      complete_graph cg = solve(get_tsumego(TSUMEGO_NAMES[i]), use_delay, root_only, false);
+      complete_graph cg = solve(get_tsumego(TSUMEGO_NAMES[i]), ts, root_only, play_high, false);
       free_complete_graph(&cg);
     }
     return EXIT_SUCCESS;
   } else {
-    complete_graph cg = solve(get_tsumego(argv[optind]), use_delay, root_only, true);
+    complete_graph cg = solve(get_tsumego(argv[optind]), ts, root_only, play_high, true);
     if (arg_count >= 3) {
       char *filename = argv[optind + 1];
       printf("Saving result to %s\n", filename);

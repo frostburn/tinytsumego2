@@ -12,7 +12,7 @@
 
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream) {
   size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream);
-  total += fwrite(&(cg->use_delay), sizeof(bool), 1, stream);
+  total += fwrite(&(cg->tactics), sizeof(tactics), 1, stream);
   total += fwrite(&(cg->num_moves), sizeof(int), 1, stream);
   total += fwrite(cg->moves, sizeof(stones_t), cg->num_moves, stream);
 
@@ -58,8 +58,8 @@ complete_graph_reader load_complete_graph_reader(const char *filename) {
   map += sizeof(state);
   result.keyspace = create_tight_keyspace(&root);
 
-  result.use_delay = ((bool*) map)[0];
-  map += sizeof(bool);
+  result.tactics = ((tactics*) map)[0];
+  map += sizeof(tactics);
 
   result.num_moves = ((int*) map)[0];
   map += sizeof(int);
@@ -113,25 +113,19 @@ value get_complete_graph_reader_value_(const complete_graph_reader *cgr, const s
     for (int j = 0; j < cgr->num_moves; ++j) {
       state child = *s;
       const move_result r = make_move(&child, cgr->moves[j]);
-      if (r == SECOND_PASS) {
-        float child_score = score(&child);
-        low = fmax(low, -child_score);
-        high = fmax(high, -child_score);
+      value child_value;
+      if (r <= TAKE_TARGET) {
+        child_value = score_terminal(r, &child);
+      } else {
+        child_value = apply_tactics(
+          cgr->tactics,
+          r,
+          &child,
+          get_complete_graph_reader_value_(cgr, &child, depth - 1)
+        );
       }
-      else if (r == TAKE_TARGET) {
-        float child_score = target_lost_score(&child);
-        low = fmax(low, -child_score);
-        high = fmax(high, -child_score);
-      } else if (r != ILLEGAL) {
-        const value child_value = get_complete_graph_reader_value_(cgr, &child, depth - 1);
-        if (cgr->use_delay) {
-          low = fmax(low, -delay_capture(child_value.high));
-          high = fmax(high, -delay_capture(child_value.low));
-        } else {
-          low = fmax(low, -child_value.high);
-          high = fmax(high, -child_value.low);
-        }
-      }
+      low = fmax(low, child_value.high);
+      high = fmax(high, child_value.low);
     }
     return (value){low, high};
   }

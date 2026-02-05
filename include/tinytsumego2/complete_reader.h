@@ -14,8 +14,8 @@ typedef struct complete_graph_reader {
   // Pre-computed key generator
   tight_keyspace keyspace;  // NOTE: (m)allocated in RAM
 
-  // Was delay scoring used during solving
-  bool use_delay;
+  // Tactics used during solving
+  tactics tactics;
 
   // Valid moves according to the root state
   int num_moves;
