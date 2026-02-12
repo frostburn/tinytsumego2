@@ -4,6 +4,7 @@ ADD_LIBRARY(
   bloom.c
   complete_reader.c
   complete_solver.c
+  dual_solver.c
   keyspace.c
   scoring.c
   shape.c
