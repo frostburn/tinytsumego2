@@ -18,14 +18,14 @@ typedef struct tight_keyspace {
   size_t ko_m;
   int num_tritters;
   tritter *tritters;
-  size_t player_external_m;
-  size_t opponent_external_m;
+  size_t black_external_m;
+  size_t white_external_m;
 
   size_t prefix_m;
   state *prefixes;
   int num_blocks;
-  stones_t **player_blocks;
-  stones_t **opponent_blocks;
+  stones_t **black_blocks;
+  stones_t **white_blocks;
 } tight_keyspace;
 
 // Create a keyspace helper for a root state

@@ -473,24 +473,27 @@ size_t to_tight_key(const state *root, const state *child, const bool symmetric_
 
   stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
 
+  stones_t black = child->white_to_play ? child->opponent : child->player;
+  stones_t white = child->white_to_play ? child->player : child->opponent;
+
   // Encode stones in ternary
   for (int i = 63; i >= 0; --i) {
     const stones_t p = 1ULL << i;
     if (p & effective_area) {
       key *= 3;
-      if (p & child->player) {
+      if (p & black) {
         key += 1;
-      } else if (p & child->opponent) {
+      } else if (p & white) {
         key += 2;
       }
     }
   }
 
   // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  stones_t player = root->white_to_play == child->white_to_play ? child->player : child->opponent;
-  stones_t opponent = root->white_to_play == child->white_to_play ? child->opponent : child->player;
-  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & player);
-  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & opponent);
+  stones_t root_black = root->white_to_play ? root->opponent : root->player;
+  stones_t root_white = root->white_to_play ? root->player : root->opponent;
+  key = key * (popcount(root->external & root_black) + 1) + popcount(child->external & black);
+  key = key * (popcount(root->external & root_white) + 1) + popcount(child->external & white);
 
   if (symmetric_threats) {
     key = key * (2 * abs(root->ko_threats) + 1) + child->ko_threats + abs(root->ko_threats);
@@ -506,8 +509,6 @@ size_t to_tight_key(const state *root, const state *child, const bool symmetric_
 state from_tight_key(const state *root, size_t key, const bool symmetric_threats) {
   size_t m;
   state result = *root;
-  result.player = 0;
-  result.opponent = 0;
   result.immortal |= result.external;
 
   result.white_to_play = key & 1;
@@ -526,20 +527,22 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
     key /= m;
   }
 
-  m = (popcount(root->external & root->opponent) + 1);
+  stones_t root_white = root->white_to_play ? root->player : root->opponent;
+  m = (popcount(root->external & root_white) + 1);
   size_t num_external = key % m;
   key /= m;
 
   for (size_t i = num_external + 1; i < m; ++i) {
-    result.external ^= LAST_STONE >> (clz(result.external & root->opponent));
+    result.external ^= LAST_STONE >> (clz(result.external & root_white));
   }
 
-  m = (popcount(root->external & root->player) + 1);
+  stones_t root_black = root->white_to_play ? root->opponent : root->player;
+  m = (popcount(root->external & root_black) + 1);
   num_external = key % m;
   key /= m;
 
   for (size_t i = num_external + 1; i < m; ++i) {
-    result.external ^= LAST_STONE >> (clz(result.external & root->player));
+    result.external ^= LAST_STONE >> (clz(result.external & root_black));
   }
 
   result.immortal ^= result.external;
@@ -547,43 +550,36 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
   stones_t special = root->target | root->immortal | root->external;
   stones_t effective_area = root->logical_area & ~special;
 
+  stones_t black = 0;
+  stones_t white = 0;
   for (int i = 0; i < 64; ++i) {
     const stones_t p = 1ULL << i;
     if (p & effective_area) {
       switch (key % 3) {
         case 1:
-          result.player |= p;
+          black |= p;
           break;
         case 2:
-          result.opponent |= p;
+          white |= p;
           break;
       }
       key /= 3;
     }
   }
 
-  if (result.wide) {
-    result.target |= flood_16(result.target & result.player, result.player);
-    result.target |= flood_16(result.target & result.opponent, result.opponent);
-    result.immortal |= flood_16(result.immortal & result.player, result.player);
-    result.immortal |= flood_16(result.immortal & result.opponent, result.opponent);
+  if (result.white_to_play) {
+    result.player = white | (root_white & special);
+    result.opponent = black | (root_black & special);
   } else {
-    result.target |= flood(result.target & result.player, result.player);
-    result.target |= flood(result.target & result.opponent, result.opponent);
-    result.immortal |= flood(result.immortal & result.player, result.player);
-    result.immortal |= flood(result.immortal & result.opponent, result.opponent);
+    result.player = black | (root_black & special);
+    result.opponent = white | (root_white & special);
   }
 
-  if (result.white_to_play == root->white_to_play) {
-    result.player |= root->player & special;
-    result.opponent |= root->opponent & special;
-    if (!symmetric_threats && root->ko_threats < 0) {
+  if (!symmetric_threats) {
+    if (result.white_to_play == root->white_to_play && root->ko_threats < 0) {
       result.ko_threats = -result.ko_threats;
     }
-  } else {
-    result.player |= root->opponent & special;
-    result.opponent |= root->player & special;
-    if (!symmetric_threats && root->ko_threats > 0) {
+    if (result.white_to_play != root->white_to_play && root->ko_threats > 0) {
       result.ko_threats = -result.ko_threats;
     }
   }
@@ -1000,7 +996,7 @@ move_result normalize_immortal_regions(state *root, state *s) {
   return result;
 }
 
-bool is_legal(state *s) {
+bool is_legal(const state *s) {
   if (s->passes < 0 || s->passes > 2) {
     return false;
   }
