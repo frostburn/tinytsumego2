@@ -20,7 +20,7 @@ typedef struct state
   // Stones of the player the made the last move.
   stones_t opponent;
 
-  // The zero bit board. Or a single bit signifying the illegal ko recapture.
+  // The zero bitboard. Or a single bit signifying the illegal ko recapture.
   stones_t ko;
 
   // Tsumego target(s) to be captured or saved depending on the problem.
@@ -39,7 +39,7 @@ typedef struct state
   // Number of external ko threats available. Negative numbers signify that the opponent has ko threats.
   int ko_threats;
 
-  // Indicate the owner of the button. Awarded to the first player to make a passing move. Worth ½ points of area score.
+  // Indicate the owner of the button. Awarded to the first player to make a passing move. Worth a quarter-point of area score.
   // -1: opponent has button
   //  0: button not awarded yet
   // +1: player has button

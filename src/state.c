@@ -107,10 +107,10 @@ void print_state(const state *s) {
       printf(" ?");
     }
     else {
-        printf("  ");
+      printf("  ");
     }
     if (i % width == width - 1){
-        printf("\x1b[0m\n");
+      printf("\x1b[0m\n");
     }
   }
   printf("passes = %d ko_threats = %d button = %d\n", s->passes, s->ko_threats, s->button);
