@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "tinytsumego2/state.h"
@@ -738,6 +739,26 @@ void test_legality() {
   assert(is_legal(&f));
 }
 
+void test_compressed_keyspace() {
+  const state root = rectangle_six();
+  print_state(&root);
+  compressed_keyspace cks = create_compressed_keyspace(&root);
+  printf(
+    "size = %zu, factor = %g %% requiring %g + %g bytes of aux space, compare with %zu\n",
+    cks.size,
+    cks.compressor.factor * 100,
+    cks.compressor.size * cks.compressor.factor,
+    floor(cks.compressor.size * cks.compressor.factor / 256) * sizeof(size_t),
+    cks.keyspace.size
+  );
+
+  for (size_t key = 0; key < cks.size; ++key) {
+    const state s = from_compressed_key(&cks, key);
+    assert(is_legal(&s));
+  }
+  free_compressed_keyspace(&cks);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -758,6 +779,7 @@ int main() {
   test_bent_four_tight_keyspace();
   test_wide_keyspace();
   test_legality();
+  test_compressed_keyspace();
 
   return EXIT_SUCCESS;
 }

@@ -4,6 +4,10 @@ int ceil_div(int x, int y) {
   return (x + y - 1) / y;
 }
 
+size_t ceil_divz(size_t x, size_t y) {
+  return (x + y - 1) / y;
+}
+
 char* file_to_mmap(const char *filename, struct stat *sb, int *fd) {
   stat(filename, sb);
   *fd = open(filename, O_RDONLY);

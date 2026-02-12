@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include "tinytsumego2/keyspace.h"
 #include "tinytsumego2/util.h"
@@ -166,4 +167,86 @@ void free_tight_keyspace(tight_keyspace *tks) {
   tks->black_blocks = NULL;
   free(tks->white_blocks);
   tks->white_blocks = NULL;
+}
+
+monotonic_compressor create_monotonic_compressor(size_t num_keys, indicator_f indicator) {
+  monotonic_compressor result = {0};
+  result.uncompressed_size = num_keys;
+  result.checkpoints = malloc(ceil_divz(num_keys, 1 << CHAR_BIT) * sizeof(size_t));
+  result.deltas = malloc(num_keys * sizeof(unsigned char));
+
+  size_t num_legal = 0;
+  size_t last_checkpoint = 0;
+  for (size_t key = 0; key < num_keys; ++key) {
+    if ((key & 255) == 0) {
+      result.checkpoints[key >> CHAR_BIT] = num_legal;
+      last_checkpoint = num_legal;
+    }
+    result.deltas[key] = num_legal - last_checkpoint;
+    if (indicator(key)) {
+      num_legal++;
+    }
+  }
+
+  result.size = num_legal;
+  if (num_legal) {
+    result.factor = (double)(num_keys) / (double)(num_legal);
+  } else {
+    result.factor = 1;
+  }
+
+  return result;
+}
+
+size_t compress_key(const monotonic_compressor *mc, const size_t key) {
+  return mc->checkpoints[key >> CHAR_BIT] + (size_t)mc->deltas[key];
+}
+
+size_t decompress_key(const monotonic_compressor *mc, const size_t compressed_key) {
+  if (!mc->size) {
+    return 0;
+  }
+  size_t result = (size_t)(compressed_key * mc->factor);
+  while ((result + 1) < mc->uncompressed_size && compress_key(mc, result) <= compressed_key) {
+    result++;
+  }
+  while (compress_key(mc, result) > compressed_key) {
+    result--;
+  }
+  return result;
+}
+
+void free_monotonic_compressor (monotonic_compressor *mc) {
+  free(mc->checkpoints);
+  mc->checkpoints = NULL;
+  free(mc->deltas);
+  mc->deltas = NULL;
+}
+
+compressed_keyspace create_compressed_keyspace(const state *root) {
+  compressed_keyspace result = {0};
+  result.keyspace = create_tight_keyspace(root, true);
+  result.prefix_m = result.keyspace.prefix_m / result.keyspace.black_external_m / result.keyspace.white_external_m;
+  bool indicator(size_t key) {
+    const state s = from_tight_key_fast(&(result.keyspace), key * result.prefix_m);
+    return is_legal(&s);
+  }
+  result.compressor = create_monotonic_compressor(result.keyspace.size / result.prefix_m, indicator);
+  result.size = result.prefix_m * result.compressor.size;
+  return result;
+}
+
+size_t to_compressed_key(const compressed_keyspace *cks, const state *s) {
+  const size_t key = to_tight_key_fast(&(cks->keyspace), s);
+  return (key % cks->prefix_m) + cks->prefix_m * compress_key(&(cks->compressor), key / cks->prefix_m);
+}
+
+state from_compressed_key(const compressed_keyspace *cks, size_t key) {
+  key = (key % cks->prefix_m) + cks->prefix_m * decompress_key(&(cks->compressor), key / cks->prefix_m);
+  return from_tight_key_fast(&(cks->keyspace), key);
+}
+
+void free_compressed_keyspace(compressed_keyspace *cks) {
+  free_tight_keyspace(&(cks->keyspace));
+  free_monotonic_compressor(&(cks->compressor));
 }
