@@ -606,21 +606,21 @@ void test_rectangle_tight_keys() {
   // Normalize representation
   root.logical_area &= ~(root.target | root.immortal);
   print_state(&root);
-  const size_t key = to_tight_key(&root, &root);
-  assert(key < tight_keyspace_size(&root));
+  const size_t key = to_tight_key(&root, &root, false);
+  assert(key < tight_keyspace_size(&root, false));
 
-  state s = from_tight_key(&root, key);
+  state s = from_tight_key(&root, key, false);
   print_state(&s);
   assert(equals(&root, &s));
 
   state child = root;
   make_move(&child, single(1, 0));
-  const size_t child_key = to_tight_key(&root, &child);
-  state tc = from_tight_key(&root, child_key);
+  const size_t child_key = to_tight_key(&root, &child, false);
+  state tc = from_tight_key(&root, child_key, false);
   print_state(&tc);
   assert(equals(&child, &tc));
 
-  tight_keyspace tks = create_tight_keyspace(&root);
+  tight_keyspace tks = create_tight_keyspace(&root, false);
   state fs = from_tight_key_fast(&tks, key);
   print_state(&fs);
   assert(equals(&s, &fs));
@@ -639,14 +639,14 @@ void test_bent_four_tight_keyspace() {
   state root = bent_four_in_the_corner();
   print_state(&root);
 
-  tight_keyspace tks = create_tight_keyspace(&root);
+  tight_keyspace tks = create_tight_keyspace(&root, true);
 
-  size_t num_nodes = tight_keyspace_size(&root);
+  size_t num_nodes = tight_keyspace_size(&root, true);
 
   state *states = malloc(num_nodes * sizeof(state));
 
   for (size_t i = 0; i < num_nodes; ++i) {
-    states[i] = from_tight_key(&root, i);
+    states[i] = from_tight_key(&root, i, true);
     state s = from_tight_key_fast(&tks, i);
     assert(equals(&s, states + i));
     size_t key = to_tight_key_fast(&tks, states + i);
@@ -654,7 +654,7 @@ void test_bent_four_tight_keyspace() {
     for (size_t j = 0; j < i; ++j) {
       if (equals(states + i, states + j)) {
         printf("%zu != %zu\n", i, j);
-        from_tight_key(&root, j);
+        from_tight_key(&root, j, true);
         print_state(states + i);
         print_state(states + j);
       }
@@ -669,14 +669,14 @@ void test_wide_keyspace() {
   state root = straight_nine_wide();
   print_state(&root);
 
-  tight_keyspace tks = create_tight_keyspace(&root);
+  tight_keyspace tks = create_tight_keyspace(&root, false);
 
-  size_t num_nodes = tight_keyspace_size(&root);
+  size_t num_nodes = tight_keyspace_size(&root, false);
 
   state *states = malloc(num_nodes * sizeof(state));
 
   for (size_t i = 0; i < num_nodes; ++i) {
-    states[i] = from_tight_key(&root, i);
+    states[i] = from_tight_key(&root, i, false);
     state s = from_tight_key_fast(&tks, i);
     assert(equals(&s, states + i));
     size_t key = to_tight_key_fast(&tks, states + i);
@@ -687,7 +687,7 @@ void test_wide_keyspace() {
       }
       if (equals(states + i, states + j)) {
         printf("%zu != %zu\n", i, j);
-        from_tight_key(&root, j);
+        from_tight_key(&root, j, false);
         print_state(states + i);
         print_state(states + j);
       }
@@ -725,14 +725,14 @@ void test_legality() {
   assert(is_legal(&s));
 
   state root = (state) {16547391ULL, 8408623ULL, 8138768ULL, 8405024ULL, 0ULL, 8138768ULL, 0ULL, 8405024ULL, 0, -1, -1, false, false};
-  tight_keyspace tks = create_tight_keyspace(&root);
+  tight_keyspace tks = create_tight_keyspace(&root, false);
 
   s.button = abs(s.button);
   size_t key = to_tight_key_fast(&tks, &s);
-  size_t slow_key = to_tight_key(&root, &s);
+  size_t slow_key = to_tight_key(&root, &s, false);
   printf("%zu ?= %zu\n", key, slow_key);
 
-  state f = from_tight_key(&root, key);
+  state f = from_tight_key(&root, key, false);
   print_state(&f);
 
   assert(is_legal(&f));

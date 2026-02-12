@@ -5,14 +5,18 @@
 #define TRIT_BLOCK_SIZE (8)
 #define TRIT_BLOCK_M (6561)
 
-tight_keyspace create_tight_keyspace(const state *root) {
+tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_threats) {
   tight_keyspace result = {0};
 
   result.root = *root;
-  result.size = tight_keyspace_size(root);
+  result.size = tight_keyspace_size(root, symmetric_threats);
 
-  result.white_to_play = root->white_to_play;
-  result.ko_m = abs(root->ko_threats) + 1;
+  result.symmetric_threats = symmetric_threats;
+  if (symmetric_threats) {
+    result.ko_m = 2 * abs(root->ko_threats) + 1;
+  } else {
+    result.ko_m = abs(root->ko_threats) + 1;
+  }
 
   stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
 
@@ -47,7 +51,7 @@ tight_keyspace create_tight_keyspace(const state *root) {
   result.prefix_m = 4 * result.ko_m * result.player_external_m * result.opponent_external_m;
   result.prefixes = malloc(result.prefix_m * sizeof(state));
   for (size_t key = 0; key < result.prefix_m; ++key) {
-    result.prefixes[key] = from_tight_key(root, key);
+    result.prefixes[key] = from_tight_key(root, key, symmetric_threats);
   }
 
   int effective_size = popcount(effective_area);
@@ -60,7 +64,7 @@ tight_keyspace create_tight_keyspace(const state *root) {
     result.player_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
     result.opponent_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
     for (size_t j = 0; j < TRIT_BLOCK_M; ++j) {
-      state s = from_tight_key(root, j * m);
+      state s = from_tight_key(root, j * m, symmetric_threats);
       result.player_blocks[i][j] = s.player & effective_area;
       result.opponent_blocks[i][j] = s.opponent & effective_area;
     }
@@ -74,7 +78,7 @@ tight_keyspace create_tight_keyspace(const state *root) {
     result.player_blocks[i] = malloc(tail_m * sizeof(stones_t));
     result.opponent_blocks[i] = malloc(tail_m * sizeof(stones_t));
     for (size_t j = 0; j < tail_m; ++j) {
-      state s = from_tight_key(root, j * m);
+      state s = from_tight_key(root, j * m, symmetric_threats);
       result.player_blocks[i][j] = s.player & effective_area;
       result.opponent_blocks[i][j] = s.opponent & effective_area;
     }
@@ -111,12 +115,16 @@ size_t to_tight_key_fast(const tight_keyspace *tks, const state *s) {
   }
 
   // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  stones_t player = tks->white_to_play == s->white_to_play ? s->player : s->opponent;
-  stones_t opponent = tks->white_to_play == s->white_to_play ? s->opponent : s->player;
+  stones_t player = tks->root.white_to_play == s->white_to_play ? s->player : s->opponent;
+  stones_t opponent = tks->root.white_to_play == s->white_to_play ? s->opponent : s->player;
   key = key * tks->player_external_m + popcount(s->external & player);
   key = key * tks->opponent_external_m + popcount(s->external & opponent);
 
-  key = key * tks->ko_m + abs(s->ko_threats);
+  if (tks->symmetric_threats) {
+    key = key * tks->ko_m + s->ko_threats + abs(tks->root.ko_threats);
+  } else {
+    key = key * tks->ko_m + abs(s->ko_threats);
+  }
   key = (key << 2) | ((s->button) << 1) | !!s->white_to_play;
 
   return key;

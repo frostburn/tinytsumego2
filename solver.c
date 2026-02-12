@@ -19,7 +19,7 @@ complete_graph solve(tsumego t, tactics ts, bool root_only, bool play_high, bool
 
   if (verbose) {
     print_state(&root);
-    printf("Solution space size = %zu\n", tight_keyspace_size(&root));
+    printf("Solution space size = %zu\n", cg.keyspace.size);
   }
 
   solve_complete_graph(&cg, root_only, verbose);

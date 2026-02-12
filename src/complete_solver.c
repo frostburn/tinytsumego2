@@ -36,7 +36,7 @@ complete_graph create_complete_graph(const state *root, tactics ts) {
 
   complete_graph cg = {0};
 
-  cg.keyspace = create_tight_keyspace(root);
+  cg.keyspace = create_tight_keyspace(root, false);
   cg.tactics = ts;
 
   cg.num_moves = popcount(root->logical_area) + 1;

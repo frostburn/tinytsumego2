@@ -12,6 +12,7 @@
 
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream) {
   size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream);
+  total += fwrite(&(cg->keyspace.symmetric_threats), sizeof(bool), 1, stream);
   total += fwrite(&(cg->tactics), sizeof(tactics), 1, stream);
   total += fwrite(&(cg->num_moves), sizeof(int), 1, stream);
   total += fwrite(cg->moves, sizeof(stones_t), cg->num_moves, stream);
@@ -56,7 +57,9 @@ complete_graph_reader load_complete_graph_reader(const char *filename) {
 
   state root = ((state *)map)[0];
   map += sizeof(state);
-  result.keyspace = create_tight_keyspace(&root);
+  bool symmetric_threats = ((bool *)map)[0];
+  map += sizeof(bool);
+  result.keyspace = create_tight_keyspace(&root, symmetric_threats);
 
   result.tactics = ((tactics*) map)[0];
   map += sizeof(tactics);

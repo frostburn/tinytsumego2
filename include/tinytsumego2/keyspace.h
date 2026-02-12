@@ -14,7 +14,7 @@ typedef struct tritter {
 typedef struct tight_keyspace {
   state root;
   size_t size;
-  bool white_to_play;
+  bool symmetric_threats;
   size_t ko_m;
   int num_tritters;
   tritter *tritters;
@@ -29,7 +29,7 @@ typedef struct tight_keyspace {
 } tight_keyspace;
 
 // Create a keyspace helper for a root state
-tight_keyspace create_tight_keyspace(const state *root);
+tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_threats);
 
 // Convert a child state of the original root state to a unique index
 size_t to_tight_key_fast(const tight_keyspace *tks, const state *s);
