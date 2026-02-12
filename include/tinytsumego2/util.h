@@ -10,4 +10,6 @@
 
 int ceil_div(int x, int y);
 
+size_t ceil_divz(size_t x, size_t y);
+
 char* file_to_mmap(const char *filename, struct stat *sb, int *fd);

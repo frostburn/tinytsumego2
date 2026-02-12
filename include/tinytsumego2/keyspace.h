@@ -28,6 +28,26 @@ typedef struct tight_keyspace {
   stones_t **white_blocks;
 } tight_keyspace;
 
+// Compress monotonically increasing array of integers
+typedef struct monotonic_compressor {
+  size_t *checkpoints;
+  unsigned char *deltas;
+  size_t uncompressed_size;
+  size_t size;
+  double factor;
+} monotonic_compressor;
+
+// Keyspace where every indexed state is legal
+typedef struct compressed_keyspace {
+  tight_keyspace keyspace;
+  monotonic_compressor compressor;
+  size_t prefix_m;
+  size_t size;
+} compressed_keyspace;
+
+// Function pointer type for flagging legal keys
+typedef bool (*indicator_f)(const size_t key);
+
 // Create a keyspace helper for a root state
 tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_threats);
 
@@ -39,3 +59,23 @@ state from_tight_key_fast(const tight_keyspace *tks, size_t key);
 
 // Release associated resources
 void free_tight_keyspace(tight_keyspace *tks);
+
+// Construct a keyspace where every key corresponds to a legal game state
+compressed_keyspace create_compressed_keyspace(const state *root);
+
+monotonic_compressor create_monotonic_compressor(size_t num_keys, indicator_f indicator);
+
+size_t compress_key(const monotonic_compressor *mc, const size_t key);
+
+size_t decompress_key(const monotonic_compressor *mc, const size_t compressed_key);
+
+void free_monotonic_compressor (monotonic_compressor *mc);
+
+// Convert a child state of the original root state to a unique index
+size_t to_compressed_key(const compressed_keyspace *cks, const state *s);
+
+// Recover a simple state from its unique index
+state from_compressed_key(const compressed_keyspace *cks, size_t key);
+
+// Release associated resources
+void free_compressed_keyspace(compressed_keyspace *cks);
