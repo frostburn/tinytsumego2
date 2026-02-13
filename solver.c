@@ -189,6 +189,7 @@ int main(int argc, char *argv[]) {
       printf("Saving result to %s\n", filename);
       FILE *f = fopen(filename, "wb");
       write_complete_graph(&cg, f);
+      fclose(f);
     }
     free_complete_graph(&cg);
   }
