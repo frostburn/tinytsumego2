@@ -211,3 +211,20 @@ stones_t move_west_16(stones_t stones, int amount) {
   }
   return stones;
 }
+
+#ifndef NDEBUG
+stones_t flood_16(register stones_t source, register const stones_t target) {
+  source &= target;
+  register stones_t temp;
+  do {
+    temp = source;
+    source |= (
+      ((source & WEST_BLOCK_16) << H_SHIFT_16) |
+      ((source >> H_SHIFT_16) & WEST_BLOCK_16) |
+      (source << V_SHIFT_16) |
+      (source >> V_SHIFT_16)
+    ) & target;
+  } while (temp != source);
+  return source;
+}
+#endif

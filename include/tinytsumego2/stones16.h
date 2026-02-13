@@ -34,6 +34,7 @@ stones_t single_16(const int x, const int y);
 stones_t liberties_16(const stones_t stones, const stones_t empty);
 
 // Flood fill `target` starting from `source` and return the contiguous chain of stones
+#ifdef NDEBUG
 inline stones_t flood_16(register stones_t source, register const stones_t target) {
   source &= target;
   register stones_t temp;
@@ -48,6 +49,9 @@ inline stones_t flood_16(register stones_t source, register const stones_t targe
   } while (temp != source);
   return source;
 }
+#else
+stones_t flood_16(register stones_t source, register const stones_t target);
+#endif
 
 // Expand `stones` in a "cross" pattern
 stones_t cross_16(const stones_t stones);

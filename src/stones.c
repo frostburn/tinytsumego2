@@ -263,3 +263,20 @@ int offset_v(stones_t stones) {
   // Unreachable
   return 0;
 }
+
+#ifndef NDEBUG
+stones_t flood(register stones_t source, register const stones_t target) {
+  source &= target;
+  register stones_t temp;
+  do {
+    temp = source;
+    source |= (
+      ((source & WEST_BLOCK) << H_SHIFT) |
+      ((source >> H_SHIFT) & WEST_BLOCK) |
+      (source << V_SHIFT) |
+      (source >> V_SHIFT)
+    ) & target;
+  } while (temp != source);
+  return source;
+}
+#endif
