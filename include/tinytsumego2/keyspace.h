@@ -30,9 +30,10 @@ typedef struct tight_keyspace {
 
 // Compress monotonically increasing array of integers
 typedef struct monotonic_compressor {
+  size_t num_checkpoints;
   size_t *checkpoints;
-  unsigned char *deltas;
   size_t uncompressed_size;
+  unsigned char *deltas;
   size_t size;
   double factor;
 } monotonic_compressor;

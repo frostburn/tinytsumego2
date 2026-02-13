@@ -172,7 +172,8 @@ void free_tight_keyspace(tight_keyspace *tks) {
 monotonic_compressor create_monotonic_compressor(size_t num_keys, indicator_f indicator) {
   monotonic_compressor result = {0};
   result.uncompressed_size = num_keys;
-  result.checkpoints = malloc(ceil_divz(num_keys, 1 << CHAR_BIT) * sizeof(size_t));
+  result.num_checkpoints = ceil_divz(num_keys, 1 << CHAR_BIT);
+  result.checkpoints = malloc(result.num_checkpoints * sizeof(size_t));
   result.deltas = malloc(num_keys * sizeof(unsigned char));
 
   size_t num_legal = 0;

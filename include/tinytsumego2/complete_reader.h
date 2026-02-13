@@ -3,12 +3,9 @@
 #include <sys/stat.h>
 #include "tinytsumego2/complete_solver.h"
 #include "tinytsumego2/scoring.h"
+#include "tinytsumego2/util.h"
 
 // Read-only version of complete_solver memory mapped directly from the filesystem
-
-typedef unsigned short int value_id_t;
-
-#define VALUE_MAP_SIZE (1 << (sizeof(value_id_t) * CHAR_BIT))
 
 typedef struct complete_graph_reader {
   // Pre-computed key generator
@@ -38,7 +35,7 @@ typedef struct complete_graph_reader {
 } complete_graph_reader;
 
 // Write a solved complete_graph instance to a stream in a format expected by the reader
-size_t write_complete_graph(const complete_graph *restrict fg, FILE *restrict stream);
+size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream);
 
 // Load a complete_graph_reader from the given file
 complete_graph_reader load_complete_graph_reader(const char *filename);
