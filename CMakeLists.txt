@@ -40,11 +40,17 @@ ADD_SUBDIRECTORY(test)
 ADD_EXECUTABLE(solver solver.c)
 TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
 
+ADD_EXECUTABLE(dual_solver dual_solver.c)
+TARGET_LINK_LIBRARIES(dual_solver tinytsumego2 m)
+
 ADD_EXECUTABLE(tabulate_notchers tabulate_notchers.c)
 TARGET_LINK_LIBRARIES(tabulate_notchers tinytsumego2 m)
 
 ADD_EXECUTABLE(explore_solution explore_solution.c)
 TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
+
+ADD_EXECUTABLE(explore_dual explore_dual.c)
+TARGET_LINK_LIBRARIES(explore_dual tinytsumego2 m)
 
 CONFIGURE_FILE (api/tinytsumego2.h.in ${CMAKE_CURRENT_SOURCE_DIR}/api/tinytsumego2.h @ONLY)
 
