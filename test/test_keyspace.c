@@ -14,6 +14,9 @@ void test_empty() {
   assert(key == 0);
   key = decompress_key(&mc, 0);
   assert(key == 0);
+  for (size_t i = 0; i < 10; ++i) {
+    assert(!has_key(&mc, i));
+  }
   free_monotonic_compressor(&mc);
 }
 
@@ -25,6 +28,7 @@ void test_full() {
   for (size_t i = 0; i < 10; ++i) {
     assert(i == decompress_key(&mc, i));
     assert(i == compress_key(&mc, i));
+    assert(has_key(&mc, i));
   }
   free_monotonic_compressor(&mc);
 }
@@ -42,6 +46,9 @@ void test_false_start() {
   for (size_t i = 0; i < 10; ++i) {
     if (indicator(i)) {
       assert(compress_key(&mc, i) == i - 1);
+      assert(has_key(&mc, i));
+    } else {
+      assert(!has_key(&mc, i));
     }
     if (i < 9) {
       assert(decompress_key(&mc, i) == i + 1);
@@ -72,6 +79,13 @@ void test_monotonic() {
     assert(flags[uncompressed]);
     size_t recovered = compress_key(&mc, uncompressed);
     assert(recovered == key);
+  }
+  for (size_t key = 0; key < size; ++key) {
+    if (flags[key]) {
+      assert(has_key(&mc, key));
+    } else {
+      assert(!has_key(&mc, key));
+    }
   }
 
   free(flags);

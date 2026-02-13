@@ -130,7 +130,11 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
 
 bool iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
-  for (size_t i = 0; i < dg->keyspace.size; ++i) {
+  for (size_t k = 0; k < dg->keyspace.keyspace.size; ++k) {
+    if (!was_legal(&(dg->keyspace), k)) {
+      continue;
+    }
+    size_t i = remap_tight_key(&(dg->keyspace), k);
     // Don't evaluate if the range cannot be tightened
     if (dg->plain_values[i].low == dg->plain_values[i].high && dg->forcing_values[i].low == dg->forcing_values[i].high) {
       continue;
@@ -141,7 +145,7 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
     score_q7_t forcing_low = dg->forcing_values[i].low;
     score_q7_t forcing_high = SCORE_Q7_MIN;
 
-    state parent = from_compressed_key(&(dg->keyspace), i);
+    state parent = from_tight_key_fast(&(dg->keyspace.keyspace), k);
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
       const move_result r = make_move(&child, dg->moves[j]);

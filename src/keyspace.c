@@ -216,6 +216,16 @@ size_t decompress_key(const monotonic_compressor *mc, const size_t compressed_ke
   return result;
 }
 
+bool has_key(const monotonic_compressor *mc, const size_t key) {
+  if (key == mc->uncompressed_size - 1) {
+    return compress_key(mc, key) == mc->size - 1;
+  }
+  if ((key & 255) == 255) {
+    return compress_key(mc, key) != compress_key(mc, key + 1);
+  }
+  return mc->deltas[key] != mc->deltas[key + 1];
+}
+
 void free_monotonic_compressor (monotonic_compressor *mc) {
   free(mc->checkpoints);
   mc->checkpoints = NULL;
@@ -244,6 +254,14 @@ size_t to_compressed_key(const compressed_keyspace *cks, const state *s) {
 state from_compressed_key(const compressed_keyspace *cks, size_t key) {
   key = (key % cks->prefix_m) + cks->prefix_m * decompress_key(&(cks->compressor), key / cks->prefix_m);
   return from_tight_key_fast(&(cks->keyspace), key);
+}
+
+size_t remap_tight_key(const compressed_keyspace *cks, size_t key) {
+  return (key % cks->prefix_m) + cks->prefix_m * compress_key(&(cks->compressor), key / cks->prefix_m);
+}
+
+bool was_legal(const compressed_keyspace *cks, size_t key) {
+  return has_key(&(cks->compressor), key / cks->prefix_m);
 }
 
 void free_compressed_keyspace(compressed_keyspace *cks) {
