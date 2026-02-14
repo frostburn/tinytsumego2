@@ -212,6 +212,14 @@ stones_t move_west_16(stones_t stones, int amount) {
   return stones;
 }
 
+coordinates coords_of_16(const stones_t stone) {
+  if (!stone) {
+    return (coordinates) {-1, -1};
+  }
+  int i = ctz(stone);
+  return (coordinates) {i % WIDTH_16, i / WIDTH_16};
+}
+
 #ifndef NDEBUG
 stones_t flood_16(register stones_t source, register const stones_t target) {
   source &= target;

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   while (true) {
     print_state(&s);
 
-    value v = get_dual_graph_reader_value(&dgr, &s, NONE);
+    dual_value v = get_dual_graph_reader_value(&dgr, &s);
 
     for (int j = 0; j < dgr.num_moves; ++j) {
       state child = s;
@@ -36,39 +36,39 @@ int main(int argc, char *argv[]) {
       const move_result r = make_move(&child, move);
       if (r == TAKE_TARGET) {
         printf("%c%c: take target",  colof(move), rowof(move));
-        if (v.high == -target_lost_score(&child)) {
+        if (v.plain.high == -target_lost_score(&child)) {
           printf(CHECKMARK);
-        } else if (v.low == -target_lost_score(&child)) {
+        } else if (v.plain.low == -target_lost_score(&child)) {
           printf(" +");
         }
         printf("\n");
       } else if (r == SECOND_PASS) {
         float child_score = score(&child);
         printf("%c%c: %f (game over)",  colof(move), rowof(move), sign * child_score);
-        if (v.high == -child_score) {
+        if (v.plain.high == -child_score) {
           printf(CHECKMARK);
-        } else if (v.low == -child_score) {
+        } else if (v.plain.low == -child_score) {
           printf(" +");
         }
         printf("\n");
       } else if (r != ILLEGAL) {
-        value child_value = get_dual_graph_reader_value(&dgr, &child, NONE);
-        child_value = apply_tactics(NONE, r, &child, child_value);
-        bool low_good = (v.high == child_value.low);
-        bool high_good = (v.low == child_value.high);
+        dual_value child_value = get_dual_graph_reader_value(&dgr, &child);
+        child_value.plain = apply_tactics(NONE, r, &child, child_value.plain);
+        bool low_good = (v.plain.high == child_value.plain.low);
+        bool high_good = (v.plain.low == child_value.plain.high);
         if (sign > 0) {
-          float temp = child_value.low;
-          child_value.low = -child_value.high;
-          child_value.high = -temp;
+          float temp = child_value.plain.low;
+          child_value.plain.low = -child_value.plain.high;
+          child_value.plain.high = -temp;
         }
-        if (child_value.low == child_value.high) {
-          printf("%c%c: %f",  colof(move), rowof(move), child_value.low);
+        if (child_value.plain.low == child_value.plain.high) {
+          printf("%c%c: %f",  colof(move), rowof(move), child_value.plain.low);
           if (low_good) {
             printf(CHECKMARK);
           }
           printf("\n");
         } else {
-          printf("%c%c: (%f, %f)",  colof(move), rowof(move), child_value.low, child_value.high);
+          printf("%c%c: (%f, %f)",  colof(move), rowof(move), child_value.plain.low, child_value.plain.high);
           if (low_good) {
             printf(" \u2193");
           }

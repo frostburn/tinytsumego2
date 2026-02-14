@@ -59,6 +59,7 @@ ADD_LIBRARY(
     SHARED
     lib.c
     src/dual_solver.c
+    src/dual_reader.c
     src/keyspace.c
     src/scoring.c
     src/state.c
