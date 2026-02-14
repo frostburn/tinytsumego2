@@ -1,6 +1,8 @@
 import ctypes
 import sys
 
+libc = ctypes.CDLL("libc.so.6")
+
 try:
   lib = ctypes.CDLL("./build/lib/libtinytsumego.so")
 except OSError as e:
@@ -21,6 +23,11 @@ FILL_EXTERNAL = 7
 NORMAL = 8
 KO_THREAT_AND_RETAKE = 9
 
+# enum tactics
+NONE = 0
+DELAY = 1
+FORCING = 2
+
 class State(ctypes.Structure):
   _fields_ = [
     ("visual_area", stones_t),
@@ -38,6 +45,21 @@ class State(ctypes.Structure):
     ("wide", ctypes.c_bool),
   ]
 
+class Value(ctypes.Structure):
+  _fields_ = [
+    ("low", ctypes.c_float),
+    ("high", ctypes.c_float),
+  ]
+
+  def __repr__(self):
+    return "Value({}, {})".format(self.low, self.high)
+
+lib.rectangle.restype = stones_t
+lib.allocate_dual_graph.restype = ctypes.c_void_p
+lib.iterate_dual_graph.restype = ctypes.c_bool
+lib.get_dual_graph_value.restype = Value
+lib.moves_of.restype = ctypes.POINTER(stones_t)
+
 Version = ctypes.c_char * 16
 version_str = Version()
 lib.version(version_str)
@@ -54,16 +76,40 @@ s.target = s.opponent
 
 ps = ctypes.pointer(s)
 
-r = lib.make_move(ps, lib.single(1, 1))
-assert(r == NORMAL)
-r = lib.make_move(ps, lib.single(1, 0))
-assert(r == NORMAL)
-r = lib.make_move(ps, lib.single(0, 1))
-assert(r == NORMAL)
-r = lib.make_move(ps, lib.single(2, 1))
-assert(r == NORMAL)
-r = lib.make_move(ps, lib.single(2, 0))
-assert(r == TAKE_TARGET)
 lib.print_state(ps)
+
+pdg = lib.allocate_dual_graph(ps)
+while lib.iterate_dual_graph(pdg, True):
+  pass
+root_value = lib.get_dual_graph_value(pdg, ps, FORCING)
+print(root_value)
+
+num_moves = ctypes.c_int(0)
+moves = lib.moves_of(ps, ctypes.pointer(num_moves))
+
+value = lib.get_dual_graph_value(pdg, ps, NONE)
+done = False
+while not done:
+  lib.print_state(ps)
+  for i in range(num_moves.value):
+    child = State.from_buffer_copy(s)
+    pc = ctypes.pointer(child)
+    r = lib.make_move(pc, moves[i])
+    if r == TAKE_TARGET:
+      s = child
+      ps = pc
+      done = True
+      break
+    child_value = lib.get_dual_graph_value(pdg, pc, NONE)
+    if value.low == -child_value.high:
+      s = child
+      ps = pc
+      value = child_value
+      break
+
+lib.print_state(ps)
+
+lib.free_dual_graph(pdg)
+libc.free(pdg)
 
 # TODO: The actual WebSocket API

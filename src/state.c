@@ -1226,3 +1226,18 @@ move_result struggle(const state *s) {
   }
   return NORMAL;
 }
+
+stones_t* moves_of(const state *root, int *num_moves) {
+  *num_moves = popcount(root->logical_area) + 1;
+  stones_t *result = malloc(*num_moves * sizeof(stones_t));
+
+  int j = 0;
+  for (stones_t p = 1ULL; p; p <<= 1) {
+    if (root->logical_area & p) {
+      result[j++] = p;
+    }
+  }
+  result[j] = pass();
+
+  return result;
+}

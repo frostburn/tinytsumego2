@@ -39,17 +39,7 @@ complete_graph create_complete_graph(const state *root, tactics ts) {
   cg.keyspace = create_tight_keyspace(root, false);
   cg.tactics = ts;
 
-  cg.num_moves = popcount(root->logical_area) + 1;
-  cg.moves = malloc(cg.num_moves * sizeof(stones_t));
-
-  int j = 0;
-  for (int i = 0; i < 64; ++i) {
-    const stones_t p = 1ULL << i;
-    if (root->logical_area & p) {
-      cg.moves[j++] = p;
-    }
-  }
-  cg.moves[j] = pass();
+  cg.moves = moves_of(root, &cg.num_moves);
 
   cg.values = malloc(cg.keyspace.size * sizeof(table_value));
 

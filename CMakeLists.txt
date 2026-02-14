@@ -58,9 +58,13 @@ ADD_LIBRARY(
     tinytsumego
     SHARED
     lib.c
+    src/dual_solver.c
+    src/keyspace.c
+    src/scoring.c
+    src/state.c
     src/stones.c
     src/stones16.c
-    src/state.c
+    src/util.c
 )
 SET_TARGET_PROPERTIES(tinytsumego PROPERTIES
     SOVERSION 1

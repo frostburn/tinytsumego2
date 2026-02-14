@@ -28,17 +28,7 @@ dual_graph create_dual_graph(const state *root) {
 
   dg.keyspace = create_compressed_keyspace(root);
 
-  dg.num_moves = popcount(root->logical_area) + 1;
-  dg.moves = malloc(dg.num_moves * sizeof(stones_t));
-
-  int j = 0;
-  for (int i = 0; i < 64; ++i) {
-    const stones_t p = 1ULL << i;
-    if (root->logical_area & p) {
-      dg.moves[j++] = p;
-    }
-  }
-  dg.moves[j] = pass();
+  dg.moves = moves_of(root, &dg.num_moves);
 
   dg.plain_values = malloc(dg.keyspace.size * sizeof(table_value));
   dg.forcing_values = malloc(dg.keyspace.size * sizeof(table_value));
@@ -49,6 +39,12 @@ dual_graph create_dual_graph(const state *root) {
   }
 
   return dg;
+}
+
+dual_graph* allocate_dual_graph(const state *root) {
+  dual_graph *result = malloc(sizeof(dual_graph));
+  *result = create_dual_graph(root);
+  return result;
 }
 
 void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_value *plain_value, table_value *forcing_value) {

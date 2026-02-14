@@ -29,6 +29,9 @@ void print_dual_graph(dual_graph *dg);
 // Create a dual game graph based on a root state.
 dual_graph create_dual_graph(const state *root);
 
+// Work-around for having to re-define `struct dual_graph` in Python ctypes
+dual_graph* allocate_dual_graph(const state *root);
+
 // Get the value range of a state in the game graph
 value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts);
 
