@@ -54,7 +54,14 @@ TARGET_LINK_LIBRARIES(explore_dual tinytsumego2 m)
 
 CONFIGURE_FILE (api/tinytsumego2.h.in ${CMAKE_CURRENT_SOURCE_DIR}/api/tinytsumego2.h @ONLY)
 
-ADD_LIBRARY(tinytsumego SHARED lib.c)
+ADD_LIBRARY(
+    tinytsumego
+    SHARED
+    lib.c
+    src/stones.c
+    src/stones16.c
+    src/state.c
+)
 SET_TARGET_PROPERTIES(tinytsumego PROPERTIES
     SOVERSION 1
     PUBLIC_HEADER api/tinytsumego2.h)
