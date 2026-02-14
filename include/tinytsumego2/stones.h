@@ -56,6 +56,11 @@
 // 64 bits of stones (1 bit outside the 9x7 rectangle)
 typedef unsigned long long int stones_t;
 
+typedef struct coordinates {
+  int x;
+  int y;
+} coordinates;
+
 // Print a bit board with "." for 0 bits and "@" for 1 bits. An extra row included for the 64th bit.
 void print_stones(const stones_t stones);
 
@@ -114,6 +119,9 @@ char row_of(const stones_t stone);
 
 // Function pointer type for easy swapping when dealing with wide stones
 typedef char (*coord_f)(const stones_t stone);
+
+// Arguments to `single(x, y)` or -1, -1 for `pass()`
+coordinates coords_of(const stones_t stone);
 
 // Break `stones` into individual chains. Returns a dynamically allocated array. Stores the number of chains in the second argument.
 stones_t *chains(stones_t stones, int *num_chains);

@@ -32,14 +32,25 @@ typedef struct dual_graph_reader {
   char *buffer;
 } dual_graph_reader;
 
+typedef struct dual_value {
+  value plain;
+  value forcing;
+} dual_value;
+
 // Write a solved dual_graph instance to a stream in a format expected by the reader
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream);
 
 // Load a dual_graph_reader from the given file
 dual_graph_reader load_dual_graph_reader(const char *filename);
 
-// Get the value range of a state in a memory mapped game graph
-value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s, tactics ts);
+// Get the value ranges of a state in a memory mapped game graph
+dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s);
 
 // Release resources associated with a dual_graph_reader instance
 void unload_dual_graph_reader(dual_graph_reader *dgr);
+
+// Work-around for having to re-define `struct dual_graph_reader` in Python ctypes
+dual_graph_reader* allocate_dual_graph_reader(const char *filename);
+
+// Lazy developer detected
+stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves);

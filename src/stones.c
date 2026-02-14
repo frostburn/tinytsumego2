@@ -264,6 +264,14 @@ int offset_v(stones_t stones) {
   return 0;
 }
 
+coordinates coords_of(const stones_t stone) {
+  if (!stone) {
+    return (coordinates) {-1, -1};
+  }
+  int i = ctz(stone);
+  return (coordinates) {i % WIDTH, i / WIDTH};
+}
+
 #ifndef NDEBUG
 stones_t flood(register stones_t source, register const stones_t target) {
   source &= target;

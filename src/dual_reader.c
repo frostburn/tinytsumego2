@@ -210,19 +210,20 @@ void get_dual_graph_reader_values(const dual_graph_reader *dgr, const state *s, 
   forcing_value->high += delta;
 }
 
-value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s, tactics ts) {
-  value plain_value;
-  value forcing_value;
-  get_dual_graph_reader_values(dgr, s, MAX_COMPENSATION_DEPTH, &plain_value, &forcing_value);
-  switch (ts) {
-    case NONE:
-      return plain_value;
-    case FORCING:
-      return forcing_value;
-    case DELAY:
-      break;
-  }
-  fprintf(stderr, "Unsupported tactic");
-  exit(EXIT_FAILURE);
-  return (value) {NAN, NAN};
+dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s) {
+  dual_value result;
+  get_dual_graph_reader_values(dgr, s, MAX_COMPENSATION_DEPTH, &result.plain, &result.forcing);
+  return result;
+}
+
+dual_graph_reader* allocate_dual_graph_reader(const char *filename) {
+  dual_graph_reader *result = malloc(sizeof(dual_graph_reader));
+  *result = load_dual_graph_reader(filename);
+  return result;
+}
+
+stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves) {
+  *root = dgr->keyspace.keyspace.root;
+  *num_moves = dgr->num_moves;
+  return dgr->moves;
 }

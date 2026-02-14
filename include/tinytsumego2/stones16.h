@@ -97,3 +97,6 @@ int offset_v_16(stones_t stones);
 
 // Shift stones to the left by the given `amount`
 stones_t move_west_16(stones_t stones, int amount);
+
+// Arguments to `single_16(x, y)` or -1, -1 for `pass()`
+coordinates coords_of_16(const stones_t stone);
