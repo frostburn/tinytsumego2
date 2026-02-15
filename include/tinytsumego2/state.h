@@ -172,3 +172,6 @@ move_result struggle(const state *s);
 
 // Return the potential moves of a root state including passing
 stones_t* moves_of(const state *root, int *num_moves);
+
+// Pass without incrementing pass count
+void swap_players(state *s);

@@ -233,6 +233,16 @@ state parse_state(const char *visuals) {
   return s;
 }
 
+void swap_players(state *s) {
+  stones_t temp = s->player;
+  s->player = s->opponent;
+  s->opponent = temp;
+  s->ko = 0ULL;
+  s->ko_threats = -s->ko_threats;
+  s->button = -s->button;
+  s->white_to_play = !s->white_to_play;
+}
+
 move_result make_move(state *s, stones_t move) {
   move_result result = NORMAL;
   stones_t old_player = s->player;
