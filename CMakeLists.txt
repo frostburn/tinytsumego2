@@ -52,12 +52,16 @@ TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
 ADD_EXECUTABLE(explore_dual explore_dual.c)
 TARGET_LINK_LIBRARIES(explore_dual tinytsumego2 m)
 
+ADD_EXECUTABLE(generate_collections generate_collections.c)
+TARGET_LINK_LIBRARIES(generate_collections tinytsumego2 m)
+
 CONFIGURE_FILE (api/tinytsumego2.h.in ${CMAKE_CURRENT_SOURCE_DIR}/api/tinytsumego2.h @ONLY)
 
 ADD_LIBRARY(
     tinytsumego
     SHARED
     lib.c
+    src/collection.c
     src/dual_solver.c
     src/dual_reader.c
     src/keyspace.c
