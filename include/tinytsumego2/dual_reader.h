@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <sys/stat.h>
+#include "tinytsumego2/stones.h"
 #include "tinytsumego2/dual_solver.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
@@ -37,6 +38,16 @@ typedef struct dual_value {
   value forcing;
 } dual_value;
 
+// Information about a potential move
+typedef struct move_info {
+  coordinates coords;
+  float low_gain;
+  float high_gain;
+  bool low_ideal;
+  bool high_ideal;
+  bool forcing;
+} move_info;
+
 // Write a solved dual_graph instance to a stream in a format expected by the reader
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream);
 
@@ -45,6 +56,9 @@ dual_graph_reader load_dual_graph_reader(const char *filename);
 
 // Get the value ranges of a state in a memory mapped game graph
 dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s);
+
+// Get information about the potential moves in a game state. Aesthetics are compensated for
+move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos);
 
 // Release resources associated with a dual_graph_reader instance
 void unload_dual_graph_reader(dual_graph_reader *dgr);

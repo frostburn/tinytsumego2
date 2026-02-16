@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "bitboards",
     "bitmatrix",
     "clzll",
     "ctzll",
@@ -14,6 +15,7 @@
     "jkiss",
     "jlrand",
     "keyspace",
+    "libc",
     "libtinytsumego",
     "negamax",
     "OPENMP",

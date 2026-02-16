@@ -9,6 +9,7 @@
 #include "tinytsumego2/dual_reader.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
+#include "tinytsumego2/keyspace.h"
 
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
   size_t total = fwrite(&(dg->keyspace.keyspace.root), sizeof(state), 1, stream);
@@ -226,4 +227,58 @@ stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, in
   *root = dgr->keyspace.keyspace.root;
   *num_moves = dgr->num_moves;
   return dgr->moves;
+}
+
+move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos) {
+  move_info *result = malloc(dgr->num_moves * sizeof(move_info));
+  *num_move_infos = 0;
+
+  // Strip aesthetics
+  state parent = *s;
+  parent.button = abs(parent.button);
+  size_t key = to_tight_key_fast(&(dgr->keyspace.keyspace), &parent);
+  parent = from_tight_key_fast(&(dgr->keyspace.keyspace), key);
+  parent.button = s->button;
+
+  dual_value v = get_dual_graph_reader_value(dgr, &parent);
+
+  float lows_high = -INFINITY;
+  float highs_low = -INFINITY;
+  dual_value *child_values = malloc(dgr->num_moves * sizeof(dual_value));
+  for (int i = 0; i < dgr->num_moves; ++i) {
+    state child = parent;
+    const move_result r = make_move(&child, dgr->moves[i]);
+    if (r <= TAKE_TARGET) {
+      child_values[i].plain = score_terminal(r, &child);
+      child_values[i].forcing = child_values[i].forcing;
+    } else {
+      child_values[i] = get_dual_graph_reader_value(dgr, &child);
+      child_values[i].plain = apply_tactics(NONE, r, &child, child_values[i].plain);
+      child_values[i].forcing = apply_tactics(FORCING, r, &child, child_values[i].forcing);
+    }
+    if (v.plain.low == child_values[i].plain.high) {
+      lows_high = fmax(lows_high, child_values[i].plain.low);
+    }
+    if (v.plain.high == child_values[i].plain.low) {
+      highs_low = fmax(highs_low, child_values[i].plain.high);
+    }
+  }
+
+  for (int i = 0; i < dgr->num_moves; ++i) {
+    if (isnan(child_values[i].plain.low)) {
+      continue;
+    }
+    result[(*num_move_infos)++] = (move_info) {
+      s->wide ? coords_of_16(dgr->moves[i]) : coords_of(dgr->moves[i]),
+      child_values[i].plain.high - v.plain.low,
+      child_values[i].plain.low - v.plain.high,
+      v.plain.low == child_values[i].plain.high && lows_high == child_values[i].plain.low,
+      v.plain.high == child_values[i].plain.low && highs_low == child_values[i].plain.high,
+      v.forcing.high == child_values[i].forcing.low,
+    };
+  }
+
+  free(child_values);
+
+  return realloc(result, *num_move_infos * sizeof(move_info));
 }

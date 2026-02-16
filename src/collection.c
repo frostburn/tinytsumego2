@@ -191,15 +191,16 @@ collection notcher_122xy() {
   swap_players(&att_122NN);
   float score_att_122NN = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
 
+  // Unfortunately these are dead and there are no forcing moves
   state def_122WN = root;
   def_122WN.opponent |= single_16(3, 2);
   def_122WN.immortal = def_122WN.opponent;
   def_122WN.logical_area &= ~def_122WN.immortal;
-  float score_def_122WN = -TARGET_CAPTURED_SCORE + BUTTON_BONUS;
+  // float score_def_122WN = -TARGET_CAPTURED_SCORE + BUTTON_BONUS;
 
   state att_122WN = def_122WN;
   swap_players(&att_122WN);
-  float score_att_122WN = TARGET_CAPTURED_SCORE + BUTTON_BONUS;
+  // float score_att_122WN = TARGET_CAPTURED_SCORE + BUTTON_BONUS;
 
   state def_122NS = root;
   def_122NS.player |= single_16(5, 2);
@@ -224,8 +225,8 @@ collection notcher_122xy() {
   tsumego tsumegos[] = {
     {"122NN-defense", "122NN Defense", def_122NN, false, {score_def_122NN, score_def_122NN}},
     {"122NN-attack", "122NN Attack", att_122NN, false, {score_att_122NN, score_att_122NN}},
-    {"122WN-defense", "122WN Defense", def_122WN, true, {score_def_122WN, score_def_122WN}},
-    {"122WN-attack", "122WN Attack", att_122WN, true, {score_att_122WN, score_att_122WN}},
+    // {"122WN-defense", "122WN Defense", def_122WN, true, {score_def_122WN, score_def_122WN}},
+    // {"122WN-attack", "122WN Attack", att_122WN, true, {score_att_122WN, score_att_122WN}},
     {"122NS-defense", "122NS Defense", def_122NS, false, {score_def_122NS, score_def_122NS}},
     {"122NS-attack", "122NS Attack", att_122NS, false, {score_att_122NS, score_att_122NS}},
     {"122SS-defense", "122SS Defense", def_122SS, false, {score_def_122SS, score_def_122SS}},

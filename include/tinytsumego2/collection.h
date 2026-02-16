@@ -30,7 +30,7 @@
 
 // POST api/tsumego/{collection: rectangle-six}/
 // In: {"state": {...}}
-// Out: {"moves": [...], "lowPrincipal": [...], "forcingMoves": [...], ...}
+// Out: {"moves": [...], ...}
 
 typedef struct tsumego {
   // URL-friendly name
