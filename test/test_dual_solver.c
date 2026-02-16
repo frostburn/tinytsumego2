@@ -57,6 +57,7 @@ void test_bulky_five() {
   value v = get_dual_graph_value(&dg, &s, NONE);
   assert(v.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
   assert(v.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+  free_dual_graph(&dg);
 }
 
 int main() {
