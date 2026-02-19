@@ -127,6 +127,9 @@ int chinese_liberty_score(const state *s);
 // Chinese-like score but ownership is anticipated
 int compensated_liberty_score(const state *s);
 
+// Count the difference between areas without trying to remove dead stones
+int simple_area_score(const state *s);
+
 // Return true if two game states are the same. False otherwise.
 bool equals(const state *a, const state *b);
 

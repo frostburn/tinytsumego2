@@ -13,7 +13,7 @@ void test_external() {
   print_state(&s);
   float scr = score(&s);
   printf("Score = %f\n", scr);
-  assert(scr == -12);
+  assert(scr == -11);
 
   s = parse_state("   \
     . w @ . w B x x x \

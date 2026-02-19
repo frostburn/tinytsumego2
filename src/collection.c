@@ -17,7 +17,7 @@ collection rectangle_six() {
           , , B , , , , , , \
   ");
   root.ko_threats = 1;
-  float root_score = 10 + BUTTON_BONUS + KO_THREAT_BONUS;
+  float root_score = 30 + BUTTON_BONUS + KO_THREAT_BONUS;
 
   state no_libs = parse_state(" \
               . . . w B , , , , \
@@ -41,7 +41,7 @@ collection rectangle_six() {
 
   state one_lib_def = one_lib;
   one_lib_def.ko_threats = -1;
-  float one_lib_def_score = 10 + BUTTON_BONUS - KO_THREAT_BONUS;
+  float one_lib_def_score = 30 + BUTTON_BONUS - KO_THREAT_BONUS;
 
   tsumego tsumegos[] = {
     {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
@@ -72,7 +72,7 @@ collection rectangle_eight() {
           , B , , , , , , , \
   ");
   root.ko_threats = 1;
-  float root_score = 8 + BUTTON_BONUS + KO_THREAT_BONUS;
+  float root_score = 24 + BUTTON_BONUS + KO_THREAT_BONUS;
 
   state no_libs = parse_state(" \
               . . . . w B , , , \
@@ -81,11 +81,11 @@ collection rectangle_eight() {
               B B B B B , B , , \
   ");
   no_libs.ko_threats = 0;
-  float no_libs_score = 16 + BUTTON_BONUS;
+  float no_libs_score = 32 + BUTTON_BONUS;
 
   state no_libs_def = no_libs;
   no_libs_def.ko_threats = -1;
-  float no_libs_def_score = 8 + BUTTON_BONUS;
+  float no_libs_def_score = 24 + BUTTON_BONUS;
 
   tsumego tsumegos[] = {
     {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
@@ -141,7 +141,7 @@ collection l_j_groups() {
 
   state second_l_1_def = second_l_1_att;
   swap_players(&second_l_1_def);
-  float second_l_1_def_score = -17 + BUTTON_BONUS;
+  float second_l_1_def_score = -37 + BUTTON_BONUS;
 
   state j_group_att = parse_state(" \
                   . . . 0 . . . B , \
@@ -155,7 +155,7 @@ collection l_j_groups() {
 
   state j_group_def = j_group_att;
   swap_players(&j_group_def);
-  float j_group_def_score = -15 - BUTTON_BONUS;
+  float j_group_def_score = -35 - BUTTON_BONUS;
 
   tsumego tsumegos[] = {
     {"l-group", "L Group", l_group, true, {l_group_score, l_group_score}},
@@ -185,7 +185,7 @@ collection notcher_122xy() {
   root.immortal = root.opponent;
 
   state def_122NN = root;
-  float score_def_122NN = -15 + BUTTON_BONUS;
+  float score_def_122NN = -18 + BUTTON_BONUS;
 
   state att_122NN = root;
   swap_players(&att_122NN);
@@ -206,7 +206,7 @@ collection notcher_122xy() {
   def_122NS.player |= single_16(5, 2);
   def_122NS.target = def_122NS.player;
   def_122NS.logical_area &= ~def_122NS.target;
-  float score_def_122NS = -13 - BUTTON_BONUS;
+  float score_def_122NS = -16 - BUTTON_BONUS;
 
   state att_122NS = def_122NS;
   swap_players(&att_122NS);
@@ -216,7 +216,7 @@ collection notcher_122xy() {
   def_122SS.player |= single_16(3, 2);
   def_122SS.target = def_122SS.player;
   def_122SS.logical_area &= ~def_122SS.target;
-  float score_def_122SS = -13 + BUTTON_BONUS;
+  float score_def_122SS = -16 + BUTTON_BONUS;
 
   state att_122SS = def_122SS;
   swap_players(&att_122SS);

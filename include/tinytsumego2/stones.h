@@ -105,6 +105,25 @@ inline stones_t flood(register stones_t source, register const stones_t target) 
 stones_t flood(register stones_t source, register const stones_t target);
 #endif
 
+// Flood fill `target` starting from `source` without masking and return the contiguous chain of stones
+#ifdef NDEBUG
+inline stones_t bleed(register stones_t source, register const stones_t target) {
+  register stones_t temp;
+  do {
+    temp = source;
+    source |= (
+      ((source & WEST_BLOCK) << H_SHIFT) |
+      ((source >> H_SHIFT) & WEST_BLOCK) |
+      (source << V_SHIFT) |
+      (source >> V_SHIFT)
+    ) & target;
+  } while (temp != source);
+  return source;
+}
+#else
+stones_t bleed(register stones_t source, register const stones_t target);
+#endif
+
 // Expand `stones` in a "cross" pattern
 stones_t cross(const stones_t stones);
 

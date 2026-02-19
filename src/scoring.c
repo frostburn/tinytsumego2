@@ -12,7 +12,7 @@ score_q7_t float_to_score_q7(float amount) {
 
 score_q7_t score_q7(const state *s) {
   return (
-    chinese_liberty_score(s) * FLOAT_TO_SCORE_Q7 +
+    simple_area_score(s) * FLOAT_TO_SCORE_Q7 +
     s->button * BUTTON_Q7 +
     s->ko_threats * KO_THREAT_Q7
   );
