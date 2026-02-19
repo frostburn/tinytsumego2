@@ -40,8 +40,8 @@ ADD_SUBDIRECTORY(test)
 ADD_EXECUTABLE(solver solver.c)
 TARGET_LINK_LIBRARIES(solver tinytsumego2 m)
 
-ADD_EXECUTABLE(dual_solver dual_solver.c)
-TARGET_LINK_LIBRARIES(dual_solver tinytsumego2 m)
+ADD_EXECUTABLE(compressed_solver compressed_solver.c)
+TARGET_LINK_LIBRARIES(compressed_solver tinytsumego2 m)
 
 ADD_EXECUTABLE(tabulate_notchers tabulate_notchers.c)
 TARGET_LINK_LIBRARIES(tabulate_notchers tinytsumego2 m)
@@ -49,8 +49,8 @@ TARGET_LINK_LIBRARIES(tabulate_notchers tinytsumego2 m)
 ADD_EXECUTABLE(explore_solution explore_solution.c)
 TARGET_LINK_LIBRARIES(explore_solution tinytsumego2 m)
 
-ADD_EXECUTABLE(explore_dual explore_dual.c)
-TARGET_LINK_LIBRARIES(explore_dual tinytsumego2 m)
+ADD_EXECUTABLE(explore_compressed explore_compressed.c)
+TARGET_LINK_LIBRARIES(explore_compressed tinytsumego2 m)
 
 ADD_EXECUTABLE(generate_collections generate_collections.c)
 TARGET_LINK_LIBRARIES(generate_collections tinytsumego2 m)
@@ -62,8 +62,8 @@ ADD_LIBRARY(
     SHARED
     lib.c
     src/collection.c
-    src/dual_solver.c
-    src/dual_reader.c
+    src/compressed_graph.c
+    src/compressed_reader.c
     src/keyspace.c
     src/scoring.c
     src/state.c

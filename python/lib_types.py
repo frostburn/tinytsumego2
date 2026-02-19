@@ -110,15 +110,6 @@ class Value(ctypes.Structure):
   def __repr__(self):
     return "Value({}, {})".format(self.low, self.high)
 
-class DualValue(ctypes.Structure):
-  _fields_ = [
-    ("plain", Value),
-    ("forcing", Value),
-  ]
-
-  def __repr__(self):
-    return "DualValue({}, {})".format(self.plain, self.forcing)
-
 class Coordinates(ctypes.Structure):
   _fields_ = [
     ("x", ctypes.c_int),

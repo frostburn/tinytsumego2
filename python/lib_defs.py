@@ -15,15 +15,15 @@ lib.coords_of_16.restype = Coordinates
 lib.moves_of.restype = ctypes.POINTER(stones_t)
 lib.equals.restype = ctypes.c_bool
 lib.compensated_liberty_score.restype = ctypes.c_int
-# dual_solver.h
-lib.allocate_dual_graph.restype = ctypes.c_void_p
-lib.iterate_dual_graph.restype = ctypes.c_bool
-lib.get_dual_graph_value.restype = Value
-# dual_reader.h
-lib.allocate_dual_graph_reader.restype = ctypes.c_void_p
-lib.get_dual_graph_reader_value.restype = DualValue
-lib.dual_graph_reader_python_stuff.restype = ctypes.POINTER(stones_t)
-lib.dual_graph_reader_move_infos.restype = ctypes.POINTER(MoveInfo)
+# compressed_graph.h
+lib.allocate_compressed_graph.restype = ctypes.c_void_p
+lib.iterate_compressed_graph.restype = ctypes.c_bool
+lib.get_compressed_graph_value.restype = Value
+# compressed_reader.h
+lib.allocate_compressed_graph_reader.restype = ctypes.c_void_p
+lib.get_compressed_graph_reader_value.restype = Value
+lib.compressed_graph_reader_python_stuff.restype = ctypes.POINTER(stones_t)
+lib.compressed_graph_reader_move_infos.restype = ctypes.POINTER(MoveInfo)
 # scoring.h
 lib.score_terminal.restype = Value
 lib.apply_tactics.restype = Value

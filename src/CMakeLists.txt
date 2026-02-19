@@ -5,8 +5,8 @@ ADD_LIBRARY(
   collection.c
   complete_reader.c
   complete_solver.c
-  dual_reader.c
-  dual_solver.c
+  compressed_graph.c
+  compressed_reader.c
   keyspace.c
   scoring.c
   shape.c

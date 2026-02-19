@@ -16,16 +16,16 @@ if __name__ == '__main__':
 
   lib.print_state(ps)
 
-  pdg = lib.allocate_dual_graph(ps)
-  while lib.iterate_dual_graph(pdg, True):
+  pdg = lib.allocate_compressed_graph(ps)
+  while lib.iterate_compressed_graph(pdg, True):
     pass
-  root_value = lib.get_dual_graph_value(pdg, ps, FORCING)
+  root_value = lib.get_compressed_graph_value(pdg, ps)
   print(root_value)
 
   num_moves = ctypes.c_int(0)
   moves = lib.moves_of(ps, ctypes.pointer(num_moves))
 
-  value = lib.get_dual_graph_value(pdg, ps, NONE)
+  value = lib.get_compressed_graph_value(pdg, ps)
   done = False
   while not done:
     lib.print_state(ps)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         ps = pc
         done = True
         break
-      child_value = lib.get_dual_graph_value(pdg, pc, NONE)
+      child_value = lib.get_compressed_graph_value(pdg, pc)
       if value.low == -child_value.high:
         s = child
         ps = pc
@@ -47,5 +47,5 @@ if __name__ == '__main__':
 
   lib.print_state(ps)
 
-  lib.free_dual_graph(pdg)
+  lib.free_compressed_graph(pdg)
   libc.free(pdg)

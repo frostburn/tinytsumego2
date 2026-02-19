@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/compressed_graph.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/status.h"
 
@@ -63,17 +63,17 @@ const char* tsumego_status_string(tsumego_status ts) {
   return KO_KO;
 }
 
-// TODO: Promote to an actual dual_graph method
-state navigate_principal_path(dual_graph *dg, state s) {
+// TODO: Promote to an actual compressed_graph method
+state navigate_principal_path(compressed_graph *cg, state s) {
   bool low_color = s.white_to_play;
-  value v = get_dual_graph_value(dg, &s, NONE);
+  value v = get_compressed_graph_value(cg, &s);
   while (true) {
     bool found = false;
-    for (int i = 0; i < dg->num_moves; ++i) {
+    for (int i = 0; i < cg->num_moves; ++i) {
       state child = s;
-      const move_result r = make_move(&child, dg->moves[i]);
+      const move_result r = make_move(&child, cg->moves[i]);
       if (r > TAKE_TARGET) {
-        value child_v = get_dual_graph_value(dg, &child, NONE);
+        value child_v = get_compressed_graph_value(cg, &child);
         if (s.white_to_play == low_color) {
           if (v.low == -child_v.high) {
             found = true;
@@ -97,7 +97,7 @@ state navigate_principal_path(dual_graph *dg, state s) {
 
 tsumego_status get_tsumego_status(const state *s) {
   tsumego_status result;
-  dual_graph dg = {0};
+  compressed_graph cg = {0};
   value v;
   state base;
   state c;
@@ -111,15 +111,15 @@ tsumego_status get_tsumego_status(const state *s) {
   base.passes = 0;
   base.button = 0;
 
-  dg = create_dual_graph(&base);
-  while(iterate_dual_graph(&dg, false));
+  cg = create_compressed_graph(&base);
+  while(iterate_compressed_graph(&cg, false));
 
   // Player first
   c = base;
 
   // First try to live with maximum resources
   c.ko_threats = 2;
-  v = get_dual_graph_value(&dg, &c, NONE);
+  v = get_compressed_graph_value(&cg, &c);
   if (v.low != v.high) {
     // Our ruleset is not powerful enough to determine status
     result.player_first.life = SUPER_KO;
@@ -128,7 +128,7 @@ tsumego_status get_tsumego_status(const state *s) {
     result.player_first.life = DEAD;
   } else {
     c.ko_threats = 1;
-    v = get_dual_graph_value(&dg, &c, NONE);
+    v = get_compressed_graph_value(&cg, &c);
     if (v.low != v.high) {
       result.player_first.life = SUPER_KO;
     } else if (v.low < -BIG_SCORE) {
@@ -136,7 +136,7 @@ tsumego_status get_tsumego_status(const state *s) {
       result.player_first.life = DEAD_UNLESS_KO_2;
     } else {
       c.ko_threats = 0;
-      v = get_dual_graph_value(&dg, &c, NONE);
+      v = get_compressed_graph_value(&cg, &c);
       if (v.low != v.high) {
         result.player_first.life = SUPER_KO;
       } else if (v.low < -BIG_SCORE) {
@@ -145,12 +145,12 @@ tsumego_status get_tsumego_status(const state *s) {
       } else {
         // It seems that we're alive. Can the opponent kill if they have ko threats?
         c.ko_threats = -2;
-        v = get_dual_graph_value(&dg, &c, NONE);
+        v = get_compressed_graph_value(&cg, &c);
         if (v.low != v.high) {
           result.player_first.life = SUPER_KO;
         } else if (v.low < -BIG_SCORE) {
           c.ko_threats = -1;
-          v = get_dual_graph_value(&dg, &c, NONE);
+          v = get_compressed_graph_value(&cg, &c);
           if (v.low != v.high) {
             result.player_first.life = SUPER_KO;
           } else if (v.low < -BIG_SCORE) {
@@ -163,7 +163,7 @@ tsumego_status get_tsumego_status(const state *s) {
 
           c.ko_threats = 0;
 
-          c = navigate_principal_path(&dg, c);
+          c = navigate_principal_path(&cg, c);
 
           stones_t empty = c.logical_area & ~(c.player | c.opponent);
           stones_t player_libs = c.wide ? liberties_16(c.player, empty) : liberties(c.player, empty);
@@ -179,7 +179,7 @@ tsumego_status get_tsumego_status(const state *s) {
     }
   }
 
-  c = navigate_principal_path(&dg, c);
+  c = navigate_principal_path(&cg, c);
 
   if (result.player_first.life == SUPER_KO) {
     // Our ruleset is not powerful enough to determine initiative
@@ -197,7 +197,7 @@ tsumego_status get_tsumego_status(const state *s) {
     // Short-circuit
     result.opponent_first.life = DEAD;
     result.opponent_first.initiative = SENTE;
-    free_dual_graph(&dg);
+    free_compressed_graph(&cg);
     return result;
   }
 
@@ -207,7 +207,7 @@ tsumego_status get_tsumego_status(const state *s) {
   c.opponent = base.player;
   c.white_to_play = !base.white_to_play;
   c.ko_threats = -2;  // Resist with maximum resources
-  v = get_dual_graph_value(&dg, &c, NONE);
+  v = get_compressed_graph_value(&cg, &c);
   if (v.low != v.high) {
     result.opponent_first.life = SUPER_KO;
   } else if (v.low > BIG_SCORE) {
@@ -215,14 +215,14 @@ tsumego_status get_tsumego_status(const state *s) {
     result.opponent_first.life = DEAD;
   } else {
     c.ko_threats = -1;
-    v = get_dual_graph_value(&dg, &c, NONE);
+    v = get_compressed_graph_value(&cg, &c);
     if (v.low != v.high) {
       result.opponent_first.life = SUPER_KO;
     } else if (v.low > BIG_SCORE) {
       result.opponent_first.life = ALIVE_UNLESS_KO_2;
     } else {
       c.ko_threats = 0;
-      v = get_dual_graph_value(&dg, &c, NONE);
+      v = get_compressed_graph_value(&cg, &c);
       if (v.low != v.high) {
         result.opponent_first.life = SUPER_KO;
       } else if (v.low > BIG_SCORE) {
@@ -230,12 +230,12 @@ tsumego_status get_tsumego_status(const state *s) {
       } else {
         // We're alive. Give the opponent some chances
         c.ko_threats = 2;
-        v = get_dual_graph_value(&dg, &c, NONE);
+        v = get_compressed_graph_value(&cg, &c);
         if (v.low != v.high) {
           result.opponent_first.life = SUPER_KO;
         } else if (v.low > BIG_SCORE) {
           c.ko_threats = 1;
-          v = get_dual_graph_value(&dg, &c, NONE);
+          v = get_compressed_graph_value(&cg, &c);
           if (v.low != v.high) {
             result.opponent_first.life = SUPER_KO;
           } else if (v.low > BIG_SCORE) {
@@ -247,7 +247,7 @@ tsumego_status get_tsumego_status(const state *s) {
           // Opponent's ko threats don't seem to affect anything
 
           c.ko_threats = 0;
-          c = navigate_principal_path(&dg, c);
+          c = navigate_principal_path(&cg, c);
 
           stones_t empty = c.logical_area & ~(c.player | c.opponent);
           stones_t player_libs = c.wide ? liberties_16(c.player, empty) : liberties(c.player, empty);
@@ -263,7 +263,7 @@ tsumego_status get_tsumego_status(const state *s) {
     }
   }
 
-  c = navigate_principal_path(&dg, c);
+  c = navigate_principal_path(&cg, c);
 
   if (result.opponent_first.life == SUPER_KO) {
     // Our ruleset is not powerful enough to determine initiative
@@ -277,7 +277,7 @@ tsumego_status get_tsumego_status(const state *s) {
     }
   }
 
-  free_dual_graph(&dg);
+  free_compressed_graph(&cg);
 
   return result;
 }

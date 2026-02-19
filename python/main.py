@@ -61,7 +61,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     data = json.loads(content)
     state = State.from_json(data["state"], root.wide)
     num_move_infos = ctypes.c_int(0)
-    move_infos = lib.dual_graph_reader_move_infos(reader, ctypes.pointer(state), ctypes.pointer(num_move_infos))
+    move_infos = lib.compressed_graph_reader_move_infos(reader, ctypes.pointer(state), ctypes.pointer(num_move_infos))
     response_data = {"moves": []}
     for i in range(num_move_infos.value):
       response_data["moves"].append({
@@ -164,10 +164,10 @@ if __name__ == "__main__":
 
   for filename in os.listdir(collection_path):
     print("Reading", filename)
-    reader = lib.allocate_dual_graph_reader(os.path.join(collection_path, filename).encode())
+    reader = lib.allocate_compressed_graph_reader(os.path.join(collection_path, filename).encode())
     dummy = ctypes.c_int(0)
     root = State()
-    lib.dual_graph_reader_python_stuff(reader, ctypes.pointer(root), ctypes.pointer(dummy))
+    lib.compressed_graph_reader_python_stuff(reader, ctypes.pointer(root), ctypes.pointer(dummy))
     readers[filename.strip(".bin")] = (reader, root)
 
   num_collections = ctypes.c_int(0)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
   print("Cleaning up...")
   for (reader, _) in readers.values():
-    lib.unload_dual_graph_reader(reader)
+    lib.unload_compressed_graph_reader(reader)
     libc.free(reader)
 
   for i in range(num_collections.value):

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tinytsumego2/collection.h"
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/dual_reader.h"
+#include "tinytsumego2/compressed_graph.h"
+#include "tinytsumego2/compressed_reader.h"
 
 int main(int argc, char *argv[]) {
   printf("Generating solutions to all public tsumegos...\n");
@@ -31,17 +31,17 @@ int main(int argc, char *argv[]) {
   for (size_t i = 0; i < num_collections; ++i) {
     printf("%s\n", collections[i].title);
     print_state(&(collections[i].root));
-    dual_graph dg = create_dual_graph(&(collections[i].root));
+    compressed_graph cg = create_compressed_graph(&(collections[i].root));
     for (int j = 0;;j++) {
       bool verbose = (j < 8) || (j % (j >> 2) == 0);
-      if (!iterate_dual_graph(&dg, verbose)) break;
+      if (!iterate_compressed_graph(&cg, verbose)) break;
     }
     printf("%zu tsumegos in collection\n", collections[i].num_tsumegos);
     for (size_t j = 0; j < collections[i].num_tsumegos; ++j) {
       tsumego t = collections[i].tsumegos[j];
       printf(" %s\n", t.subtitle);
       print_state(&(t.state));
-      value v = get_dual_graph_value(&dg, &(t.state), NONE);
+      value v = get_compressed_graph_value(&cg, &(t.state));
       printf(" value: %f, %f\n", v.low, v.high);
       if (!isnan(t.value.low)) {
         assert(t.value.low == v.low);
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
       sprintf(filename, "%s%s.bin", path, collections[i].slug);
       printf("Storing solution to %s\n", filename);
       FILE *f = fopen(filename, "wb");
-      write_dual_graph(&dg, f);
+      write_compressed_graph(&cg, f);
       fclose(f);
       free(filename);
-      free_dual_graph(&dg);
+      free_compressed_graph(&cg);
       free(collections[i].tsumegos);
     }
   }
