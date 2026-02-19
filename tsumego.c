@@ -517,7 +517,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "First L+1 Group Defense") == 0) {
-    return single_valued(s, -7 + BUTTON_BONUS);
+    return single_valued(s, -10 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -539,11 +539,7 @@ tsumego get_tsumego(const char *name) {
   s.ko_threats = -1;
 
   if (strcmp(name, "Second L+1 Group Defense") == 0) {
-    // 5225437 nodes expanded (4x3 tablebase)
-    // -7.781250*, -7.781250*
-    // 5037354 nodes expanded (4x3 tablebase)
-    // -6.250000*, -5.781250*
-    return single_valued(s, -6 + BUTTON_BONUS - KO_THREAT_BONUS);
+    return single_valued(s, -9 + BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
   temp = s.player;
@@ -565,7 +561,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "L+2 Group with Descent Defense") == 0) {
-    return dual_valued(s, -4 + BUTTON_BONUS, -2 + BUTTON_BONUS);
+    return dual_valued(s, -7 + BUTTON_BONUS, -5 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -587,7 +583,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Basic J Group Defense") == 0) {
-    return single_valued(s, -5 - BUTTON_BONUS);
+    return single_valued(s, -7 - BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -606,7 +602,7 @@ tsumego get_tsumego(const char *name) {
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "Straight J Group Defense") == 0) {
-    return single_valued(s, -5 - BUTTON_BONUS);
+    return single_valued(s, -7 - BUTTON_BONUS);
   }
 
   s = parse_state("   \
@@ -619,7 +615,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "J+1 Group with Descent Defense") == 0) {
-    return dual_valued(s, -3 + BUTTON_BONUS, -1 + BUTTON_BONUS);
+    return dual_valued(s, -8 + BUTTON_BONUS, -6 + BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -641,7 +637,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Long L Group Defense") == 0) {
-    return single_valued(s, -4 - BUTTON_BONUS);
+    return single_valued(s, -5 - BUTTON_BONUS);
   }
 
   temp = s.player;
@@ -649,7 +645,7 @@ tsumego get_tsumego(const char *name) {
   s.opponent = temp;
 
   if (strcmp(name, "Long L Group Attack") == 0) {
-    return single_valued(s, 16 - BUTTON_BONUS);
+    return single_valued(s, 17 - BUTTON_BONUS);
   }
 
   s.ko_threats = 1;
@@ -759,14 +755,14 @@ tsumego get_tsumego(const char *name) {
 
   s = notcher("133SS");
   if (strcmp(name, "Notcher 133SS Defense") == 0) {
-    return single_valued(s, -8 + BUTTON_BONUS);
+    return single_valued(s, -10 + BUTTON_BONUS);
   }
 
   temp = s.player;
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "Notcher 133SS Attack") == 0) {
-    return single_valued(s, 14 - BUTTON_BONUS);
+    return single_valued(s, 16 - BUTTON_BONUS);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);

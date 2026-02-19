@@ -673,6 +673,23 @@ int compensated_liberty_score(const state *s) {
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
 
+int simple_area_score(const state *s) {
+  stones_t empty = (s->visual_area & ~(s->player | s->opponent)) | s->external;
+
+  stones_t player_controlled = s->player & ~s->external;
+  stones_t opponent_controlled = s->opponent & ~s->external;
+
+  if (s->wide) {
+    player_controlled = bleed_16(player_controlled, empty);
+    opponent_controlled = bleed_16(opponent_controlled, empty);
+  } else {
+    player_controlled = bleed(player_controlled, empty);
+    opponent_controlled = bleed(opponent_controlled, empty);
+  }
+
+  return popcount(player_controlled) - popcount(opponent_controlled);
+}
+
 bool equals(const state *a, const state *b) {
   if (a->visual_area != b->visual_area) {
     return false;
