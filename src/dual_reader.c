@@ -238,6 +238,8 @@ move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const stat
   parent.button = abs(parent.button);
   size_t key = to_tight_key_fast(&(dgr->keyspace.keyspace), &parent);
   parent = from_tight_key_fast(&(dgr->keyspace.keyspace), key);
+  parent.ko = s->ko;
+  parent.passes = s->passes;
   parent.button = s->button;
 
   dual_value v = get_dual_graph_reader_value(dgr, &parent);

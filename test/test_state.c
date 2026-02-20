@@ -759,6 +759,21 @@ void test_compressed_keyspace() {
   free_compressed_keyspace(&cks);
 }
 
+void test_illegal_ko() {
+  state s = parse_state(" \
+              @ 0 . . . . . B , \
+              * @ . w w B B B , \
+              @ w w w B , , , , \
+              . B B B , B , , , \
+              . B , , , , , , , \
+              B B , , , , , , , \
+  ");
+  print_state(&s);
+  const move_result r = make_move(&s, single(0, 1));
+  assert(r == ILLEGAL);
+  print_state(&s);
+}
+
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
@@ -780,6 +795,7 @@ int main() {
   test_wide_keyspace();
   test_legality();
   test_compressed_keyspace();
+  test_illegal_ko();
 
   return EXIT_SUCCESS;
 }

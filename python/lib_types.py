@@ -125,6 +125,9 @@ class Coordinates(ctypes.Structure):
     ("y", ctypes.c_int),
   ]
 
+  def __repr__(self):
+    return "Coordinates({}, {})".format(self.x, self.y)
+
 class Tsumego(ctypes.Structure):
   _fields_ = [
     ("slug", ctypes.c_char_p),
