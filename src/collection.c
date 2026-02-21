@@ -157,12 +157,34 @@ collection l_j_groups() {
   swap_players(&j_group_def);
   float j_group_def_score = -35 - BUTTON_BONUS;
 
+  state straight_j_group_att = parse_state("\
+                          . . . . 0 . . B , \
+                          . . . . 0 B B B , \
+                          . w w w B , , , , \
+                          . B B B , B , , , \
+                          . B , , , , , , , \
+                          B B , , , , , , , \
+  ");
+  float straight_j_group_att_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state straight_j_group_sac = straight_j_group_att;
+  straight_j_group_sac.ko_threats = -1;
+  float straight_j_group_sac_score = 43 - BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state straight_j_group_def = straight_j_group_att;
+  swap_players(&straight_j_group_def);
+  straight_j_group_def.ko_threats = -1;
+  float straight_j_group_def_score = -35 - BUTTON_BONUS - KO_THREAT_BONUS;
+
   tsumego tsumegos[] = {
     {"l-group", "L Group", l_group, true, {l_group_score, l_group_score}},
     {"2nd-l-1-group-attack", "Second L+1 Group (Attack)", second_l_1_att, false, {second_l_1_att_score, second_l_1_att_score}},
     {"2nd-l-1-group-defense", "Second L+1 Group (Defense)", second_l_1_def, false, {second_l_1_def_score, second_l_1_def_score}},
     {"j-group-defense", "J Group (Defense)", j_group_def, false, {j_group_def_score, j_group_def_score}},
     {"j-group-attack", "J Group (Attack)", j_group_att, false, {j_group_att_score, j_group_att_score}},
+    {"straight-j-group-defense", "Straight J Group (Defense)", straight_j_group_def, false, {straight_j_group_def_score, straight_j_group_def_score}},
+    {"straight-j-group-attack", "Straight J Group (Attack)", straight_j_group_att, false, {straight_j_group_att_score, straight_j_group_att_score}},
+    {"straight-j-group-sac", "Straight J Group (Sacrifice)", straight_j_group_sac, true, {straight_j_group_sac_score, straight_j_group_sac_score}},
   };
 
   tsumego *ts = malloc(sizeof(tsumegos));
