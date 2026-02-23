@@ -205,16 +205,18 @@ collection notcher_122xy() {
   root.visual_area |= root.visual_area << 1;
   root.opponent |= single_16(9, 0) | single_16(9, 1);
   root.immortal = root.opponent;
+  root.ko_threats = 1;
 
   state def_122NN = root;
+  def_122NN.ko_threats = 0;
   float score_def_122NN = -18 + BUTTON_BONUS;
 
-  state att_122NN = root;
+  state att_122NN = def_122NN;
   swap_players(&att_122NN);
   float score_att_122NN = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
 
   // Unfortunately these are dead and there are no forcing moves
-  state def_122WN = root;
+  state def_122WN = def_122NN;
   def_122WN.opponent |= single_16(3, 2);
   def_122WN.immortal = def_122WN.opponent;
   def_122WN.logical_area &= ~def_122WN.immortal;
@@ -224,7 +226,7 @@ collection notcher_122xy() {
   swap_players(&att_122WN);
   // float score_att_122WN = TARGET_CAPTURED_SCORE + BUTTON_BONUS;
 
-  state def_122NS = root;
+  state def_122NS = def_122NN;
   def_122NS.player |= single_16(5, 2);
   def_122NS.target = def_122NS.player;
   def_122NS.logical_area &= ~def_122NS.target;
