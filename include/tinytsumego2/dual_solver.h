@@ -35,6 +35,12 @@ dual_graph* allocate_dual_graph(const state *root);
 // Get the value range of a state in the game graph
 value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts);
 
+// Navigate to an end state from the given starting state assuming the player cannot repeat moves
+state dual_graph_low_terminal(dual_graph *dg, const state *origin, tactics ts);
+
+// Navigate to an end state from the given starting state assuming the player can repeat moves
+state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts);
+
 // Apply negamax to a dual game graph. Returns `false` if the graph has converged.
 bool iterate_dual_graph(dual_graph *dg, bool verbose);
 

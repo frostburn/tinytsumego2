@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
+#include "jkiss/jkiss.h"
 #include "tinytsumego2/dual_solver.h"
 
 void print_dual_graph(dual_graph *dg) {
@@ -174,6 +175,99 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
     printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
   }
   return num_updated;
+}
+
+state dual_graph_low_terminal(dual_graph *dg, const state *origin, tactics ts) {
+  if (origin->passes > 1 || (origin->target & ~(origin->player | origin->opponent))) {
+    return *origin;
+  }
+  table_value plain_value;
+  table_value forcing_value;
+  get_dual_graph_values(dg, origin, MAX_COMPENSATION_DEPTH, &plain_value, &forcing_value);
+
+  // Need to break loops by random navigation
+  unsigned int offset = jrand();
+  for (int i = 0; i < dg->num_moves; ++i) {
+    int j = (i + offset) % dg->num_moves;
+    state child = *origin;
+    const move_result r = make_move(&child, dg->moves[j]);
+    table_value child_plain;
+    table_value child_forcing;
+    if (r <= TAKE_TARGET) {
+      if (ts == NONE) {
+        child_plain = score_terminal_q7(r, &child);
+        if (plain_value.low == child_plain.high) {
+          return child;
+        }
+      } else {
+        child_forcing = score_terminal_q7(r, &child);
+        if (forcing_value.low == child_forcing.high) {
+          return child;
+        }
+      }
+    } else {
+      get_dual_graph_values(dg, &child, MAX_COMPENSATION_DEPTH, &child_plain, &child_forcing);
+      if (ts == NONE) {
+        child_plain = apply_tactics_q7(ts, r, &child, child_plain);
+        if (plain_value.low == child_plain.high) {
+          return dual_graph_high_terminal(dg, &child, ts);
+        }
+      } else {
+        child_forcing = apply_tactics_q7(ts, r, &child, child_forcing);
+        if (forcing_value.low == child_forcing.high) {
+          return dual_graph_high_terminal(dg, &child, ts);
+        }
+      }
+    }
+  }
+  fprintf(stderr, "Low terminal not found\n");
+  exit(EXIT_FAILURE);
+  return *origin;
+}
+
+state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts) {
+  if (origin->passes > 1 || (origin->target & ~(origin->player | origin->opponent))) {
+    return *origin;
+  }
+  table_value plain_value;
+  table_value forcing_value;
+  get_dual_graph_values(dg, origin, MAX_COMPENSATION_DEPTH, &plain_value, &forcing_value);
+
+  for (int i = 0; i < dg->num_moves; ++i) {
+    state child = *origin;
+    const move_result r = make_move(&child, dg->moves[i]);
+    table_value child_plain;
+    table_value child_forcing;
+    if (r <= TAKE_TARGET) {
+      if (ts == NONE) {
+        child_plain = score_terminal_q7(r, &child);
+        if (plain_value.high == child_plain.low) {
+          return child;
+        }
+      } else {
+        child_forcing = score_terminal_q7(r, &child);
+        if (forcing_value.high == child_forcing.low) {
+          return child;
+        }
+      }
+    } else {
+      get_dual_graph_values(dg, &child, MAX_COMPENSATION_DEPTH, &child_plain, &child_forcing);
+      if (ts == NONE) {
+        child_plain = apply_tactics_q7(ts, r, &child, child_plain);
+        if (plain_value.high == child_plain.low) {
+          return dual_graph_high_terminal(dg, &child, ts);
+        }
+      } else {
+        child_forcing = apply_tactics_q7(ts, r, &child, child_forcing);
+        if (forcing_value.high == child_forcing.low) {
+          return dual_graph_high_terminal(dg, &child, ts);
+        }
+      }
+    }
+  }
+  fprintf(stderr, "High terminal not found\n");
+  exit(EXIT_FAILURE);
+  return *origin;
 }
 
 void free_dual_graph(dual_graph *dg) {

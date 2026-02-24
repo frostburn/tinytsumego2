@@ -57,6 +57,12 @@ void test_bulky_five() {
   value v = get_dual_graph_value(&dg, &s, NONE);
   assert(v.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
   assert(v.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+
+  state terminal = dual_graph_low_terminal(&dg, &root, NONE);
+  print_state(&terminal);
+  stones_t empty = terminal.visual_area & ~(terminal.player | terminal.opponent);
+  assert(root.target & empty);
+
   free_dual_graph(&dg);
 }
 

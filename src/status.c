@@ -63,38 +63,6 @@ const char* tsumego_status_string(tsumego_status ts) {
   return KO_KO;
 }
 
-// TODO: Promote to an actual dual_graph method
-state navigate_principal_path(dual_graph *dg, state s) {
-  bool low_color = s.white_to_play;
-  value v = get_dual_graph_value(dg, &s, NONE);
-  while (true) {
-    bool found = false;
-    for (int i = 0; i < dg->num_moves; ++i) {
-      state child = s;
-      const move_result r = make_move(&child, dg->moves[i]);
-      if (r > TAKE_TARGET) {
-        value child_v = get_dual_graph_value(dg, &child, NONE);
-        if (s.white_to_play == low_color) {
-          if (v.low == -child_v.high) {
-            found = true;
-          }
-        } else if (v.high == -child_v.low) {
-          found = true;
-        }
-        if (found) {
-          s = child;
-          v = child_v;
-          break;
-        }
-      }
-    }
-    if (!found) {
-      break;
-    }
-  }
-  return s;
-}
-
 tsumego_status get_tsumego_status(const state *s) {
   tsumego_status result;
   dual_graph dg = {0};
@@ -163,7 +131,7 @@ tsumego_status get_tsumego_status(const state *s) {
 
           c.ko_threats = 0;
 
-          c = navigate_principal_path(&dg, c);
+          c = dual_graph_low_terminal(&dg, &c, NONE);
 
           stones_t empty = c.logical_area & ~(c.player | c.opponent);
           stones_t player_libs = c.wide ? liberties_16(c.player, empty) : liberties(c.player, empty);
@@ -179,7 +147,7 @@ tsumego_status get_tsumego_status(const state *s) {
     }
   }
 
-  c = navigate_principal_path(&dg, c);
+  c = dual_graph_low_terminal(&dg, &c, NONE);
 
   if (result.player_first.life == SUPER_KO) {
     // Our ruleset is not powerful enough to determine initiative
@@ -247,7 +215,7 @@ tsumego_status get_tsumego_status(const state *s) {
           // Opponent's ko threats don't seem to affect anything
 
           c.ko_threats = 0;
-          c = navigate_principal_path(&dg, c);
+          c = dual_graph_low_terminal(&dg, &c, NONE);
 
           stones_t empty = c.logical_area & ~(c.player | c.opponent);
           stones_t player_libs = c.wide ? liberties_16(c.player, empty) : liberties(c.player, empty);
@@ -263,7 +231,7 @@ tsumego_status get_tsumego_status(const state *s) {
     }
   }
 
-  c = navigate_principal_path(&dg, c);
+  c = dual_graph_low_terminal(&dg, &c, NONE);
 
   if (result.opponent_first.life == SUPER_KO) {
     // Our ruleset is not powerful enough to determine initiative
