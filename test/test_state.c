@@ -92,9 +92,13 @@ void test_rectangle_six_no_liberties_capture_mainline() {
   assert(r == NORMAL);
   print_state(&s);
 
+  stones_t white = s.opponent;
   r = make_move(&s, single(2, 0));
   assert(r == TAKE_TARGET);
   print_state(&s);
+
+  stones_t captured = s.player ^ white;
+  assert(popcount(captured) == 7);
 }
 
 void test_rectangle_six_no_liberties_capture_refutation() {
@@ -120,15 +124,23 @@ void test_rectangle_six_no_liberties_capture_refutation() {
   assert(r == NORMAL);
   print_state(&s);
 
+  stones_t white = s.opponent;
   r = make_move(&s, single(0, 1));
   assert(r == NORMAL);
   print_state(&s);
 
+  stones_t captured = s.player ^ white;
+  assert(popcount(captured) == 1);
+
   // Legal ko move due to logical "external" threat
+  stones_t black = s.opponent;
   r = make_move(&s, single(0, 0));
   assert(r == KO_THREAT_AND_RETAKE);
   assert(s.ko_threats == 0);
   print_state(&s);
+
+  captured = s.player ^ black;
+  assert(popcount(captured) == 1);
 
   // Illegal ko move
   r = make_move(&s, single(0, 1));

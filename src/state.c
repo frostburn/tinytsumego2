@@ -322,11 +322,7 @@ move_result make_move(state *s, stones_t move) {
 
   if (s->wide) {
     // Lol, macro abuse
-    #define KILL_CHAIN_16 \
-    if (!liberties_16(chain, empty) && !(chain & s->immortal)) {\
-      kill |= chain;\
-      s->opponent ^= chain;\
-    }
+    #define KILL_CHAIN_16 if (!liberties_16(chain, empty) && !(chain & s->immortal)) kill |= chain;
     chain = flood_16(move >> V_SHIFT_16, s->opponent);
     KILL_CHAIN_16
     chain = flood_16(move << V_SHIFT_16, s->opponent);
@@ -336,16 +332,14 @@ move_result make_move(state *s, stones_t move) {
     chain = flood_16((move & WEST_BLOCK_16) << H_SHIFT_16, s->opponent);
     KILL_CHAIN_16
 
+    s->opponent ^= kill;
+
     // Check legality
     chain = flood_16(move, s->player & ~s->external);
     libs = liberties_16(chain, s->visual_area & ~(s->opponent ^ s->external));
   } else {
     // Lol, macro abuse
-    #define KILL_CHAIN \
-    if (!liberties(chain, empty) && !(chain & s->immortal)) {\
-      kill |= chain;\
-      s->opponent ^= chain;\
-    }
+    #define KILL_CHAIN if (!liberties(chain, empty) && !(chain & s->immortal)) kill |= chain;
     chain = flood(move >> V_SHIFT, s->opponent);
     KILL_CHAIN
     chain = flood(move << V_SHIFT, s->opponent);
@@ -354,6 +348,8 @@ move_result make_move(state *s, stones_t move) {
     KILL_CHAIN
     chain = flood((move & WEST_BLOCK) << H_SHIFT, s->opponent);
     KILL_CHAIN
+
+    s->opponent ^= kill;
 
     // Check legality
     chain = flood(move, s->player & ~s->external);
