@@ -177,6 +177,103 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
   return num_updated;
 }
 
+table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth) {
+  if (!depth) {
+    return MAX_RANGE_Q7;
+  }
+  if (s->passes || s->ko) {
+    // Compensate for keyspace tightness using negamax
+    score_q7_t low = SCORE_Q7_MIN;
+    score_q7_t high = SCORE_Q7_MIN;
+
+    for (int j = 0; j < dg->num_moves; ++j) {
+      state child = *s;
+      const move_result r = make_move(&child, dg->moves[j]);
+      table_value child_value;
+      if (r == SECOND_PASS) {
+        // For the most part true area scoring agrees with simple area scoring,
+        // but removing ko-threats after two passes makes
+        // "Bent Four in the Corner is Dead"-type cases into dead shapes instead of seki.
+        score_q7_t delta = child.ko_threats * KO_THREAT_Q7;
+        child.ko = 0ULL;
+        child.ko_threats = 0;
+        child.passes = 0;
+        child_value = get_dual_graph_area_value_(dg, &child, depth - 1);
+        child_value.low += delta;
+        child_value.high += delta;
+        child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      } else if (r <= TAKE_TARGET) {
+        child_value = score_terminal_q7(r, &child);
+      } else {
+        child_value = get_dual_graph_area_value_(dg, &child, depth - 1);
+        child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      }
+      if (child_value.high > low) low = child_value.high;
+      if (child_value.low > high) high = child_value.low;
+    }
+    return (table_value) {low, high};
+  }
+
+  size_t key;
+  score_q7_t delta = 0;
+  if (s->button < 0) {
+    state c = *s;
+    c.button = -c.button;
+    delta = -2 * BUTTON_Q7;
+    key = to_compressed_key(&(dg->keyspace), &c);
+  } else {
+    key = to_compressed_key(&(dg->keyspace), s);
+  }
+  table_value v = dg->plain_values[key];
+  if (v.low != SCORE_Q7_MIN) {
+    v.low += delta;
+  }
+  if (v.high != SCORE_Q7_MAX) {
+    v.high += delta;
+  }
+  return v;
+}
+
+bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
+  size_t num_updated = 0;
+  for (size_t k = 0; k < dg->keyspace.keyspace.size; ++k) {
+    if (!was_legal(&(dg->keyspace), k)) {
+      continue;
+    }
+    size_t i = remap_tight_key(&(dg->keyspace), k);
+
+    // Perform negamax
+    score_q7_t low = SCORE_Q7_MIN;
+    score_q7_t high = SCORE_Q7_MIN;
+
+    state parent = from_tight_key_fast(&(dg->keyspace.keyspace), k);
+    for (int j = 0; j < dg->num_moves; ++j) {
+      state child = parent;
+      const move_result r = make_move(&child, dg->moves[j]);
+      table_value child_value;
+      if (r <= TAKE_TARGET) {
+        child_value = score_terminal_q7(r, &child);
+      } else {
+        child_value = get_dual_graph_area_value_(dg, &child, MAX_COMPENSATION_DEPTH);
+        child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      }
+      if (child_value.high > low) low = child_value.high;
+      if (child_value.low > high) high = child_value.low;
+    }
+    if (
+      dg->plain_values[i].low != low || dg->plain_values[i].high != high
+    ) {
+      dg->plain_values[i] = (table_value) {low, high};
+      num_updated++;
+    }
+  }
+  if (verbose) {
+    value v = get_dual_graph_value(dg, &(dg->keyspace.keyspace.root), NONE);
+    printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
+  }
+  return num_updated;
+}
+
 state dual_graph_low_terminal(dual_graph *dg, const state *origin, tactics ts) {
   if (origin->passes > 1 || (origin->target & ~(origin->player | origin->opponent))) {
     return *origin;

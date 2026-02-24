@@ -38,6 +38,11 @@ dual_graph solve(tsumego t, bool verbose) {
   if (verbose)
     printf("Root value (forcing) = (%f, %f)\n\n", root_value.low, root_value.high);
 
+  if (verbose) {
+    printf("Iterating area score\n");
+    while(area_iterate_dual_graph(&dg, true));
+  }
+
   return dg;
 }
 
