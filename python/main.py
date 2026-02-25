@@ -60,6 +60,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
     content = self.rfile.read(content_length).decode("utf-8")
     data = json.loads(content)
     state = State.from_json(data["state"], root.wide)
+    if state.passes >= 2:
+      state.passes = 0
+      state.ko = 0
+      state.ko_threats = 0
+      # Plain values have been "used up" for area scoring. Take the forcing terminal.
+      terminal = lib.dual_graph_reader_low_terminal(reader, ctypes.pointer(state), FORCING)
+      dead_stones = lib.dead_stones(ctypes.pointer(state), ctypes.pointer(terminal))
+      self.json_response({"deadStones": state.slice_stones(dead_stones)})
+      return
     num_move_infos = ctypes.c_int(0)
     move_infos = lib.dual_graph_reader_move_infos(reader, ctypes.pointer(state), ctypes.pointer(num_move_infos))
     response_data = {"moves": []}

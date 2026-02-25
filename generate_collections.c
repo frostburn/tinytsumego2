@@ -36,6 +36,11 @@ int main(int argc, char *argv[]) {
       bool verbose = (j < 8) || (j % (j >> 2) == 0);
       if (!iterate_dual_graph(&dg, verbose)) break;
     }
+    printf("Iterating area score\n");
+    for (int j = 0;;j++) {
+      bool verbose = (j < 8) || (j % (j >> 2) == 0);
+      if (!area_iterate_dual_graph(&dg, verbose)) break;
+    }
     printf("%zu tsumegos in collection\n", collections[i].num_tsumegos);
     for (size_t j = 0; j < collections[i].num_tsumegos; ++j) {
       tsumego t = collections[i].tsumegos[j];

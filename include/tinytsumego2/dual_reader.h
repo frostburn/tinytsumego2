@@ -51,6 +51,9 @@ typedef struct move_info {
 // Write a solved dual_graph instance to a stream in a format expected by the reader
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream);
 
+// Unroll `dgr->buffer` into struct fields
+void unbuffer_dual_graph_reader(dual_graph_reader *dgr);
+
 // Load a dual_graph_reader from the given file
 dual_graph_reader load_dual_graph_reader(const char *filename);
 
@@ -68,3 +71,9 @@ dual_graph_reader* allocate_dual_graph_reader(const char *filename);
 
 // Lazy developer detected
 stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves);
+
+// Navigate to an end state from the given starting state assuming the player cannot repeat moves
+state dual_graph_reader_low_terminal(dual_graph_reader *dgr, const state *origin, tactics ts);
+
+// Navigate to an end state from the given starting state assuming the player can repeat moves
+state dual_graph_reader_high_terminal(dual_graph_reader *dgr, const state *origin, tactics ts);
