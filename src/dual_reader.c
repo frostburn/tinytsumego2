@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "jkiss/jkiss.h"
 #include "tinytsumego2/dual_reader.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
@@ -76,61 +77,67 @@ size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
   return total;
 }
 
+void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
+  char *map = dgr->buffer;
+
+  state root = ((state *)map)[0];
+  map += sizeof(state);
+  dgr->keyspace.keyspace = create_tight_keyspace(&root, true);
+
+  dgr->keyspace.compressor.num_checkpoints = ((size_t*) map)[0];
+  map += sizeof(size_t);
+
+  // Memory map aux data to save RAM
+  dgr->keyspace.compressor.checkpoints = (size_t *)map;
+  map += sizeof(size_t) * dgr->keyspace.compressor.num_checkpoints;
+
+  dgr->keyspace.compressor.uncompressed_size = ((size_t*) map)[0];
+  map += sizeof(size_t);
+
+  dgr->keyspace.compressor.deltas = (unsigned char *)map;
+  map += sizeof(unsigned char) * dgr->keyspace.compressor.uncompressed_size;
+
+  dgr->keyspace.compressor.size = ((size_t*) map)[0];
+  map += sizeof(size_t);
+
+  dgr->keyspace.compressor.factor = ((double*) map)[0];
+  map += sizeof(double);
+
+  dgr->keyspace.prefix_m = ((size_t*) map)[0];
+  map += sizeof(size_t);
+
+  dgr->keyspace.size = ((size_t*) map)[0];
+  map += sizeof(size_t);
+
+  dgr->num_moves = ((int*) map)[0];
+  map += sizeof(int);
+
+  dgr->moves = malloc(dgr->num_moves * sizeof(stones_t));
+  for (int i = 0; i < dgr->num_moves; ++i) {
+    dgr->moves[i] = ((stones_t *) map)[i];
+  }
+  map += dgr->num_moves * sizeof(stones_t);
+
+  dgr->plain_value_ids = (value_id_t *)map;
+  map += sizeof(value_id_t) * dgr->keyspace.size;
+
+  dgr->forcing_value_ids = (value_id_t *)map;
+  map += sizeof(value_id_t) * dgr->keyspace.size;
+
+  dgr->value_map = malloc(VALUE_MAP_SIZE * sizeof(value));
+  for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
+    dgr->value_map[i] = ((value *)map)[i];
+  }
+  map += sizeof(value) * VALUE_MAP_SIZE;
+}
+
 dual_graph_reader load_dual_graph_reader(const char *filename) {
   dual_graph_reader result;
   char *map = file_to_mmap(filename, &(result.sb), &(result.fd));
 
   result.buffer = map;
 
-  state root = ((state *)map)[0];
-  map += sizeof(state);
-  result.keyspace.keyspace = create_tight_keyspace(&root, true);
-
-  result.keyspace.compressor.num_checkpoints = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  // Memory map aux data to save RAM
-  result.keyspace.compressor.checkpoints = (size_t *)map;
-  map += sizeof(size_t) * result.keyspace.compressor.num_checkpoints;
-
-  result.keyspace.compressor.uncompressed_size = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  result.keyspace.compressor.deltas = (unsigned char *)map;
-  map += sizeof(unsigned char) * result.keyspace.compressor.uncompressed_size;
-
-  result.keyspace.compressor.size = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  result.keyspace.compressor.factor = ((double*) map)[0];
-  map += sizeof(double);
-
-  result.keyspace.prefix_m = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  result.keyspace.size = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  result.num_moves = ((int*) map)[0];
-  map += sizeof(int);
-
-  result.moves = malloc(result.num_moves * sizeof(stones_t));
-  for (int i = 0; i < result.num_moves; ++i) {
-    result.moves[i] = ((stones_t *) map)[i];
-  }
-  map += result.num_moves * sizeof(stones_t);
-
-  result.plain_value_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * result.keyspace.size;
-
-  result.forcing_value_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * result.keyspace.size;
-
-  result.value_map = malloc(VALUE_MAP_SIZE * sizeof(value));
-  for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
-    result.value_map[i] = ((value *)map)[i];
-  }
-  map += sizeof(value) * VALUE_MAP_SIZE;
+  unbuffer_dual_graph_reader(&result);
 
   return result;
 }
@@ -145,16 +152,18 @@ void unload_dual_graph_reader(dual_graph_reader *dgr) {
   free(dgr->value_map);
   dgr->value_map = NULL;
 
-  munmap(dgr->buffer, dgr->sb.st_size);
-  close(dgr->fd);
+  if (dgr->fd >= 0) {
+    munmap(dgr->buffer, dgr->sb.st_size);
+    close(dgr->fd);
 
-  dgr->buffer = NULL;
-  dgr->fd = -1;
+    dgr->buffer = NULL;
+    dgr->fd = -1;
 
-  dgr->keyspace.compressor.checkpoints = NULL;
-  dgr->keyspace.compressor.deltas = NULL;
-  dgr->plain_value_ids = NULL;
-  dgr->forcing_value_ids = NULL;
+    dgr->keyspace.compressor.checkpoints = NULL;
+    dgr->keyspace.compressor.deltas = NULL;
+    dgr->plain_value_ids = NULL;
+    dgr->forcing_value_ids = NULL;
+  }
 }
 
 void get_dual_graph_reader_values(const dual_graph_reader *dgr, const state *s, int depth, value *plain_value, value *forcing_value) {
@@ -175,7 +184,19 @@ void get_dual_graph_reader_values(const dual_graph_reader *dgr, const state *s, 
       const move_result r = make_move(&child, dgr->moves[j]);
       value child_plain;
       value child_forcing;
-      if (r <= TAKE_TARGET) {
+      if (r == SECOND_PASS) {
+        value simple_area = score_terminal(r, &child);
+        float delta = child.ko_threats * KO_THREAT_BONUS;
+        child.passes = 0;
+        child.ko = 0ULL;
+        child.ko_threats = 0;
+        get_dual_graph_reader_values(dgr, &child, depth - 1, &child_plain, &child_forcing);
+        child_plain.low += delta;
+        child_plain.high += delta;
+        child_plain = apply_tactics(NONE, r, &child, child_plain);
+        // Don't break forcing logic
+        child_forcing = simple_area;
+      } else if (r <= TAKE_TARGET) {
         child_plain = score_terminal(r, &child);
         child_forcing = child_plain;
       } else {
@@ -229,18 +250,23 @@ stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, in
   return dgr->moves;
 }
 
+state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
+  state ss = *s;
+  ss.button = abs(ss.button);
+  size_t key = to_tight_key_fast(&(dgr->keyspace.keyspace), &ss);
+  ss = from_tight_key_fast(&(dgr->keyspace.keyspace), key);
+  ss.ko = s->ko;
+  ss.passes = s->passes;
+  ss.button = s->button;
+
+  return ss;
+}
+
 move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos) {
   move_info *result = malloc(dgr->num_moves * sizeof(move_info));
   *num_move_infos = 0;
 
-  // Strip aesthetics
-  state parent = *s;
-  parent.button = abs(parent.button);
-  size_t key = to_tight_key_fast(&(dgr->keyspace.keyspace), &parent);
-  parent = from_tight_key_fast(&(dgr->keyspace.keyspace), key);
-  parent.ko = s->ko;
-  parent.passes = s->passes;
-  parent.button = s->button;
+  state parent = strip_aesthetics(dgr, s);
 
   dual_value v = get_dual_graph_reader_value(dgr, &parent);
 
@@ -250,9 +276,21 @@ move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const stat
   for (int i = 0; i < dgr->num_moves; ++i) {
     state child = parent;
     const move_result r = make_move(&child, dgr->moves[i]);
-    if (r <= TAKE_TARGET) {
+    if (r == SECOND_PASS) {
+      value simple_area = score_terminal(r, &child);
+      float delta = child.ko_threats * KO_THREAT_BONUS;
+      child.passes = 0;
+      child.ko = 0ULL;
+      child.ko_threats = 0;
+      child_values[i] = get_dual_graph_reader_value(dgr, &child);
+      child_values[i].plain.low += delta;
+      child_values[i].plain.high += delta;
+      child_values[i].plain = apply_tactics(NONE, r, &child, child_values[i].plain);
+      // Don't break forcing logic
+      child_values[i].forcing = simple_area;
+    } else if (r <= TAKE_TARGET) {
       child_values[i].plain = score_terminal(r, &child);
-      child_values[i].forcing = child_values[i].forcing;
+      child_values[i].forcing = child_values[i].plain;
     } else {
       child_values[i] = get_dual_graph_reader_value(dgr, &child);
       child_values[i].plain = apply_tactics(NONE, r, &child, child_values[i].plain);
@@ -283,4 +321,103 @@ move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const stat
   free(child_values);
 
   return realloc(result, *num_move_infos * sizeof(move_info));
+}
+
+state dual_graph_reader_high_terminal_(dual_graph_reader *dgr, const state *origin, tactics ts);
+
+state dual_graph_reader_low_terminal_(dual_graph_reader *dgr, const state *origin, tactics ts) {
+  if (origin->passes > 1 || (origin->target & ~(origin->player | origin->opponent))) {
+    return *origin;
+  }
+  dual_value v = get_dual_graph_reader_value(dgr, origin);
+
+  // Need to break loops by random navigation
+  unsigned int offset = jrand();
+  for (int i = 0; i < dgr->num_moves; ++i) {
+    int j = (i + offset) % dgr->num_moves;
+    state child = *origin;
+    const move_result r = make_move(&child, dgr->moves[j]);
+    dual_value child_value;
+    if (r <= TAKE_TARGET) {
+      if (ts == NONE) {
+        child_value.plain = score_terminal(r, &child);
+        if (v.plain.low == child_value.plain.high) {
+          return child;
+        }
+      } else {
+        child_value.forcing = score_terminal(r, &child);
+        if (v.forcing.low == child_value.forcing.high) {
+          return child;
+        }
+      }
+    } else {
+      child_value = get_dual_graph_reader_value(dgr, &child);
+      if (ts == NONE) {
+        child_value.plain = apply_tactics(ts, r, &child, child_value.plain);
+        if (v.plain.low == child_value.plain.high) {
+          return dual_graph_reader_high_terminal_(dgr, &child, ts);
+        }
+      } else {
+        child_value.forcing = apply_tactics(ts, r, &child, child_value.forcing);
+        if (v.forcing.low == child_value.forcing.high) {
+          return dual_graph_reader_high_terminal_(dgr, &child, ts);
+        }
+      }
+    }
+  }
+  fprintf(stderr, "Low terminal not found\n");
+  exit(EXIT_FAILURE);
+  return *origin;
+}
+
+state dual_graph_reader_high_terminal_(dual_graph_reader *dgr, const state *origin, tactics ts) {
+  if (origin->passes > 1 || (origin->target & ~(origin->player | origin->opponent))) {
+    return *origin;
+  }
+  dual_value v = get_dual_graph_reader_value(dgr, origin);
+
+  for (int i = 0; i < dgr->num_moves; ++i) {
+    state child = *origin;
+    const move_result r = make_move(&child, dgr->moves[i]);
+    dual_value child_value;
+    if (r <= TAKE_TARGET) {
+      if (ts == NONE) {
+        child_value.plain = score_terminal(r, &child);
+        if (v.plain.high == child_value.plain.low) {
+          return child;
+        }
+      } else {
+        child_value.forcing = score_terminal(r, &child);
+        if (v.forcing.high == child_value.forcing.low) {
+          return child;
+        }
+      }
+    } else {
+      child_value = get_dual_graph_reader_value(dgr, &child);
+      if (ts == NONE) {
+        child_value.plain = apply_tactics(ts, r, &child, child_value.plain);
+        if (v.plain.high == child_value.plain.low) {
+          return dual_graph_reader_low_terminal_(dgr, &child, ts);
+        }
+      } else {
+        child_value.forcing = apply_tactics(ts, r, &child, child_value.forcing);
+        if (v.forcing.high == child_value.forcing.low) {
+          return dual_graph_reader_low_terminal_(dgr, &child, ts);
+        }
+      }
+    }
+  }
+  fprintf(stderr, "High terminal not found\n");
+  exit(EXIT_FAILURE);
+  return *origin;
+}
+
+state dual_graph_reader_low_terminal(dual_graph_reader *dgr, const state *origin, tactics ts) {
+  state o = strip_aesthetics(dgr, origin);
+  return dual_graph_reader_low_terminal_(dgr, &o, ts);
+}
+
+state dual_graph_reader_high_terminal(dual_graph_reader *dgr, const state *origin, tactics ts) {
+  state o = strip_aesthetics(dgr, origin);
+  return dual_graph_reader_high_terminal_(dgr, &o, ts);
 }

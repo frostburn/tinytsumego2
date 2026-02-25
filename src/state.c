@@ -686,6 +686,32 @@ int simple_area_score(const state *s) {
   return popcount(player_controlled) - popcount(opponent_controlled);
 }
 
+stones_t dead_stones(const state *s, const state *terminal) {
+  // Terminal's perspective
+  stones_t empty = (terminal->visual_area & ~(terminal->player | terminal->opponent)) | terminal->external;
+  stones_t player_controlled = terminal->player & ~terminal->external;
+  stones_t opponent_controlled = terminal->opponent & ~terminal->external;
+  if (terminal->wide) {
+    player_controlled = bleed_16(player_controlled, empty);
+    opponent_controlled = bleed_16(opponent_controlled, empty);
+  } else {
+    player_controlled = bleed(player_controlled, empty);
+    opponent_controlled = bleed(opponent_controlled, empty);
+  }
+  stones_t disputed = player_controlled & opponent_controlled;
+  player_controlled ^= disputed;
+  opponent_controlled ^= disputed;
+
+  // State's perspective
+  if (s->white_to_play != terminal->white_to_play) {
+    empty = player_controlled;
+    player_controlled = opponent_controlled;
+    opponent_controlled = empty;
+  }
+
+  return (s->player & opponent_controlled) | (s->opponent & player_controlled);
+}
+
 bool equals(const state *a, const state *b) {
   if (a->visual_area != b->visual_area) {
     return false;
