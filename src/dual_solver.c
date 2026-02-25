@@ -234,6 +234,10 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
   return v;
 }
 
+value get_dual_graph_area_value(dual_graph *dg, const state *s) {
+  return table_value_to_value(get_dual_graph_area_value_(dg, s, MAX_COMPENSATION_DEPTH));
+}
+
 bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
   for (size_t k = 0; k < dg->keyspace.keyspace.size; ++k) {

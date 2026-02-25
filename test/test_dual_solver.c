@@ -36,6 +36,28 @@ state bent_four_in_the_corner_might_be_seki() {
   return s;
 }
 
+state dead_three() {
+  state s = {0};
+  s.visual_area = rectangle(4, 3);
+  s.logical_area = rectangle(3, 1) << V_SHIFT;
+  s.player = s.visual_area ^ s.logical_area;
+  s.opponent = single(1, 1);
+  s.target = s.player;
+  s.white_to_play = true;
+  s.passes = 1;
+  s.button = -1;
+  return s;
+}
+
+state no_moves() {
+  state s = {0};
+  s.visual_area = rectangle(4, 2);
+  s.logical_area = single(0, 0) | single(2, 0);
+  s.opponent = s.visual_area ^ s.logical_area;
+  s.target = s.opponent;
+  return s;
+}
+
 void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
@@ -84,6 +106,11 @@ void test_bulky_five() {
   print_state(&terminal);
   stones_t empty = terminal.visual_area & ~(terminal.player | terminal.opponent);
   assert(root.target & empty);
+
+  // Make sure the rest exist
+  dual_graph_high_terminal(&dg, &root, NONE);
+  dual_graph_low_terminal(&dg, &root, FORCING);
+  dual_graph_high_terminal(&dg, &root, FORCING);
 
   did_change = area_iterate_dual_graph(&dg, true);
   assert(!did_change);
@@ -157,9 +184,79 @@ void test_bent_four_in_the_might_be_seki() {
   free_dual_graph(&dg);
 }
 
+void test_dead_three() {
+  state s = dead_three();
+  state root = s;
+  root.passes = 0;
+  root.button = 0;
+  print_state(&root);
+
+  dual_graph dg = create_dual_graph(&root);
+  while (iterate_dual_graph(&dg, true));
+  print_state(&s);
+  state child = s;
+  const move_result r = make_move(&child, pass());
+  print_state(&child);
+  assert(r == SECOND_PASS);
+  assert(-simple_area_score(&child) > -BIG_SCORE);
+
+  value v = get_dual_graph_value(&dg, &s, NONE);
+  printf("%f, %f\n", v.low, v.high);
+  assert(v.low > -BIG_SCORE);
+
+  while (area_iterate_dual_graph(&dg, true));
+
+  v = get_dual_graph_area_value(&dg, &s);
+  printf("%f, %f\n", v.low, v.high);
+  assert(v.low < -BIG_SCORE);
+}
+
+void test_no_moves_terminals() {
+  state s = no_moves();
+  print_state(&s);
+  dual_graph dg = create_dual_graph(&s);
+  while (iterate_dual_graph(&dg, true));
+
+  state terminal = dual_graph_low_terminal(&dg, &s, NONE);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_high_terminal(&dg, &s, NONE);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_low_terminal(&dg, &s, FORCING);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_high_terminal(&dg, &s, FORCING);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  while (area_iterate_dual_graph(&dg, true));
+
+  terminal = dual_graph_low_terminal(&dg, &s, NONE);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_high_terminal(&dg, &s, NONE);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_low_terminal(&dg, &s, FORCING);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+
+  terminal = dual_graph_high_terminal(&dg, &s, FORCING);
+  print_state(&terminal);
+  assert(terminal.passes == 2);
+}
+
 int main() {
   test_bulky_five();
   test_bent_four_in_the_corner_is_dead();
   test_bent_four_in_the_might_be_seki();
+  test_dead_three();
+  test_no_moves_terminals();
   return 0;
 }

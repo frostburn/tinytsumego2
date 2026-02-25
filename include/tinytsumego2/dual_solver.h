@@ -44,6 +44,8 @@ state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts);
 // Apply negamax to a dual game graph. Returns `false` if the graph has converged.
 bool iterate_dual_graph(dual_graph *dg, bool verbose);
 
+value get_dual_graph_area_value(dual_graph *dg, const state *s);
+
 // Apply negamax to a dual game graph with true area scoring after two consecutive passes. Returns `false` if the graph has converged.
 bool area_iterate_dual_graph(dual_graph *dg, bool verbose);
 
