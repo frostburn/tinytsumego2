@@ -17,6 +17,7 @@
     "keyspace",
     "libc",
     "libtinytsumego",
+    "mannen",
     "negamax",
     "OPENMP",
     "polyomino",

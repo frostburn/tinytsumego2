@@ -380,22 +380,188 @@ collection carpenters_square() {
   };
 }
 
+collection long_l_group() {
+  state root = parse_state("\
+          . . . . . . . B , \
+          . . . . w B B B , \
+          . w w w w B , , B \
+          . . B + B B , , , \
+          . B , B , , , , , \
+          . B , , , , , , , \
+          B B , , , , , , , \
+  ");
+  root.ko_threats = 2;
+
+  state no_libs_mannen_ko = parse_state(" \
+                        . . . . . . . B , \
+                        . . . . w B B , , \
+                        . w w w w B , B , \
+                        . B B B B , , , , \
+                        . B , , , B , , , \
+                        B , B , , , , , , \
+  ");
+  float no_libs_mannen_ko_score = 45 - BUTTON_BONUS;
+
+  state no_libs_ko = no_libs_mannen_ko;
+  no_libs_ko.ko_threats = 1;
+  float no_libs_ko_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS + KO_THREAT_BONUS;
+
+  state no_libs_hane_seki = no_libs_mannen_ko;
+  no_libs_hane_seki.opponent |= single(0, 3);
+  float no_libs_hane_seki_score = 39 - BUTTON_BONUS;
+
+  state no_libs_hane_ko = no_libs_hane_seki;
+  no_libs_hane_ko.ko_threats = 2;
+  float no_libs_hane_ko_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state one_lib = parse_state(" \
+              . . . . . . . B , \
+              . . . . w B B B , \
+              . w w w w B , , B \
+              . B B + B B , , , \
+              . B , B , , , , , \
+              B B , , , , , , , \
+  ");
+  one_lib.ko_threats = 1;
+  float one_lib_score = 41 + BUTTON_BONUS + KO_THREAT_BONUS;
+
+  state one_lib_life = one_lib;
+  one_lib_life.ko_threats = -1;
+  make_move(&one_lib_life, single(1, 1));
+  float one_lib_life_score = -26 - BUTTON_BONUS + KO_THREAT_BONUS;
+
+  state hane_outside = parse_state("\
+                  . . . . . . . B , \
+                  . . . . w B B B , \
+                  . w w w w B , , B \
+                  @ w B B B , B , , \
+                  . B , , , , , , , \
+                  . B , , , , , , , \
+                  B B , , , , , , , \
+  ");
+  float hane_outside_score = 43 - BUTTON_BONUS;
+
+  state descent_1 = parse_state("\
+              . . . . . . . B , \
+              . . . . w B B B , \
+              . w w w w B , , , \
+              B B B B B B , , , \
+  ");
+  descent_1.ko_threats = -2;
+  float descent_1_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 2 * KO_THREAT_BONUS;
+
+  state descent_2 = parse_state(" \
+                . . . . . B , , , \
+                . . . . w B , , , \
+                . w w w w B , , , \
+                . B B B B B , , , \
+                . B , , , , , , , \
+                B , B , , , , , , \
+  ");
+  descent_2.ko_threats = -2;
+  float descent_2_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS - 2 * KO_THREAT_BONUS;
+
+  tsumego tsumegos[] = {
+    {"no-liberties-mannen-ko", "No Outside Liberties (Mannen-Ko)", no_libs_mannen_ko, false, {no_libs_mannen_ko_score, no_libs_mannen_ko_score}},
+    {"no-liberties-ko", "No Outside Liberties (Ko)", no_libs_ko, false, {no_libs_ko_score, no_libs_ko_score}},
+    {"no-liberties-hane-seki", "No Outside Liberties w/ Hane (Seki)", no_libs_hane_seki, false, {no_libs_hane_seki_score, no_libs_hane_seki_score}},
+    {"no-liberties-hane-ko", "No Outside Liberties w/ Hane (Ko)", no_libs_hane_ko, false, {no_libs_hane_ko_score, no_libs_hane_ko_score}},
+    {"one-liberty-seki", "One Outside Liberty (Seki)", one_lib, true, {one_lib_score, one_lib_score}},
+    {"one-liberty-life", "One Outside Liberty (Life)", one_lib_life, false, {one_lib_life_score, one_lib_life_score}},
+    {"hane-outside", "Hane Outside", hane_outside, true, {hane_outside_score, hane_outside_score}},
+    {"1st-descent", "First Descent", descent_1, false, {descent_1_score, descent_1_score}},
+    {"2nd-descent", "Second Descent", descent_2, false, {descent_2_score, descent_2_score}},
+  };
+
+  tsumego *ts = malloc(sizeof(tsumegos));
+  memcpy(ts, tsumegos, sizeof(tsumegos));
+
+  return (collection) {
+    "long-l-group",
+    "Long L Group",
+    root,
+    true,
+    sizeof(tsumegos) / sizeof(tsumego),
+    ts,
+  };
+}
+
+collection five_on_3rd() {
+  state root = parse_state("\
+          . . . . . . . . B \
+          . . . . . . . . B \
+          w w w w w B B B , \
+          B B B B B , , , B \
+  ");
+  root.ko_threats = 2;
+  float root_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state endgame = root;
+  endgame.ko_threats = 0;
+
+  state lesser_endgame = root;
+  lesser_endgame.ko_threats = -1;
+  float lesser_endgame_score = 10 + BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state endgame_def = root;
+  swap_players(&endgame_def);
+  endgame_def.ko_threats = 0;
+  float endgame_def_score = -2 - BUTTON_BONUS;
+
+  state lesser_endgame_def = endgame_def;
+  lesser_endgame_def.ko_threats = -1;
+  float lesser_endgame_def_score = -4 - BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state eternal_life = parse_state("\
+                  . @ . 0 . @ 0 . B \
+                  w @ @ @ w w B B B \
+                  w w w w w B , , , \
+                  B B B B B B , , , \
+  ");
+  swap_players(&eternal_life);
+
+  tsumego tsumegos[] = {
+    {"ko", "Ko", root, false, {root_score, root_score}},
+    {"endgame-attack", "Endgame (Attack)", endgame, false, {12 + BUTTON_BONUS, 14 - BUTTON_BONUS}},
+    {"lesser-endgame-attack", "Lesser Endgame (Attack)", lesser_endgame, false, {lesser_endgame_score, lesser_endgame_score}},
+    {"endgame-defense", "Endgame (Defense)", endgame_def, false, {endgame_def_score, endgame_def_score}},
+    {"lesser-endgame-defense", "Lesser Endgame (Defense)", lesser_endgame_def, false, {lesser_endgame_def_score, lesser_endgame_def_score}},
+    {"eternal-life", "Eternal Life", eternal_life, false, {BUTTON_BONUS - TARGET_CAPTURED_SCORE, -4 - BUTTON_BONUS}},
+  };
+
+  tsumego *ts = malloc(sizeof(tsumegos));
+  memcpy(ts, tsumegos, sizeof(tsumegos));
+
+  return (collection) {
+    "5-on-3rd",
+    "Five on the Third Line in the Corner",
+    root,
+    true,
+    sizeof(tsumegos) / sizeof(tsumego),
+    ts,
+  };
+}
+
 collection* get_collections(size_t *num_collections) {
-  *num_collections = 14;
+  *num_collections = 16;
   collection *result = malloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
   result[2] = notcher_122xy();
   result[3] = l_j_groups();
   result[4] = carpenters_square();
-  result[5] = rectangular_goban(3, 2);
-  result[6] = rectangular_goban(3, 3);
-  result[7] = rectangular_goban(4, 2);
-  result[8] = rectangular_goban(4, 3);
-  result[9] = rectangular_goban(4, 4);
-  result[10] = rectangular_goban(5, 2);
-  result[11] = rectangular_goban(5, 3);
-  result[12] = rectangular_goban(6, 2);
-  result[13] = rectangular_goban(7, 2);
+  result[5] = five_on_3rd();
+  result[6] = long_l_group();
+
+  size_t i = 7;
+  result[i+0] = rectangular_goban(3, 2);
+  result[i+1] = rectangular_goban(3, 3);
+  result[i+2] = rectangular_goban(4, 2);
+  result[i+3] = rectangular_goban(4, 3);
+  result[i+4] = rectangular_goban(4, 4);
+  result[i+5] = rectangular_goban(5, 2);
+  result[i+6] = rectangular_goban(5, 3);
+  result[i+7] = rectangular_goban(6, 2);
+  result[i+8] = rectangular_goban(7, 2);
   return result;
 }
