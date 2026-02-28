@@ -52,6 +52,8 @@ typedef struct collection {
   char *title;
   // Dual-graph root in the upper-left corner. Solutions should be preserved if goban is extended to full 19x19.
   state root;
+  // Can the goban be extended to full 19x19?
+  bool can_stretch;
   // Sub-problems that can be reached from the root
   size_t num_tsumegos;
   tsumego *tsumegos;
