@@ -142,6 +142,7 @@ class Collection(ctypes.Structure):
     ("slug", ctypes.c_char_p),
     ("title", ctypes.c_char_p),
     ("root", State),
+    ("can_stretch", ctypes.c_bool),
     ("num_tsumegos", ctypes.c_size_t),
     ("tsumegos", ctypes.POINTER(Tsumego)),
   ]

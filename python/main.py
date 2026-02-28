@@ -1,4 +1,5 @@
 import ctypes
+from ctypes import pointer
 from lib_types import *
 from lib_defs import lib
 import http.server
@@ -9,6 +10,7 @@ import sys
 libc = ctypes.CDLL("libc.so.6")
 
 # Global config is bad, but let's just get this thing off the ground
+dev_mode = False
 allow_origin = None
 collection_path = None
 readers = {}
@@ -65,12 +67,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
       state.ko = 0
       state.ko_threats = 0
       # Plain values have been "used up" for area scoring. Take the forcing terminal.
-      terminal = lib.dual_graph_reader_low_terminal(reader, ctypes.pointer(state), FORCING)
-      dead_stones = lib.dead_stones(ctypes.pointer(state), ctypes.pointer(terminal))
+      low_terminal = lib.dual_graph_reader_low_terminal(reader, pointer(state), FORCING)
+      dead_stones = lib.dead_stones(pointer(state), pointer(low_terminal))
+      if dead_stones:
+        high_terminal = lib.dual_graph_reader_high_terminal(reader, pointer(state), FORCING)
+        high_stones = lib.dead_stones(pointer(state), pointer(high_terminal))
+        dead_stones &= high_stones
       self.json_response({"deadStones": state.slice_stones(dead_stones)})
       return
     num_move_infos = ctypes.c_int(0)
-    move_infos = lib.dual_graph_reader_move_infos(reader, ctypes.pointer(state), ctypes.pointer(num_move_infos))
+    move_infos = lib.dual_graph_reader_move_infos(reader, pointer(state), pointer(num_move_infos))
     response_data = {"moves": []}
     for i in range(num_move_infos.value):
       response_data["moves"].append({
@@ -83,6 +89,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         "forcing": move_infos[i].forcing,
       })
     libc.free(move_infos)
+    if dev_mode:
+      v = lib.get_dual_graph_reader_value(reader, pointer(state))
+      lib.print_state(pointer(state))
+      print(f"Plain: {v.plain.low}, {v.plain.high}")
+      print(f"Forcing: {v.forcing.low}, {v.forcing.high}")
     self.json_response(response_data)
 
   def do_GET(self):
@@ -122,6 +133,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         data = {
           "title": collection.title.decode(),
           "root": collection.root.to_json(),
+          "canStretch": collection.can_stretch,
           "tsumegos": [{"slug": t.slug.decode(), "subtitle": t.subtitle.decode()} for t in collection.tsumegos_by_slug.values()],
         }
         self.json_response(data)
@@ -142,6 +154,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
           "subtitle": tsumego.subtitle.decode(),
           "state": tsumego.state.to_json(),
           "botToPlay": tsumego.bot_to_play,
+          "canStretch": collection.can_stretch,
         }
         self.json_response(data)
         return
@@ -168,6 +181,7 @@ if __name__ == "__main__":
     sys.exit(1)
 
   if len(sys.argv) > 2 and sys.argv[2] == '--dev':
+    dev_mode = True
     print("Dev mode enabled: Access-Control-Allow-Origin = '*'")
     allow_origin = "*"
 
@@ -176,16 +190,18 @@ if __name__ == "__main__":
     reader = lib.allocate_dual_graph_reader(os.path.join(collection_path, filename).encode())
     dummy = ctypes.c_int(0)
     root = State()
-    lib.dual_graph_reader_python_stuff(reader, ctypes.pointer(root), ctypes.pointer(dummy))
+    lib.dual_graph_reader_python_stuff(reader, pointer(root), pointer(dummy))
     readers[filename.strip(".bin")] = (reader, root)
 
   num_collections = ctypes.c_int(0)
-  pc = lib.get_collections(ctypes.pointer(num_collections))
+  pc = lib.get_collections(pointer(num_collections))
   for i in range(num_collections.value):
     slug = pc[i].slug.decode()
     if slug in readers:
       print("Adding metadata for", slug)
       collections[slug] = pc[i]
+    else:
+      print("Missing binary for", slug)
 
   server = http.server.HTTPServer(("localhost", 8361), Handler)
   try:

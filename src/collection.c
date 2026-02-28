@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "tinytsumego2/collection.h"
 #include "tinytsumego2/state.h"
@@ -16,8 +17,7 @@ collection rectangle_six() {
           B B , , , , , , , \
           , , B , , , , , , \
   ");
-  root.ko_threats = 1;
-  float root_score = 30 + BUTTON_BONUS + KO_THREAT_BONUS;
+  root.ko_threats = 2;
 
   state no_libs = parse_state(" \
               . . . w B , , , , \
@@ -43,11 +43,15 @@ collection rectangle_six() {
   one_lib_def.ko_threats = -1;
   float one_lib_def_score = 30 + BUTTON_BONUS - KO_THREAT_BONUS;
 
+  state two_libs = root;
+  two_libs.ko_threats = 1;
+  float two_libs_score = 30 + BUTTON_BONUS + KO_THREAT_BONUS;
+
   tsumego tsumegos[] = {
     {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
     {"one-liberty", "One Outside Liberty", one_lib, false, {one_lib_score, one_lib_score}},
     {"one-liberty-defense", "One Outside Liberty (Defense)", one_lib_def, true, {one_lib_def_score, one_lib_def_score}},
-    {"two-liberties", "Two Outside Liberties", root, true, {root_score, root_score}},
+    {"two-liberties", "Two Outside Liberties", two_libs, true, {two_libs_score, two_libs_score}},
   };
 
   tsumego *ts = malloc(sizeof(tsumegos));
@@ -57,6 +61,7 @@ collection rectangle_six() {
     "rectangle-six",
     "Rectangular Six in the Corner",
     root,
+    true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
   };
@@ -71,8 +76,7 @@ collection rectangle_eight() {
           B , , , , , , , , \
           , B , , , , , , , \
   ");
-  root.ko_threats = 1;
-  float root_score = 24 + BUTTON_BONUS + KO_THREAT_BONUS;
+  root.ko_threats = 2;
 
   state no_libs = parse_state(" \
               . . . . w B , , , \
@@ -87,10 +91,14 @@ collection rectangle_eight() {
   no_libs_def.ko_threats = -1;
   float no_libs_def_score = 24 + BUTTON_BONUS;
 
+  state one_lib = root;
+  one_lib.ko_threats = 1;
+  float one_lib_score = 24 + BUTTON_BONUS + KO_THREAT_BONUS;
+
   tsumego tsumegos[] = {
     {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
     {"no-liberties-defense", "No Outside Liberties (Defense)", no_libs_def, true, {no_libs_def_score, no_libs_def_score}},
-    {"one-liberty", "One Outside Liberty", root, true, {root_score, root_score}},
+    {"one-liberty", "One Outside Liberty", one_lib, true, {one_lib_score, one_lib_score}},
   };
 
   tsumego *ts = malloc(sizeof(tsumegos));
@@ -100,6 +108,7 @@ collection rectangle_eight() {
     "rectangle-eight",
     "Rectangular Eight in the Corner",
     root,
+    true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
   };
@@ -110,16 +119,16 @@ collection l_j_groups() {
           . . . . . . . B , \
           . . . . . B B B , \
           . w w w B , , , , \
-          . B B B , B , , , \
-          . B , , , , , , , \
+          . B + B , B , , , \
+          . B B , , , , , , \
           B B , , , , , , , \
           , , , , , , , , , \
   ");
-  root.ko_threats = 1;
+  root.ko_threats = 2;
 
   state l_group = parse_state(" \
-              . . . . . . . B , \
-              . . . w B B B B , \
+              . . . . . . B , , \
+              . . . w B B B , , \
               . w w w B , , , , \
               . B B B , B , , , \
               . B , , , , , , , \
@@ -176,6 +185,17 @@ collection l_j_groups() {
   straight_j_group_def.ko_threats = -1;
   float straight_j_group_def_score = -35 - BUTTON_BONUS - KO_THREAT_BONUS;
 
+  state straight_j_group_ko = parse_state("\
+                          . . . . 0 . . B , \
+                          . . . . 0 B B B , \
+                          . w w w B , , , , \
+                          . B + B , , , , , \
+                          . B B , B , , , , \
+                          B B , , , , , , , \
+  ");
+  straight_j_group_ko.ko_threats = -1;
+  float straight_j_group_ko_score = 37 - BUTTON_BONUS;
+
   tsumego tsumegos[] = {
     {"l-group", "L Group", l_group, true, {l_group_score, l_group_score}},
     {"2nd-l-1-group-attack", "Second L+1 Group (Attack)", second_l_1_att, false, {second_l_1_att_score, second_l_1_att_score}},
@@ -185,6 +205,7 @@ collection l_j_groups() {
     {"straight-j-group-defense", "Straight J Group (Defense)", straight_j_group_def, false, {straight_j_group_def_score, straight_j_group_def_score}},
     {"straight-j-group-attack", "Straight J Group (Attack)", straight_j_group_att, false, {straight_j_group_att_score, straight_j_group_att_score}},
     {"straight-j-group-sac", "Straight J Group (Sacrifice)", straight_j_group_sac, true, {straight_j_group_sac_score, straight_j_group_sac_score}},
+    {"straight-j-group-ko", "Straight J Group (Ko)", straight_j_group_ko, true, {straight_j_group_ko_score, straight_j_group_ko_score}},
   };
 
   tsumego *ts = malloc(sizeof(tsumegos));
@@ -194,6 +215,7 @@ collection l_j_groups() {
     "l-j-groups",
     "L & J Groups",
     root,
+    true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
   };
@@ -205,7 +227,7 @@ collection notcher_122xy() {
   root.visual_area |= root.visual_area << 1;
   root.opponent |= single_16(9, 0) | single_16(9, 1);
   root.immortal = root.opponent;
-  root.ko_threats = 1;
+  root.ko_threats = 2;
 
   state def_122NN = root;
   def_122NN.ko_threats = 0;
@@ -264,17 +286,116 @@ collection notcher_122xy() {
     "122xy",
     "Notchers 122xy",
     root,
+    true,
+    sizeof(tsumegos) / sizeof(tsumego),
+    ts,
+  };
+}
+
+collection rectangular_goban(int width, int height) {
+  state root = {0};
+  root.visual_area = rectangle(width, height);
+  root.logical_area = root.visual_area;
+  root.ko_threats = 2;
+
+  state empty = root;
+  empty.ko_threats = 0;
+
+  tsumego tsumegos[] = {
+    {"empty", "Empty Board", empty, false, {NAN, NAN}},
+  };
+
+  tsumego *ts = malloc(sizeof(tsumegos));
+  memcpy(ts, tsumegos, sizeof(tsumegos));
+
+  char *slug = malloc(128 * sizeof(char));
+  char *title = malloc(128 * sizeof(char));
+
+  sprintf(slug, "%dx%d", width, height);
+  sprintf(title, "%dx%d Goban", width, height);
+
+  return (collection) {
+    slug,
+    title,
+    root,
+    false,
+    sizeof(tsumegos) / sizeof(tsumego),
+    ts,
+  };
+}
+
+collection carpenters_square() {
+  state root = parse_state("\
+          . . . . . . B , , \
+          . . . w B B B , , \
+          . . . w B , , , , \
+          . w w w + B , , , \
+          . B B B B , , , , \
+          . B , , , , , , , \
+          B B , , , , , , , \
+  ");
+  root.ko_threats = 2;
+
+  state no_libs = parse_state(" \
+              . . . . . . B , , \
+              . . . w B B , B , \
+              . . . w B , , , , \
+              . w w w B , , , , \
+              . B B B , B , , , \
+              . B , , , , , , , \
+              B B , , , , , , , \
+  ");
+  float no_libs_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state seki = no_libs;
+  seki.ko_threats = -1;
+  float seki_score = 41 - BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state one_lib_att = root;
+  one_lib_att.ko_threats = 0;
+  float one_lib_att_score = TARGET_CAPTURED_SCORE - KO_THREAT_BONUS;
+
+  state one_lib_def = root;
+  one_lib_def.ko_threats = 0;
+  make_move(&one_lib_def, single(2, 1));
+  float one_lib_def_score = -37 + BUTTON_BONUS;
+
+  tsumego tsumegos[] = {
+    {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
+    {"seki", "No Outside Liberties (Seki)", seki, false, {seki_score, seki_score}},
+    {"one-liberty-attack", "One Outside Liberty (Attack)", one_lib_att, false, {one_lib_att_score, one_lib_att_score}},
+    {"one-liberty-defense", "One Outside Liberty (Defense)", one_lib_def, false, {one_lib_def_score, one_lib_def_score}},
+  };
+
+  tsumego *ts = malloc(sizeof(tsumegos));
+  memcpy(ts, tsumegos, sizeof(tsumegos));
+
+  return (collection) {
+    "carpenters-square",
+    "Carpenter's Square",
+    root,
+    true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
   };
 }
 
 collection* get_collections(size_t *num_collections) {
-  *num_collections = 4;
+  *num_collections = 14;
   collection *result = malloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
   result[2] = notcher_122xy();
   result[3] = l_j_groups();
+  result[4] = carpenters_square();
+  result[5] = rectangular_goban(3, 2);
+  result[6] = rectangular_goban(3, 3);
+  result[7] = rectangular_goban(4, 2);
+  result[8] = rectangular_goban(4, 3);
+  result[9] = rectangular_goban(4, 4);
+  result[10] = rectangular_goban(5, 2);
+  result[11] = rectangular_goban(5, 3);
+  result[12] = rectangular_goban(6, 2);
+  result[13] = rectangular_goban(7, 2);
   return result;
 }
