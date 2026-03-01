@@ -8,9 +8,12 @@
 #include "tinytsumego2/dual_reader.h"
 
 int main(int argc, char *argv[]) {
-  printf("Generating solutions to all public tsumegos...\n");
+  if (argc <= 2) {
+    printf("Generating solutions to all public tsumegos...\n");
+  }
 
   char *path = NULL;
+  char *target_slug = NULL;
   if (argc < 2) {
     fprintf(stderr, "No output folder provided. Doing a dry-run\n");
   } else {
@@ -23,12 +26,22 @@ int main(int argc, char *argv[]) {
       path[strlen(argv[1]) + 1] = 0;
     }
     printf("Saving under %s\n", path);
+    if (argc > 2) {
+      target_slug = argv[2];
+    }
+  }
+
+  if (target_slug) {
+    printf("Generating solution to %s...\n", target_slug);
   }
 
   size_t num_collections = 0;
   collection *collections = get_collections(&num_collections);
 
   for (size_t i = 0; i < num_collections; ++i) {
+    if (target_slug && strcmp(target_slug, collections[i].slug) != 0) {
+      continue;
+    }
     printf("%s\n", collections[i].title);
     print_state(&(collections[i].root));
     dual_graph dg = create_dual_graph(&(collections[i].root));
