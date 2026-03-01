@@ -8,20 +8,25 @@
 
 // Read-only version of dual_solver memory mapped directly from the filesystem
 
+typedef struct dual_value {
+  value plain;
+  value forcing;
+} dual_value;
+
 typedef struct dual_graph_reader {
   // Valid moves according to the root state
   int num_moves;
   stones_t *moves;  // NOTE: (m)allocated in RAM
 
   // List of unique value ranges in the graph
-  value *value_map;  // NOTE: (m)allocated in RAM
+  size_t value_map_size;
+  dual_value *value_map;  // NOTE: (m)allocated in RAM
 
   // Pre-computed key generator
   compressed_keyspace keyspace;  // NOTE: Only partially (m)allocated, do not free()
 
   // Identifiers of node values inside of self.value_map
-  value_id_t *plain_value_ids;  // NOTE: Not (m)allocated, do not free()
-  value_id_t *forcing_value_ids;  // NOTE: Not (m)allocated, do not free()
+  dual_value_id_t *value_ids;  // NOTE: Not (m)allocated, do not free()
 
   // For resource acquisition and release
   struct stat sb;
@@ -32,11 +37,6 @@ typedef struct dual_graph_reader {
   // Memory map handle for resource acquisition and release
   char *buffer;
 } dual_graph_reader;
-
-typedef struct dual_value {
-  value plain;
-  value forcing;
-} dual_value;
 
 // Information about a potential move
 typedef struct move_info {

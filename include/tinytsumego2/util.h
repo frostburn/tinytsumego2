@@ -10,6 +10,8 @@
 
 typedef unsigned short int value_id_t;
 
+typedef unsigned int dual_value_id_t;
+
 #define VALUE_MAP_SIZE (1 << (sizeof(value_id_t) * CHAR_BIT))
 
 int ceil_div(int x, int y);

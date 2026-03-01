@@ -27,49 +27,43 @@ size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
 
   // The actual reader uses float values but we can write using a temporary fixed-point array
   size_t num_unique = 0;
-  table_value *value_map = calloc(VALUE_MAP_SIZE, sizeof(table_value));
+  size_t capacity = 128;
+  score_q7_t *value_map = malloc(capacity * 4 * sizeof(score_q7_t));
 
-  // Tactics = NONE
   for (size_t i = 0; i < dg->keyspace.size; ++i) {
     size_t id;
     for (id = 0; id < num_unique; ++id) {
-      if (value_map[id].low == dg->plain_values[i].low && value_map[id].high == dg->plain_values[i].high) {
+      if (
+        value_map[4*id + 0] == dg->plain_values[i].low &&
+        value_map[4*id + 1] == dg->plain_values[i].high &&
+        value_map[4*id + 2] == dg->forcing_values[i].low &&
+        value_map[4*id + 3] == dg->forcing_values[i].high
+      ) {
         break;
       }
     }
     if (id >= num_unique) {
-      value_map[num_unique++] = dg->plain_values[i];
-      if (num_unique >= VALUE_MAP_SIZE) {
-        fprintf(stderr, "Too many unique values. Aborting write\n");
-        exit(EXIT_FAILURE);
+      if (num_unique >= capacity) {
+        capacity <<= 1;
+        value_map = realloc(value_map, capacity * 4 * sizeof(score_q7_t));
       }
+      value_map[4*num_unique + 0] = dg->plain_values[i].low;
+      value_map[4*num_unique + 1] = dg->plain_values[i].high;
+      value_map[4*num_unique + 2] = dg->forcing_values[i].low;
+      value_map[4*num_unique + 3] = dg->forcing_values[i].high;
+      num_unique++;
     }
-    value_id_t vid = (value_id_t) id;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream);
+    dual_value_id_t vid = (dual_value_id_t) id;
+    total += fwrite(&(vid), sizeof(dual_value_id_t), 1, stream);
   }
 
-  // Tactics = FORCING
-  for (size_t i = 0; i < dg->keyspace.size; ++i) {
-    size_t id;
-    for (id = 0; id < num_unique; ++id) {
-      if (value_map[id].low == dg->forcing_values[i].low && value_map[id].high == dg->forcing_values[i].high) {
-        break;
-      }
-    }
-    if (id >= num_unique) {
-      value_map[num_unique++] = dg->forcing_values[i];
-      if (num_unique >= VALUE_MAP_SIZE) {
-        fprintf(stderr, "Too many unique values. Aborting write\n");
-        exit(EXIT_FAILURE);
-      }
-    }
-    value_id_t vid = (value_id_t) id;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream);
-  }
-
-  for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
-    value v = table_value_to_value(value_map[i]);
-    total += fwrite(&v, sizeof(value), 1, stream);
+  total += fwrite(&num_unique, sizeof(size_t), 1, stream);
+  for (size_t i = 0; i < num_unique; ++i) {
+    dual_value v = (dual_value){
+      {score_q7_to_float(value_map[4*i + 0]), score_q7_to_float(value_map[4*i + 1])},
+      {score_q7_to_float(value_map[4*i + 2]), score_q7_to_float(value_map[4*i + 3])},
+    };
+    total += fwrite(&v, sizeof(dual_value), 1, stream);
   }
 
   free(value_map);
@@ -118,17 +112,17 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   }
   map += dgr->num_moves * sizeof(stones_t);
 
-  dgr->plain_value_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * dgr->keyspace.size;
+  dgr->value_ids = (dual_value_id_t *)map;
+  map += sizeof(dual_value_id_t) * dgr->keyspace.size;
 
-  dgr->forcing_value_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * dgr->keyspace.size;
+  dgr->value_map_size = ((size_t*) map)[0];
+  map += sizeof(size_t);
 
-  dgr->value_map = malloc(VALUE_MAP_SIZE * sizeof(value));
-  for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
-    dgr->value_map[i] = ((value *)map)[i];
+  dgr->value_map = malloc(dgr->value_map_size * sizeof(dual_value));
+  for (size_t i = 0; i < dgr->value_map_size; ++i) {
+    dgr->value_map[i] = ((dual_value *)map)[i];
   }
-  map += sizeof(value) * VALUE_MAP_SIZE;
+  map += sizeof(dual_value) * dgr->value_map_size;
 }
 
 dual_graph_reader load_dual_graph_reader(const char *filename) {
@@ -150,6 +144,7 @@ void unload_dual_graph_reader(dual_graph_reader *dgr) {
   dgr->moves = NULL;
 
   free(dgr->value_map);
+  dgr->value_map_size = 0;
   dgr->value_map = NULL;
 
   if (dgr->fd >= 0) {
@@ -161,55 +156,48 @@ void unload_dual_graph_reader(dual_graph_reader *dgr) {
 
     dgr->keyspace.compressor.checkpoints = NULL;
     dgr->keyspace.compressor.deltas = NULL;
-    dgr->plain_value_ids = NULL;
-    dgr->forcing_value_ids = NULL;
+    dgr->value_ids = NULL;
   }
 }
 
-void get_dual_graph_reader_values(const dual_graph_reader *dgr, const state *s, int depth, value *plain_value, value *forcing_value) {
+dual_value get_dual_graph_reader_value_(const dual_graph_reader *dgr, const state *s, int depth) {
   if (!depth) {
-    *plain_value = (value){-INFINITY, INFINITY};
-    *forcing_value = (value){-INFINITY, INFINITY};
-    return;
+    return (dual_value){{-INFINITY, INFINITY}, {-INFINITY, INFINITY}};
   }
   if (s->passes || s->ko) {
     // Compensate for keyspace tightness using negamax
-    plain_value->low = -INFINITY;
-    plain_value->high = -INFINITY;
-    forcing_value->low = -INFINITY;
-    forcing_value->high = -INFINITY;
+    dual_value v = (dual_value){{-INFINITY, -INFINITY}, {-INFINITY, -INFINITY}};
 
     for (int j = 0; j < dgr->num_moves; ++j) {
       state child = *s;
       const move_result r = make_move(&child, dgr->moves[j]);
-      value child_plain;
-      value child_forcing;
+      dual_value child_value;
       if (r == SECOND_PASS) {
         value simple_area = score_terminal(r, &child);
         float delta = child.ko_threats * KO_THREAT_BONUS;
         child.passes = 0;
         child.ko = 0ULL;
         child.ko_threats = 0;
-        get_dual_graph_reader_values(dgr, &child, depth - 1, &child_plain, &child_forcing);
-        child_plain.low += delta;
-        child_plain.high += delta;
-        child_plain = apply_tactics(NONE, r, &child, child_plain);
+        child_value = get_dual_graph_reader_value_(dgr, &child, depth - 1);
+        child_value.plain.low += delta;
+        child_value.plain.high += delta;
+        child_value.plain = apply_tactics(NONE, r, &child, child_value.plain);
         // Don't break forcing logic
-        child_forcing = simple_area;
+        child_value.forcing = simple_area;
       } else if (r <= TAKE_TARGET) {
-        child_plain = score_terminal(r, &child);
-        child_forcing = child_plain;
+        child_value.plain = score_terminal(r, &child);
+        child_value.forcing = child_value.plain;
       } else {
-        get_dual_graph_reader_values(dgr, &child, depth - 1, &child_plain, &child_forcing);
-        child_plain = apply_tactics(NONE, r, &child, child_plain);
-        child_forcing = apply_tactics(FORCING, r, &child, child_forcing);
+        child_value = get_dual_graph_reader_value_(dgr, &child, depth - 1);
+        child_value.plain = apply_tactics(NONE, r, &child, child_value.plain);
+        child_value.forcing = apply_tactics(FORCING, r, &child, child_value.forcing);
       }
-      plain_value->low = fmax(plain_value->low, child_plain.high);
-      plain_value->high = fmax(plain_value->high, child_plain.low);
-      forcing_value->low = fmax(forcing_value->low, child_forcing.high);
-      forcing_value->high = fmax(forcing_value->high, child_forcing.low);
+      v.plain.low = fmax(v.plain.low, child_value.plain.high);
+      v.plain.high = fmax(v.plain.high, child_value.plain.low);
+      v.forcing.low = fmax(v.forcing.low, child_value.forcing.high);
+      v.forcing.high = fmax(v.forcing.high, child_value.forcing.low);
     }
-    return;
+    return v;
   }
 
   float delta = 0;
@@ -224,18 +212,16 @@ void get_dual_graph_reader_values(const dual_graph_reader *dgr, const state *s, 
     key = to_compressed_key(&(dgr->keyspace), s);
   }
 
-  *plain_value = dgr->value_map[dgr->plain_value_ids[key]];
-  *forcing_value = dgr->value_map[dgr->forcing_value_ids[key]];
-  plain_value->low += delta;
-  plain_value->high += delta;
-  forcing_value->low += delta;
-  forcing_value->high += delta;
+  dual_value v = dgr->value_map[dgr->value_ids[key]];
+  v.plain.low += delta;
+  v.plain.high += delta;
+  v.forcing.low += delta;
+  v.forcing.high += delta;
+  return v;
 }
 
 dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state *s) {
-  dual_value result;
-  get_dual_graph_reader_values(dgr, s, MAX_COMPENSATION_DEPTH, &result.plain, &result.forcing);
-  return result;
+  return get_dual_graph_reader_value_(dgr, s, MAX_COMPENSATION_DEPTH);
 }
 
 dual_graph_reader* allocate_dual_graph_reader(const char *filename) {

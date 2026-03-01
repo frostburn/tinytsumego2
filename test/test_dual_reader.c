@@ -22,7 +22,7 @@ void test_bulky_five() {
   print_state(&root);
   dual_graph dg = create_dual_graph(&root);
   while(iterate_dual_graph(&dg, false));
-  while(area_iterate_dual_graph(&dg, false));
+  while(area_iterate_dual_graph(&dg, true));
 
   char *buffer = malloc(MEM_FILE_SIZE);
   FILE *stream = fmemopen(buffer, MEM_FILE_SIZE, "wb");
@@ -35,7 +35,14 @@ void test_bulky_five() {
   dgr.buffer = buffer;
   unbuffer_dual_graph_reader(&dgr);
 
+  for (size_t i = 0; i < dgr.value_map_size; ++i) {
+    dual_value v = dgr.value_map[i];
+    printf("#%zu: (%f, %f), (%f, %f)\n", i, v.plain.low, v.plain.high, v.forcing.low, v.forcing.high);
+  }
+
   dual_value v = get_dual_graph_reader_value(&dgr, &root);
+
+  printf("(%f, %f), (%f, %f)\n", v.plain.low, v.plain.high, v.forcing.low, v.forcing.high);
 
   assert(v.plain.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
   assert(v.plain.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
