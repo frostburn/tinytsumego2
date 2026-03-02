@@ -353,7 +353,7 @@ collection carpenters_square() {
 
   state one_lib_att = root;
   one_lib_att.ko_threats = 0;
-  float one_lib_att_score = TARGET_CAPTURED_SCORE - KO_THREAT_BONUS;
+  float one_lib_att_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
 
   state one_lib_def = root;
   one_lib_def.ko_threats = 0;
