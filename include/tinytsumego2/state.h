@@ -5,6 +5,9 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/stones16.h"
 
+// Define if external liberty normalization is needed at the make_move() level
+// #define NORMALIZE_EXTERNAL_LIBERTIES
+
 // Game state
 typedef struct state
 {

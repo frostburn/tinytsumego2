@@ -244,6 +244,10 @@ state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
   ss.ko = s->ko;
   ss.passes = s->passes;
   ss.button = s->button;
+  stones_t swaps = ss.external ^ s->external;
+  ss.immortal ^= swaps;
+  ss.external ^= swaps;
+  ss.logical_area ^= swaps;
 
   return ss;
 }
