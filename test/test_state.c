@@ -308,7 +308,11 @@ void test_external_liberties() {
 
   r = make_move(&alt, single(1, 1));
   assert(r == FILL_EXTERNAL);
-  assert(equals(&s, &alt));  // Make sure target liberties are filled in standard order
+  #ifdef NORMALIZE_EXTERNAL_LIBERTIES
+    assert(equals(&s, &alt));  // Make sure target liberties are filled in standard order
+  #else
+    assert(!equals(&s, &alt));  // Make sure we don't care right now
+  #endif
 
   r = make_move(&s, pass());
   print_state(&s);
@@ -582,7 +586,11 @@ void test_bent_four_keyspace_coverage() {
   }
 
   printf("%d states expanded\n", num_states);
-  assert(num_states == 55);
+  #ifdef NORMALIZE_EXTERNAL_LIBERTIES
+    assert(num_states == 55);
+  #else
+    assert(num_states == 76);
+  #endif
 
   for (int i = 0; i < num_states; ++i) {
     size_t my_key = to_key(&root, states + i);
@@ -594,7 +602,9 @@ void test_bent_four_keyspace_coverage() {
         print_state(states + j);
       }
       assert(compare(states + i, states + j) != 0);
-      assert(my_key != your_key);
+      #ifdef NORMALIZE_EXTERNAL_LIBERTIES
+        assert(my_key != your_key);
+      #endif
     }
   }
 

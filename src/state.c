@@ -297,12 +297,14 @@ move_result make_move(state *s, stones_t move) {
   }
 
   if (move & s->external) {
-    // Normalize move placement inside the group of external liberties.
-    if (s->wide) {
-      move = 1ULL << ctz(flood_16(move, s->external));
-    } else {
-      move = 1ULL << ctz(flood(move, s->external));
-    }
+    #ifdef NORMALIZE_EXTERNAL_LIBERTIES
+      // Normalize move placement inside the group of external liberties.
+      if (s->wide) {
+        move = 1ULL << ctz(flood_16(move, s->external));
+      } else {
+        move = 1ULL << ctz(flood(move, s->external));
+      }
+    #endif
     s->immortal |= move;
     s->external ^= move;
     result = FILL_EXTERNAL;
