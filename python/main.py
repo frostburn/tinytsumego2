@@ -6,6 +6,7 @@ import http.server
 import json
 import os
 import sys
+from urllib.parse import urlsplit
 
 libc = ctypes.CDLL("libc.so.6")
 
@@ -42,7 +43,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
   def do_POST(self):
-    path = self.path.strip("/")
+    parsed = urlsplit(self.path)
+    path = parsed.path.strip("/")
     parts = path.split("/")
     if len(parts) != 2 or parts[0] != "tsumego":
       self.json_response({"error": "POST not allowed"}, 405)
@@ -92,11 +94,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
     self.json_response(response_data)
 
   def do_GET(self):
-    path = self.path
-    query = ""
-    if "?" in path:
-      path, query = path.split("?")
-    path = path.strip("/")
+    parsed = urlsplit(self.path)
+    path = parsed.path.strip("/")
+    query = parsed.query
     if path == "":
       self.send_response(200)
       self.send_default_headers()
