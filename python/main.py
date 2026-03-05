@@ -195,12 +195,15 @@ if __name__ == "__main__":
     allow_origin = "*"
 
   for filename in os.listdir(collection_path):
+    [slug, ext] = os.path.splitext(filename)
+    if ext != '.bin':
+      continue
     print("Reading", filename)
     reader = lib.allocate_dual_graph_reader(os.path.join(collection_path, filename).encode())
     dummy = ctypes.c_int(0)
     root = State()
     lib.dual_graph_reader_python_stuff(reader, pointer(root), pointer(dummy))
-    readers[filename.strip(".bin")] = (reader, root)
+    readers[slug] = (reader, root)
 
   num_collections = ctypes.c_int(0)
   pc = lib.get_collections(pointer(num_collections))
