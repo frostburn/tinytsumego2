@@ -174,6 +174,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
     return
 
   def do_PUT(self):
+    parsed = urlsplit(self.path)
+    path = parsed.path.strip("/")
+    if path == 'coffee':
+      self.json_response({"error": "Do not PUT coffee grounds into a teapot, which I am, by the way..."}, 418)
+      return
     self.json_response({"error": "PUT not allowed"}, 405)
 
   def do_DELETE(self):
