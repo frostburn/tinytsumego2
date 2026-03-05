@@ -97,7 +97,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
     self.json_response(response_data)
 
   def do_GET(self):
-    path = self.path.strip("/")
+    path = self.path
+    query = ""
+    if "?" in path:
+      path, query = path.split("?")
+    path = path.strip("/")
     if path == "":
       self.send_response(200)
       if allow_origin:
@@ -113,9 +117,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
     parts = path.split("/")
     if parts[0] == "tsumego":
       if len(parts) == 1:
-        data = {
-          "collections": [{"slug": c.slug.decode(), "title": c.title.decode()} for c in collections.values()],
-        }
+        if query == "deep=1":
+          data = {
+            "collections": [{"slug": c.slug.decode(), "tsumegos": list(c.tsumegos_by_slug.keys())} for c in collections.values()]
+          }
+        else:
+          data = {
+            "collections": [{"slug": c.slug.decode(), "title": c.title.decode()} for c in collections.values()],
+          }
         self.json_response(data)
         return
       elif len(parts) >= 2:
