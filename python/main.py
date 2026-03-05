@@ -17,13 +17,18 @@ readers = {}
 collections = {}
 
 class Handler(http.server.BaseHTTPRequestHandler):
+  def send_default_headers(self):
+    if allow_origin:
+      self.send_header("Access-Control-Allow-Origin", allow_origin)
+    self.send_header("X-Content-Type-Options", "nosniff")
+    self.send_header("X-Frame-Options", "DENY")
+
   def write_json(self, data):
     self.wfile.write((json.dumps(data) + '\n').encode("utf-8"))
 
-  def json_response(self, data):
-    self.send_response(200)
-    if allow_origin:
-      self.send_header("Access-Control-Allow-Origin", allow_origin)
+  def json_response(self, data, code=200):
+    self.send_response(code)
+    self.send_default_headers()
     self.send_header("Content-type", "application/json")
     self.end_headers()
     self.write_json(data)
@@ -40,21 +45,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
     path = self.path.strip("/")
     parts = path.split("/")
     if len(parts) != 2 or parts[0] != "tsumego":
-      self.send_response(405)
-      if allow_origin:
-        self.send_header("Access-Control-Allow-Origin", allow_origin)
-      self.send_header("Content-type", "application/json")
-      self.end_headers()
-      self.write_json({"error": f"POST not allowed"})
+      self.json_response({"error": "POST not allowed"}, 405)
       return
     collection_slug = parts[1]
     if collection_slug not in collections:
-      self.send_response(404)
-      if allow_origin:
-        self.send_header("Access-Control-Allow-Origin", allow_origin)
-      self.send_header("Content-type", "application/json")
-      self.end_headers()
-      self.write_json({"error": f"Collection {collection_slug} not found"})
+      self.json_response({"error": f"Collection {collection_slug} not found"}, 404)
       return
     collection = collections[collection_slug]
     (reader, root) = readers[collection_slug]
@@ -104,8 +99,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     path = path.strip("/")
     if path == "":
       self.send_response(200)
-      if allow_origin:
-        self.send_header("Access-Control-Allow-Origin", allow_origin)
+      self.send_default_headers()
       self.send_header("Content-type", "text/html")
       self.end_headers()
       self.wfile.write(b"""
@@ -130,12 +124,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
       elif len(parts) >= 2:
         collection_slug = parts[1]
         if collection_slug not in collections:
-          self.send_response(404)
-          if allow_origin:
-            self.send_header("Access-Control-Allow-Origin", allow_origin)
-          self.send_header("Content-type", "application/json")
-          self.end_headers()
-          self.write_json({"error": f"Collection {collection_slug} not found"})
+          self.json_response({"error": f"Collection {collection_slug} not found"}, 404)
           return
       collection = collections[collection_slug]
       if len(parts) == 2:
@@ -150,12 +139,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
       elif len(parts) == 3:
         tsumego_slug = parts[2]
         if tsumego_slug not in collection.tsumegos_by_slug:
-          self.send_response(404)
-          if allow_origin:
-            self.send_header("Access-Control-Allow-Origin", allow_origin)
-          self.send_header("Content-type", "application/json")
-          self.end_headers()
-          self.write_json({"error": f"Tsumego {tsumego_slug} not found"})
+          self.json_response({"error": f"Tsumego {tsumego_slug} not found"}, 404)
           return
         tsumego = collection.tsumegos_by_slug[tsumego_slug]
         data = {
@@ -167,13 +151,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         }
         self.json_response(data)
         return
-    self.send_response(404)
-    if allow_origin:
-      self.send_header("Access-Control-Allow-Origin", allow_origin)
-    self.send_header("Content-type", "application/json")
-    self.end_headers()
-    self.write_json({"error": f"Resource not found"})
+    self.json_response({"error": f"Resource not found"}, 404)
     return
+
+  def do_PUT(self):
+    self.json_response({"error": "PUT not allowed"}, 405)
+
+  def do_DELETE(self):
+    self.json_response({"error": "DELETE not allowed"}, 405)
 
 Version = ctypes.c_char * 16
 version_str = Version()
