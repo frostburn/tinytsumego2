@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 
 libc = ctypes.CDLL("libc.so.6")
 
+MAX_BODY_SIZE = 64 * 1024
+
 # Global config is bad, but let's just get this thing off the ground
 dev_mode = False
 allow_origin = None
@@ -43,6 +45,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
   def do_POST(self):
+    if 'Content-Length' not in self.headers:
+      self.json_response({"error": "Length required"}, 411)
+      return
+    try:
+      length = int(self.headers.get('Content-Length', '0'))
+    except ValueError:
+      self.json_response({"error": "Invalid Content-Length"}, 400)
+      return
+    if length <= 0 or length > MAX_BODY_SIZE:
+      self.json_response({"error": "Request body too large"}, 413)
+      return
     parsed = urlsplit(self.path)
     path = parsed.path.strip("/")
     parts = path.split("/")
@@ -55,9 +68,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
       return
     collection = collections[collection_slug]
     (reader, root) = readers[collection_slug]
-    content_length = int(self.headers['Content-Length'])
-    content = self.rfile.read(content_length).decode("utf-8")
-    data = json.loads(content)
+    content = self.rfile.read(length).decode("utf-8")
+    try:
+      data = json.loads(content)
+    except json.JSONDecodeError:
+      self.json_response({"error": "Malformed JSON body"}, 400)
+      return
+    if "state" not in data:
+      self.json_response({"error": 'Missing "state" field'}, 400)
+      return
     state = State.from_json(data["state"], root.wide)
     if state.passes >= 2:
       state.passes = 0
