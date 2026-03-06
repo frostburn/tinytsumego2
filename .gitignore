@@ -62,3 +62,6 @@ api/tinytsumego2.h
 
 # Python
 __pycache__
+
+# Production secrets
+.env
