@@ -2,6 +2,7 @@
 
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/symmetry.h"
 
 // Ternary conversion utility
 typedef struct tritter {
@@ -46,6 +47,16 @@ typedef struct compressed_keyspace {
   size_t size;
 } compressed_keyspace;
 
+// Keyspace with spatial and color symmetries reduced out and every indexed state is legal
+typedef struct symmetric_keyspace {
+  state root;
+  symmetry symmetry;
+  monotonic_compressor compressor;
+  size_t prefix_m;
+  size_t size;
+  size_t fast_size;
+} symmetric_keyspace;
+
 // Function pointer type for flagging legal keys
 typedef bool (*indicator_f)(const size_t key);
 
@@ -89,7 +100,28 @@ state from_compressed_key(const compressed_keyspace *cks, size_t key);
 size_t remap_tight_key(const compressed_keyspace *cks, size_t key);
 
 // Test if `from_tight_key_fast(&(cks->keyspace), key)` results in a legal state
-bool was_legal(const compressed_keyspace *cks, size_t key);
+bool was_compressed_legal(const compressed_keyspace *cks, size_t key);
 
 // Release associated resources
 void free_compressed_keyspace(compressed_keyspace *cks);
+
+// Construct a keyspace where every key corresponds to a legal canonical game state
+symmetric_keyspace create_symmetric_keyspace(const state *root);
+
+// Convert a child state of the original root state to a unique compressed canonical index
+size_t to_symmetric_key(const symmetric_keyspace *sks, const state *s);
+
+// Recover a canonical state from its unique compressed index (Warning: Slow)
+state from_symmetric_key(const symmetric_keyspace *sks, size_t key);
+
+// Release associated resources
+void free_symmetric_keyspace(symmetric_keyspace *sks);
+
+// Test if `from_fast_key(sks, key)` results in a legal state
+bool was_symmetric_legal(const symmetric_keyspace *sks, size_t key);
+
+// Remap canonical keyspace element to the compressed canonical keyspace
+size_t remap_fast_key(const symmetric_keyspace *sks, size_t key);
+
+// Recover a canonical state from its unique index
+state from_fast_key(const symmetric_keyspace *sks, size_t key);

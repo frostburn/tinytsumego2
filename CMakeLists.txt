@@ -55,6 +55,9 @@ TARGET_LINK_LIBRARIES(explore_dual tinytsumego2 jkiss m)
 ADD_EXECUTABLE(generate_collections generate_collections.c)
 TARGET_LINK_LIBRARIES(generate_collections tinytsumego2 jkiss m)
 
+ADD_EXECUTABLE(verify_sym verify_sym.c)
+TARGET_LINK_LIBRARIES(verify_sym tinytsumego2 jkiss m)
+
 CONFIGURE_FILE (api/tinytsumego2.h.in ${CMAKE_CURRENT_SOURCE_DIR}/api/tinytsumego2.h @ONLY)
 
 ADD_LIBRARY(

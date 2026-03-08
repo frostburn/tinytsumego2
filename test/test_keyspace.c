@@ -92,11 +92,22 @@ void test_monotonic() {
   free_monotonic_compressor(&mc);
 }
 
+void test_symmetric() {
+  state root = {0};
+  root.visual_area = rectangle(3, 4);
+  root.logical_area = root.visual_area;
+  symmetric_keyspace sks = create_symmetric_keyspace(&root);
+  printf("%zu\n", sks.size);
+  assert(sks.size == 164512);
+  free_symmetric_keyspace(&sks);
+}
+
 int main() {
   jkiss_init();
   test_empty();
   test_full();
   test_false_start();
   test_monotonic();
+  test_symmetric();
   return 0;
 }

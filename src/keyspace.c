@@ -74,7 +74,7 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
     m *= TRIT_BLOCK_M;
   }
   size_t tail_m = 1;
-  for (int i = 0; i < effective_size % TRIT_BLOCK_SIZE; ++i) {
+  for (int j = 0; j < effective_size % TRIT_BLOCK_SIZE; ++j) {
     tail_m *= 3;
   }
   if (tail_m != 1) {
@@ -261,11 +261,80 @@ size_t remap_tight_key(const compressed_keyspace *cks, size_t key) {
   return (key % cks->prefix_m) + cks->prefix_m * compress_key(&(cks->compressor), key / cks->prefix_m);
 }
 
-bool was_legal(const compressed_keyspace *cks, size_t key) {
+bool was_compressed_legal(const compressed_keyspace *cks, size_t key) {
   return has_key(&(cks->compressor), key / cks->prefix_m);
 }
 
 void free_compressed_keyspace(compressed_keyspace *cks) {
   free_tight_keyspace(&(cks->keyspace));
   free_monotonic_compressor(&(cks->compressor));
+}
+
+symmetric_keyspace create_symmetric_keyspace(const state *root) {
+  symmetric_keyspace result = {0};
+  result.root = *root;
+  result.symmetry = compute_symmetry(root);
+  // Button taken or not
+  result.prefix_m = 2;
+  // Signed ko-threats
+  result.prefix_m *= 2 * abs(root->ko_threats) + 1;
+  // Color information dropped
+
+  result.fast_size = result.symmetry.size * result.prefix_m;
+
+  bool indicator(size_t key) {
+    state s = *root;
+    from_symmetric_bw_key(&(result.symmetry), key, &(s.player), &(s.opponent));
+    return is_legal(&s);
+  }
+
+  result.compressor = create_monotonic_compressor(result.symmetry.size, indicator);
+  result.size = result.prefix_m * result.compressor.size;
+
+  return result;
+}
+
+size_t to_symmetric_key(const symmetric_keyspace *sks, const state *s) {
+  const size_t key = to_symmetric_bw_key(&(sks->symmetry), s->player, s->opponent);
+  return (
+    s->button +
+    2 * (s->ko_threats + abs(sks->root.ko_threats)) +
+    sks->prefix_m * compress_key(&(sks->compressor), key)
+  );
+}
+
+state from_symmetric_key(const symmetric_keyspace *sks, size_t key) {
+  state result = sks->root;
+  result.button = key % 2;
+  key /= 2;
+  size_t m = 2 * abs(sks->root.ko_threats) + 1;
+  result.ko_threats = (int)(key % m) - abs(sks->root.ko_threats);
+  key /= m;
+  key = decompress_key(&(sks->compressor), key);
+  from_symmetric_bw_key(&(sks->symmetry), key, &(result.player), &(result.opponent));
+  return result;
+}
+
+void free_symmetric_keyspace(symmetric_keyspace *sks) {
+  free_symmetry(&(sks->symmetry));
+  free_monotonic_compressor(&(sks->compressor));
+}
+
+bool was_symmetric_legal(const symmetric_keyspace *sks, size_t key) {
+  return has_key(&(sks->compressor), key / sks->prefix_m);
+}
+
+size_t remap_fast_key(const symmetric_keyspace *sks, size_t key) {
+  return (key % sks->prefix_m) + sks->prefix_m * compress_key(&(sks->compressor), key / sks->prefix_m);
+}
+
+state from_fast_key(const symmetric_keyspace *sks, size_t key) {
+  state result = sks->root;
+  result.button = key % 2;
+  key /= 2;
+  size_t m = 2 * abs(sks->root.ko_threats) + 1;
+  result.ko_threats = (int)(key % m) - abs(sks->root.ko_threats);
+  key /= m;
+  from_symmetric_bw_key(&(sks->symmetry), key, &(result.player), &(result.opponent));
+  return result;
 }
