@@ -41,6 +41,15 @@
 #define V8 (V7 << H_SHIFT)
 #define EAST_WALL (V8)
 
+// Diagonal strips
+#define D0 (0x1004010040100401ULL)
+#define D1 (0x8020080200802ULL)
+#define D2 (0x40100401004ULL)
+#define D3 (0x200802008ULL)
+#define D4 (0x1004010ULL)
+#define D5 (0x8020ULL)
+#define D6 (0x40ULL)
+
 // Last bit
 #define LAST_STONE (1ULL << 63)
 

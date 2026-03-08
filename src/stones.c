@@ -175,19 +175,19 @@ stones_t stones_mirror_h(stones_t stones) {
 
 stones_t stones_mirror_d(stones_t stones) {
   return (
-    (stones & 0x1004010040100401ULL) |
-    ((stones & 0x8020080200802ULL) << D_SHIFT) |
-    ((stones >> D_SHIFT) & 0x8020080200802ULL) |
-    ((stones & 0x40100401004ULL) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & 0x40100401004ULL) |
-    ((stones & 0x200802008ULL) << (3 * D_SHIFT)) |
-    ((stones >> (3 * D_SHIFT)) & 0x200802008ULL) |
-    ((stones & 0x1004010ULL) << (4 * D_SHIFT)) |
-    ((stones >> (4 * D_SHIFT)) & 0x1004010ULL) |
-    ((stones & 0x8020ULL) << (5 * D_SHIFT)) |
-    ((stones >> (5 * D_SHIFT)) & 0x8020ULL) |
-    ((stones & 0x40ULL) << (6 * D_SHIFT)) |
-    ((stones >> (6 * D_SHIFT)) & 0x40ULL)
+    (stones & D0) |
+    ((stones & D1) << D_SHIFT) |
+    ((stones >> D_SHIFT) & D1) |
+    ((stones & D2) << (2 * D_SHIFT)) |
+    ((stones >> (2 * D_SHIFT)) & D2) |
+    ((stones & D3) << (3 * D_SHIFT)) |
+    ((stones >> (3 * D_SHIFT)) & D3) |
+    ((stones & D4) << (4 * D_SHIFT)) |
+    ((stones >> (4 * D_SHIFT)) & D4) |
+    ((stones & D5) << (5 * D_SHIFT)) |
+    ((stones >> (5 * D_SHIFT)) & D5) |
+    ((stones & D6) << (6 * D_SHIFT)) |
+    ((stones >> (6 * D_SHIFT)) & D6)
   );
 }
 
