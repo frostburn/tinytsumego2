@@ -1075,6 +1075,7 @@ bool is_legal(const state *s) {
       continue;
     }
     if (!(s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty))) {
+      free(cs);
       return false;
     }
   }
@@ -1092,6 +1093,7 @@ bool is_legal(const state *s) {
     }
     stones_t libs = s->wide ? liberties_16(cs[i], empty) : liberties(cs[i], empty);
     if (!libs) {
+      free(cs);
       return false;
     }
 
