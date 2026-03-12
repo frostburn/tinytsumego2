@@ -285,7 +285,8 @@ state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
     size_t key = to_tight_key_fast(&(dgr->keyspace.compressed.keyspace), &ss);
     ss = from_tight_key_fast(&(dgr->keyspace.compressed.keyspace), key);
   } else {
-    exit(EXIT_FAILURE);
+    // Symmetric states don't have aesthetics yet
+    return *s;
   }
   ss.ko = s->ko;
   ss.passes = s->passes;

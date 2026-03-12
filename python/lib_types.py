@@ -19,6 +19,10 @@ NONE = 0
 DELAY = 1
 FORCING = 2
 
+# enum keyspace_type
+COMPRESSED_KEYSPACE = 0
+SYMMETRIC_KEYSPACE = 1
+
 # stones.h bitboards
 WIDTH = 9
 NORTH_WALL = (1 << WIDTH) - 1
@@ -27,6 +31,9 @@ V_SHIFT = WIDTH
 WIDTH_16 = 16
 NORTH_WALL_16 = (1 << WIDTH_16) - 1
 V_SHIFT_16 = WIDTH_16
+
+# enum fields
+ENUM = ctypes.c_int
 
 def unslice_stones(slices):
   result = 0
@@ -145,6 +152,7 @@ class Collection(ctypes.Structure):
     ("can_stretch", ctypes.c_bool),
     ("num_tsumegos", ctypes.c_size_t),
     ("tsumegos", ctypes.POINTER(Tsumego)),
+    ("type", ENUM),
   ]
 
   @property
