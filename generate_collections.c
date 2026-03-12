@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     }
     printf("%s\n", collections[i].title);
     print_state(&(collections[i].root));
-    dual_graph dg = create_dual_graph(&(collections[i].root));
+    dual_graph dg = create_dual_graph(&(collections[i].root), COMPRESSED_KEYSPACE);
     for (int j = 0;;j++) {
       bool verbose = (j < 8) || (j % (j >> 2) == 0);
       if (!iterate_dual_graph(&dg, verbose)) break;

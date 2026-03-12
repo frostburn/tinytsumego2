@@ -13,15 +13,20 @@
 #include "tinytsumego2/keyspace.h"
 
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
-  size_t total = fwrite(&(dg->keyspace.keyspace.root), sizeof(state), 1, stream);
-  total += fwrite(&(dg->keyspace.compressor.num_checkpoints), sizeof(size_t), 1, stream);
-  total += fwrite(dg->keyspace.compressor.checkpoints, sizeof(size_t), dg->keyspace.compressor.num_checkpoints, stream);
-  total += fwrite(&(dg->keyspace.compressor.uncompressed_size), sizeof(size_t), 1, stream);
-  total += fwrite(dg->keyspace.compressor.deltas, sizeof(unsigned char), dg->keyspace.compressor.uncompressed_size, stream);
-  total += fwrite(&(dg->keyspace.compressor.size), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace.compressor.factor), sizeof(double), 1, stream);
-  total += fwrite(&(dg->keyspace.prefix_m), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace.size), sizeof(size_t), 1, stream);
+  if (dg->type == SYMMETRIC_KEYSPACE) {
+    exit(EXIT_FAILURE);
+    return 0;
+  }
+  size_t total = fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream);
+  const monotonic_compressor *comp = &(dg->keyspace.compressed.compressor);
+  total += fwrite(&(comp->num_checkpoints), sizeof(size_t), 1, stream);
+  total += fwrite(comp->checkpoints, sizeof(size_t), comp->num_checkpoints, stream);
+  total += fwrite(&(comp->uncompressed_size), sizeof(size_t), 1, stream);
+  total += fwrite(comp->deltas, sizeof(unsigned char), comp->uncompressed_size, stream);
+  total += fwrite(&(comp->size), sizeof(size_t), 1, stream);
+  total += fwrite(&(comp->factor), sizeof(double), 1, stream);
+  total += fwrite(&(dg->keyspace.compressed.prefix_m), sizeof(size_t), 1, stream);
+  total += fwrite(&(dg->keyspace.compressed.size), sizeof(size_t), 1, stream);
   total += fwrite(&(dg->num_moves), sizeof(int), 1, stream);
   total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream);
 
@@ -30,7 +35,7 @@ size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
   size_t capacity = 128;
   score_q7_t *value_map = malloc(capacity * 4 * sizeof(score_q7_t));
 
-  for (size_t i = 0; i < dg->keyspace.size; ++i) {
+  for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     size_t id;
     for (id = 0; id < num_unique; ++id) {
       if (

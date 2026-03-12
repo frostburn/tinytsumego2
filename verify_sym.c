@@ -15,10 +15,10 @@ void verify_goban(stones_t visual_area) {
   while(iterate_sym_graph(&sg, true));
 
   printf("Dual iteration\n");
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   while(iterate_dual_graph(&dg, true));
 
-  for (size_t i = 0; i < dg.keyspace.size; ++i) {
+  for (size_t i = 0; i < dg.keyspace._.size; ++i) {
     state s = from_compressed_key(&(dg.keyspace), i);
     value vd = get_dual_graph_value(&dg, &s, NONE);
     value vs = get_sym_graph_value(&sg, &s, NONE);
