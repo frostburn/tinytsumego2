@@ -12,21 +12,36 @@
 #include "tinytsumego2/util.h"
 #include "tinytsumego2/keyspace.h"
 
+#define DUAL_READER_VERSION (1)
+
+size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) {
+  return to_compressed_key(&(dgr->keyspace.compressed), s);
+}
+
+size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) {
+  return to_symmetric_key(&(dgr->keyspace.symmetric), s);
+}
+
 size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
-  if (dg->type == SYMMETRIC_KEYSPACE) {
-    exit(EXIT_FAILURE);
-    return 0;
-  }
-  size_t total = fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream);
-  const monotonic_compressor *comp = &(dg->keyspace.compressed.compressor);
+  int version = DUAL_READER_VERSION;
+  size_t total = fwrite(&version, sizeof(int), 1, stream);
+
+  total += fwrite(&(dg->type), sizeof(keyspace_type), 1, stream);
+  total += fwrite(&(dg->keyspace._.size), sizeof(size_t), 1, stream);
+  total += fwrite(&(dg->keyspace._.fast_size), sizeof(size_t), 1, stream);
+  total += fwrite(&(dg->keyspace._.prefix_m), sizeof(size_t), 1, stream);
+  total += fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream);
+
+  const monotonic_compressor *comp = &(dg->keyspace._.compressor);
   total += fwrite(&(comp->num_checkpoints), sizeof(size_t), 1, stream);
   total += fwrite(comp->checkpoints, sizeof(size_t), comp->num_checkpoints, stream);
   total += fwrite(&(comp->uncompressed_size), sizeof(size_t), 1, stream);
   total += fwrite(comp->deltas, sizeof(unsigned char), comp->uncompressed_size, stream);
   total += fwrite(&(comp->size), sizeof(size_t), 1, stream);
   total += fwrite(&(comp->factor), sizeof(double), 1, stream);
-  total += fwrite(&(dg->keyspace.compressed.prefix_m), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace.compressed.size), sizeof(size_t), 1, stream);
+
+  // Note: Specific keyspaces re-constructed on load
+
   total += fwrite(&(dg->num_moves), sizeof(int), 1, stream);
   total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream);
 
@@ -79,34 +94,52 @@ size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
 void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   char *map = dgr->buffer;
 
-  state root = ((state *)map)[0];
-  map += sizeof(state);
-  dgr->keyspace.keyspace = create_tight_keyspace(&root, true);
+  int version = ((int *)map)[0];
+  map += sizeof(int);
+  if (version != DUAL_READER_VERSION) {
+    fprintf(stderr, "Unknown dual graph version %d\n", version);
+    exit(EXIT_FAILURE);
+  }
 
-  dgr->keyspace.compressor.num_checkpoints = ((size_t*) map)[0];
+  dgr->type = ((keyspace_type *)map)[0];
+  map += sizeof(keyspace_type);
+
+  dgr->keyspace._.size = ((size_t *)map)[0];
+  dgr->keyspace._.fast_size = ((size_t *)map)[1];
+  dgr->keyspace._.prefix_m = ((size_t *)map)[2];
+  map += 3 * sizeof(size_t);
+
+  dgr->keyspace._.root = ((state *)map)[0];
+  map += sizeof(state);
+
+  monotonic_compressor *comp = &(dgr->keyspace._.compressor);
+
+  comp->num_checkpoints = ((size_t*) map)[0];
   map += sizeof(size_t);
 
   // Memory map aux data to save RAM
-  dgr->keyspace.compressor.checkpoints = (size_t *)map;
-  map += sizeof(size_t) * dgr->keyspace.compressor.num_checkpoints;
+  comp->checkpoints = (size_t *)map;
+  map += sizeof(size_t) * comp->num_checkpoints;
 
-  dgr->keyspace.compressor.uncompressed_size = ((size_t*) map)[0];
+  comp->uncompressed_size = ((size_t*) map)[0];
   map += sizeof(size_t);
 
-  dgr->keyspace.compressor.deltas = (unsigned char *)map;
-  map += sizeof(unsigned char) * dgr->keyspace.compressor.uncompressed_size;
+  comp->deltas = (unsigned char *)map;
+  map += sizeof(unsigned char) * comp->uncompressed_size;
 
-  dgr->keyspace.compressor.size = ((size_t*) map)[0];
+  comp->size = ((size_t*) map)[0];
   map += sizeof(size_t);
 
-  dgr->keyspace.compressor.factor = ((double*) map)[0];
+  comp->factor = ((double*) map)[0];
   map += sizeof(double);
 
-  dgr->keyspace.prefix_m = ((size_t*) map)[0];
-  map += sizeof(size_t);
-
-  dgr->keyspace.size = ((size_t*) map)[0];
-  map += sizeof(size_t);
+  if (dgr->type == COMPRESSED_KEYSPACE) {
+    dgr->keyspace.compressed.keyspace = create_tight_keyspace(&(dgr->keyspace._.root), true);
+    dgr->to_key = __to_compressed_key;
+  } else {
+    dgr->keyspace.symmetric.symmetry = compute_symmetry(&(dgr->keyspace._.root));
+    dgr->to_key = __to_symmetric_key;
+  }
 
   dgr->num_moves = ((int*) map)[0];
   map += sizeof(int);
@@ -118,7 +151,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   map += dgr->num_moves * sizeof(stones_t);
 
   dgr->value_ids = (dual_value_id_t *)map;
-  map += sizeof(dual_value_id_t) * dgr->keyspace.size;
+  map += sizeof(dual_value_id_t) * dgr->keyspace._.size;
 
   dgr->value_map_size = ((size_t*) map)[0];
   map += sizeof(size_t);
@@ -142,7 +175,11 @@ dual_graph_reader load_dual_graph_reader(const char *filename) {
 }
 
 void unload_dual_graph_reader(dual_graph_reader *dgr) {
-  free_tight_keyspace(&(dgr->keyspace.keyspace));
+  if (dgr->type == COMPRESSED_KEYSPACE) {
+    free_tight_keyspace(&(dgr->keyspace.compressed.keyspace));
+  } else {
+    free_symmetry(&(dgr->keyspace.symmetric.symmetry));
+  }
 
   free(dgr->moves);
   dgr->num_moves = 0;
@@ -159,8 +196,8 @@ void unload_dual_graph_reader(dual_graph_reader *dgr) {
     dgr->buffer = NULL;
     dgr->fd = -1;
 
-    dgr->keyspace.compressor.checkpoints = NULL;
-    dgr->keyspace.compressor.deltas = NULL;
+    dgr->keyspace._.compressor.checkpoints = NULL;
+    dgr->keyspace._.compressor.deltas = NULL;
     dgr->value_ids = NULL;
   }
 }
@@ -211,10 +248,10 @@ dual_value get_dual_graph_reader_value_(const dual_graph_reader *dgr, const stat
   if (s->button < 0) {
     state c = *s;
     c.button = -c.button;
-    key = to_compressed_key(&(dgr->keyspace), &c);
+    key = dgr->to_key(dgr, &c);
     delta = -2 * BUTTON_BONUS;
   } else {
-    key = to_compressed_key(&(dgr->keyspace), s);
+    key = dgr->to_key(dgr, s);
   }
 
   dual_value v = dgr->value_map[dgr->value_ids[key]];
@@ -236,7 +273,7 @@ dual_graph_reader* allocate_dual_graph_reader(const char *filename) {
 }
 
 stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves) {
-  *root = dgr->keyspace.keyspace.root;
+  *root = dgr->keyspace._.root;
   *num_moves = dgr->num_moves;
   return dgr->moves;
 }
@@ -244,8 +281,12 @@ stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, in
 state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
   state ss = *s;
   ss.button = abs(ss.button);
-  size_t key = to_tight_key_fast(&(dgr->keyspace.keyspace), &ss);
-  ss = from_tight_key_fast(&(dgr->keyspace.keyspace), key);
+  if (dgr->type == COMPRESSED_KEYSPACE) {
+    size_t key = to_tight_key_fast(&(dgr->keyspace.compressed.keyspace), &ss);
+    ss = from_tight_key_fast(&(dgr->keyspace.compressed.keyspace), key);
+  } else {
+    exit(EXIT_FAILURE);
+  }
   ss.ko = s->ko;
   ss.passes = s->passes;
   ss.button = s->button;
