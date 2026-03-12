@@ -14,7 +14,6 @@ ADD_LIBRARY(
   status.c
   stones.c
   stones16.c
-  sym_solver.c
   symmetry.c
   util.c
 )

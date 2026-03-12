@@ -24,6 +24,26 @@ state _from_tight_key(dual_graph *dg, size_t key) {
   return from_tight_key_fast(&(dg->keyspace.compressed.keyspace), key);
 }
 
+size_t _to_symmetric_key(dual_graph *dg, const state *s) {
+  return to_symmetric_key(&(dg->keyspace.symmetric), s);
+}
+
+state _from_symmetric_key(dual_graph *dg, size_t key) {
+  return from_symmetric_key(&(dg->keyspace.symmetric), key);
+}
+
+bool _was_symmetric_legal(dual_graph *dg, size_t key) {
+  return was_symmetric_legal(&(dg->keyspace.symmetric), key);
+}
+
+size_t _remap_fast_key(dual_graph *dg, size_t key) {
+  return remap_fast_key(&(dg->keyspace.symmetric), key);
+}
+
+state _from_fast_key(dual_graph *dg, size_t key) {
+  return from_fast_key(&(dg->keyspace.symmetric), key);
+}
+
 void print_dual_graph(dual_graph *dg) {
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     value pv = table_value_to_value(dg->plain_values[i]);
@@ -56,7 +76,12 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
     dg.remap_key = _remap_tight_key;
     dg.from_fast_key = _from_tight_key;
   } else {
-    exit(EXIT_FAILURE);
+    dg.keyspace.symmetric = create_symmetric_keyspace(root);
+    dg.to_key = _to_symmetric_key;
+    dg.from_key = _from_symmetric_key;
+    dg.was_legal = _was_symmetric_legal;
+    dg.remap_key = _remap_fast_key;
+    dg.from_fast_key = _from_fast_key;
   }
 
   dg.moves = moves_of(root, &dg.num_moves);
@@ -405,7 +430,7 @@ void free_dual_graph(dual_graph *dg) {
   if (dg->type == COMPRESSED_KEYSPACE) {
     free_compressed_keyspace(&(dg->keyspace.compressed));
   } else {
-    exit(EXIT_FAILURE);
+    free_symmetric_keyspace(&(dg->keyspace.symmetric));
   }
 
   free(dg->moves);
