@@ -4,8 +4,28 @@
 #include "jkiss/jkiss.h"
 #include "tinytsumego2/dual_solver.h"
 
+size_t _to_compressed_key(dual_graph *dg, const state *s) {
+  return to_compressed_key(&(dg->keyspace.compressed), s);
+}
+
+state _from_compressed_key(dual_graph *dg, size_t key) {
+  return from_compressed_key(&(dg->keyspace.compressed), key);
+}
+
+bool _was_compressed_legal(dual_graph *dg, size_t key) {
+  return was_compressed_legal(&(dg->keyspace.compressed), key);
+}
+
+size_t _remap_tight_key(dual_graph *dg, size_t key) {
+  return remap_tight_key(&(dg->keyspace.compressed), key);
+}
+
+state _from_tight_key(dual_graph *dg, size_t key) {
+  return from_tight_key_fast(&(dg->keyspace.compressed.keyspace), key);
+}
+
 void print_dual_graph(dual_graph *dg) {
-  for (size_t i = 0; i < dg->keyspace.size; ++i) {
+  for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     value pv = table_value_to_value(dg->plain_values[i]);
     value fv = table_value_to_value(dg->forcing_values[i]);
     printf(
@@ -19,7 +39,7 @@ void print_dual_graph(dual_graph *dg) {
   }
 }
 
-dual_graph create_dual_graph(const state *root) {
+dual_graph create_dual_graph(const state *root, keyspace_type type) {
   if (root->ko || root->passes) {
     fprintf(stderr, "The root state may not have an active ko or previous passes\n");
     exit(EXIT_FAILURE);
@@ -27,14 +47,24 @@ dual_graph create_dual_graph(const state *root) {
 
   dual_graph dg = {0};
 
-  dg.keyspace = create_compressed_keyspace(root);
+  dg.type = type;
+  if (type == COMPRESSED_KEYSPACE) {
+    dg.keyspace.compressed = create_compressed_keyspace(root);
+    dg.to_key = _to_compressed_key;
+    dg.from_key = _from_compressed_key;
+    dg.was_legal = _was_compressed_legal;
+    dg.remap_key = _remap_tight_key;
+    dg.from_fast_key = _from_tight_key;
+  } else {
+    exit(EXIT_FAILURE);
+  }
 
   dg.moves = moves_of(root, &dg.num_moves);
 
-  dg.plain_values = malloc(dg.keyspace.size * sizeof(table_value));
-  dg.forcing_values = malloc(dg.keyspace.size * sizeof(table_value));
+  dg.plain_values = malloc(dg.keyspace._.size * sizeof(table_value));
+  dg.forcing_values = malloc(dg.keyspace._.size * sizeof(table_value));
 
-  for (size_t i = 0; i < dg.keyspace.size; ++i) {
+  for (size_t i = 0; i < dg.keyspace._.size; ++i) {
     dg.plain_values[i] = MAX_RANGE_Q7;
     dg.forcing_values[i] = MAX_RANGE_Q7;
   }
@@ -44,7 +74,7 @@ dual_graph create_dual_graph(const state *root) {
 
 dual_graph* allocate_dual_graph(const state *root) {
   dual_graph *result = malloc(sizeof(dual_graph));
-  *result = create_dual_graph(root);
+  *result = create_dual_graph(root, COMPRESSED_KEYSPACE);
   return result;
 }
 
@@ -88,9 +118,9 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
     state c = *s;
     c.button = -c.button;
     delta = -2 * BUTTON_Q7;
-    key = to_compressed_key(&(dg->keyspace), &c);
+    key = dg->to_key(dg, &c);
   } else {
-    key = to_compressed_key(&(dg->keyspace), s);
+    key = dg->to_key(dg, s);
   }
   *plain_value = dg->plain_values[key];
   *forcing_value = dg->forcing_values[key];
@@ -127,11 +157,11 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
 
 bool iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
-  for (size_t k = 0; k < dg->keyspace.keyspace.size; ++k) {
-    if (!was_compressed_legal(&(dg->keyspace), k)) {
+  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+    if (!dg->was_legal(dg, k)) {
       continue;
     }
-    size_t i = remap_tight_key(&(dg->keyspace), k);
+    size_t i = dg->remap_key(dg, k);
     // Don't evaluate if the range cannot be tightened
     if (dg->plain_values[i].low == dg->plain_values[i].high && dg->forcing_values[i].low == dg->forcing_values[i].high) {
       continue;
@@ -142,7 +172,7 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
     score_q7_t forcing_low = dg->forcing_values[i].low;
     score_q7_t forcing_high = SCORE_Q7_MIN;
 
-    state parent = from_tight_key_fast(&(dg->keyspace.keyspace), k);
+    state parent = dg->from_fast_key(dg, k);
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
       const move_result r = make_move(&child, dg->moves[j]);
@@ -171,7 +201,7 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
     }
   }
   if (verbose) {
-    value v = get_dual_graph_value(dg, &(dg->keyspace.keyspace.root), NONE);
+    value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
     printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
   }
   return num_updated;
@@ -220,9 +250,9 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
     state c = *s;
     c.button = -c.button;
     delta = -2 * BUTTON_Q7;
-    key = to_compressed_key(&(dg->keyspace), &c);
+    key = dg->to_key(dg, &c);
   } else {
-    key = to_compressed_key(&(dg->keyspace), s);
+    key = dg->to_key(dg, s);
   }
   table_value v = dg->plain_values[key];
   if (v.low != SCORE_Q7_MIN) {
@@ -240,17 +270,17 @@ value get_dual_graph_area_value(dual_graph *dg, const state *s) {
 
 bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
-  for (size_t k = 0; k < dg->keyspace.keyspace.size; ++k) {
-    if (!was_compressed_legal(&(dg->keyspace), k)) {
+  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+    if (!dg->was_legal(dg, k)) {
       continue;
     }
-    size_t i = remap_tight_key(&(dg->keyspace), k);
+    size_t i = dg->remap_key(dg, k);
 
     // Perform negamax
     score_q7_t low = SCORE_Q7_MIN;
     score_q7_t high = SCORE_Q7_MIN;
 
-    state parent = from_tight_key_fast(&(dg->keyspace.keyspace), k);
+    state parent = dg->from_fast_key(dg, k);
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
       const move_result r = make_move(&child, dg->moves[j]);
@@ -272,7 +302,7 @@ bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
     }
   }
   if (verbose) {
-    value v = get_dual_graph_value(dg, &(dg->keyspace.keyspace.root), NONE);
+    value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
     printf("%zu nodes updated. Root value = %f, %f\n", num_updated, v.low, v.high);
   }
   return num_updated;
@@ -372,7 +402,11 @@ state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts) 
 }
 
 void free_dual_graph(dual_graph *dg) {
-  free_compressed_keyspace(&(dg->keyspace));
+  if (dg->type == COMPRESSED_KEYSPACE) {
+    free_compressed_keyspace(&(dg->keyspace.compressed));
+  } else {
+    exit(EXIT_FAILURE);
+  }
 
   free(dg->moves);
   dg->num_moves = 0;

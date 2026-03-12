@@ -236,6 +236,7 @@ void free_monotonic_compressor (monotonic_compressor *mc) {
 
 compressed_keyspace create_compressed_keyspace(const state *root) {
   compressed_keyspace result = {0};
+  result.root = *root;
   result.keyspace = create_tight_keyspace(root, true);
   result.prefix_m = result.keyspace.prefix_m / result.keyspace.black_external_m / result.keyspace.white_external_m;
   bool indicator(size_t key) {
@@ -244,6 +245,7 @@ compressed_keyspace create_compressed_keyspace(const state *root) {
   }
   result.compressor = create_monotonic_compressor(result.keyspace.size / result.prefix_m, indicator);
   result.size = result.prefix_m * result.compressor.size;
+  result.fast_size = result.keyspace.size;
   return result;
 }
 

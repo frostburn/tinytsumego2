@@ -39,22 +39,35 @@ typedef struct monotonic_compressor {
   double factor;
 } monotonic_compressor;
 
+// "Base class" for compressed_keyspace and symmetric_keyspace
+typedef struct abstract_keyspace {
+  size_t size;
+  size_t fast_size;
+  state root;
+} abstract_keyspace;
+
 // Keyspace where every indexed state is legal
 typedef struct compressed_keyspace {
+  // Polymorphism support
+  size_t size;
+  size_t fast_size;
+  state root;
+
   tight_keyspace keyspace;
   monotonic_compressor compressor;
   size_t prefix_m;
-  size_t size;
 } compressed_keyspace;
 
 // Keyspace with spatial and color symmetries reduced out and every indexed state is legal
 typedef struct symmetric_keyspace {
+  // Polymorphism support
+  size_t size;
+  size_t fast_size;
   state root;
+
   symmetry symmetry;
   monotonic_compressor compressor;
   size_t prefix_m;
-  size_t size;
-  size_t fast_size;
 } symmetric_keyspace;
 
 // Function pointer type for flagging legal keys

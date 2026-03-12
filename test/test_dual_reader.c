@@ -33,7 +33,7 @@ state rectangle_six() {
 void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   while(iterate_dual_graph(&dg, false));
   while(area_iterate_dual_graph(&dg, true));
 
@@ -88,7 +88,7 @@ void test_bulky_five() {
 void test_external_liberties() {
   const state root = rectangle_six();
   print_state(&root);
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   while(iterate_dual_graph(&dg, false));
   while(area_iterate_dual_graph(&dg, true));
 

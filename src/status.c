@@ -79,7 +79,7 @@ tsumego_status get_tsumego_status(const state *s) {
   base.passes = 0;
   base.button = 0;
 
-  dg = create_dual_graph(&base);
+  dg = create_dual_graph(&base, COMPRESSED_KEYSPACE);
   while(iterate_dual_graph(&dg, false));
 
   // Player first

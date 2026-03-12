@@ -13,11 +13,11 @@
 dual_graph solve(tsumego t, bool verbose) {
   state root = t.state;
 
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
 
   if (verbose) {
     print_state(&root);
-    printf("Solution space size = %zu\n", dg.keyspace.size);
+    printf("Solution space size = %zu\n", dg.keyspace._.size);
   }
 
   while(iterate_dual_graph(&dg, verbose));

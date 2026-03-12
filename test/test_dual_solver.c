@@ -61,7 +61,7 @@ state no_moves() {
 void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   for (int i = 0; i < 12; ++i) {
     bool did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
@@ -123,7 +123,7 @@ void test_bent_four_in_the_corner_is_dead() {
   bool did_change;
   value v;
   print_state(&root);
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   for (int i = 0; i < 12; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
@@ -156,7 +156,7 @@ void test_bent_four_in_the_might_be_seki() {
   bool did_change;
   value v;
   print_state(&root);
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   for (int i = 0; i < 12; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
@@ -191,7 +191,7 @@ void test_dead_three() {
   root.button = 0;
   print_state(&root);
 
-  dual_graph dg = create_dual_graph(&root);
+  dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
   while (iterate_dual_graph(&dg, true));
   print_state(&s);
   state child = s;
@@ -214,7 +214,7 @@ void test_dead_three() {
 void test_no_moves_terminals() {
   state s = no_moves();
   print_state(&s);
-  dual_graph dg = create_dual_graph(&s);
+  dual_graph dg = create_dual_graph(&s, COMPRESSED_KEYSPACE);
   while (iterate_dual_graph(&dg, true));
 
   state terminal = dual_graph_low_terminal(&dg, &s, NONE);

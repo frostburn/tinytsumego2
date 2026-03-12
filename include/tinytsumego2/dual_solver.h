@@ -6,13 +6,23 @@
 
 #define MAX_COMPENSATION_DEPTH (6)
 
+typedef enum {
+  COMPRESSED_KEYSPACE,
+  SYMMETRIC_KEYSPACE
+} keyspace_type;
+
 // An implicit game graph. All enumerable game states are evaluated even if they're not reachable from the root.
 // Ko-threats are evaluated favoring either player.
 // Both simple and forcing tactics are evaluated.
 // The end-result should contain everything necessary for determining the status of a group or displaying information to an end-user.
 typedef struct dual_graph {
   // Pre-computed key generator
-  compressed_keyspace keyspace;
+  keyspace_type type;
+  union {
+    abstract_keyspace _;
+    compressed_keyspace compressed;
+    symmetric_keyspace symmetric;
+  } keyspace;
 
   // Valid moves according to the root state
   int num_moves;
@@ -21,13 +31,20 @@ typedef struct dual_graph {
   // The values are indexed by compressed keys
   table_value *plain_values;
   table_value *forcing_values;
+
+  // Polymorphic methods
+  size_t (*to_key)(struct dual_graph *dg, const state *s);
+  state (*from_key)(struct dual_graph *dg, size_t key);
+  bool (*was_legal)(struct dual_graph *dg, size_t key);
+  size_t (*remap_key)(struct dual_graph *dg, size_t key);
+  state (*from_fast_key)(struct dual_graph *dg, size_t key);
 } dual_graph;
 
 // Print the contents of a dual game graph
 void print_dual_graph(dual_graph *dg);
 
 // Create a dual game graph based on a root state.
-dual_graph create_dual_graph(const state *root);
+dual_graph create_dual_graph(const state *root, keyspace_type type);
 
 // Work-around for having to re-define `struct dual_graph` in Python ctypes
 dual_graph* allocate_dual_graph(const state *root);
