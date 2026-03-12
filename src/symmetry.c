@@ -489,6 +489,98 @@ void prepare_odd_square_symmetry(symmetry *sym, stones_t visual_area) {
   }
 }
 
+// . @ @ .
+// @ . . @
+// @ . . @
+// . @ @ .
+// wide = false
+
+// Compression ratio ~ 7.52 (vs. ideal 8.0)
+#define EVEN_SQUARE_CORE_SIZE (873)
+
+size_t even_square_core_idx(stones_t black, stones_t white) {
+  size_t result = (black & 6) >> 1;
+  black >>= V_SHIFT;
+  result |= ((black & 1) << 2) | (black & 8);
+  black >>= V_SHIFT;
+  result |= ((black & 1) << 4) | ((black & 8) << 2);
+  black >>= V_SHIFT;
+  result |= (black & 6) << 5;
+
+  result |= (white & 6) << 7;
+  white >>= V_SHIFT;
+  result |= ((white & 1) << 10) | ((white & 8) << 8);
+  white >>= V_SHIFT;
+  result |= ((white & 1) << 12) | ((white & 8) << 10);
+  white >>= V_SHIFT;
+  result |= (white & 6) << 13;
+
+  return result;
+}
+
+void prepare_even_square_symmetry(symmetry *sym, stones_t visual_area) {
+  stones_t core_mask = (rectangle(2, 4) << H_SHIFT) ^ (rectangle(4, 2) << V_SHIFT);
+  sym->pulp_dots = dots(visual_area ^ (core_mask << sym->core_shift), &(sym->pulp_count));
+  sym->core_idx = even_square_core_idx;
+  size_t size = 1 << 16;
+  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
+  sym->core_map = malloc(size * sizeof(size_t));
+  sym->core_m = 0;
+  sym->black_core = malloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = malloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
+  for (size_t idx = 0; idx < size; ++idx) {
+    stones_t c = idx;
+    stones_t black = (c & 3) << H_SHIFT;
+    c >>= 2;
+    black |= ((c & 1) | (c & 2) << (2 * H_SHIFT)) << V_SHIFT;
+    c >>= 2;
+    black |= ((c & 1) | (c & 2) << (2 * H_SHIFT)) << (2 * V_SHIFT);
+    c >>= 2;
+    black |= (c & 3) << (H_SHIFT + 3 * V_SHIFT);
+    c >>= 2;
+
+    stones_t white = (c & 3) << H_SHIFT;
+    c >>= 2;
+    white |= ((c & 1) | (c & 2) << (2 * H_SHIFT)) << V_SHIFT;
+    c >>= 2;
+    white |= ((c & 1) | (c & 2) << (2 * H_SHIFT)) << (2 * V_SHIFT);
+    c >>= 2;
+    white |= (c & 3) << (H_SHIFT + 3 * V_SHIFT);
+
+    // Skip overlapping
+    if (black & white) {
+      sym->pulp_ops[idx] = UCHAR_MAX;
+      sym->core_map[idx] = SIZE_MAX;
+      continue;
+    }
+
+    #ifdef CHECK_SYM_SANITY
+      assert(sym->core_idx(black, white) == idx);
+    #endif
+
+    sym->pulp_ops[idx] = least_of_3(stones_mirror_v_4, stones_mirror_h_4, stones_mirror_d_4, &black, &white);
+    for (size_t i = 0; i < sym->core_m; ++i) {
+      if (black == sym->black_core[i] && white == sym->white_core[i]) {
+        sym->core_map[idx] = i;
+        // continue outer;
+        goto next_idx;
+      }
+    }
+    sym->core_map[idx] = sym->core_m;
+    sym->black_core[sym->core_m] = black;
+    sym->white_core[sym->core_m] = white;
+    sym->core_m++;
+
+    // Label to break out of inner loops
+    next_idx:
+  }
+
+  for (size_t i = 0; i < EVEN_SQUARE_CORE_SIZE; ++i) {
+    sym->black_core[i] <<= sym->core_shift;
+    sym->white_core[i] <<= sym->core_shift;
+  }
+}
+
 symmetry compute_symmetry(const state *s) {
   symmetry result = {0};
   assert(!s->wide);
@@ -579,7 +671,7 @@ symmetry compute_symmetry(const state *s) {
     if (w & 1) {
       prepare_odd_square_symmetry(&result, s->visual_area);
     } else {
-      assert(false && "Even square core not implemented yet");
+      prepare_even_square_symmetry(&result, s->visual_area);
     }
   } else {
     if (w & 1) {

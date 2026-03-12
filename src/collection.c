@@ -566,7 +566,7 @@ collection* get_collections(size_t *num_collections) {
   result[i+1] = rectangular_goban(3, 3, SYMMETRIC_KEYSPACE);
   result[i+2] = rectangular_goban(4, 2, COMPRESSED_KEYSPACE);
   result[i+3] = rectangular_goban(4, 3, SYMMETRIC_KEYSPACE);
-  result[i+4] = rectangular_goban(4, 4, COMPRESSED_KEYSPACE);
+  result[i+4] = rectangular_goban(4, 4, SYMMETRIC_KEYSPACE);
   result[i+5] = rectangular_goban(5, 2, COMPRESSED_KEYSPACE);
   result[i+6] = rectangular_goban(5, 3, COMPRESSED_KEYSPACE);
   result[i+7] = rectangular_goban(5, 4, SYMMETRIC_KEYSPACE);
