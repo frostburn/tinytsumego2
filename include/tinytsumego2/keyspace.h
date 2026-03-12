@@ -43,7 +43,9 @@ typedef struct monotonic_compressor {
 typedef struct abstract_keyspace {
   size_t size;
   size_t fast_size;
+  size_t prefix_m;
   state root;
+  monotonic_compressor compressor;
 } abstract_keyspace;
 
 // Keyspace where every indexed state is legal
@@ -51,11 +53,12 @@ typedef struct compressed_keyspace {
   // Polymorphism support
   size_t size;
   size_t fast_size;
-  state root;
-
-  tight_keyspace keyspace;
-  monotonic_compressor compressor;
   size_t prefix_m;
+  state root;
+  monotonic_compressor compressor;
+
+  // Specific fields
+  tight_keyspace keyspace;
 } compressed_keyspace;
 
 // Keyspace with spatial and color symmetries reduced out and every indexed state is legal
@@ -63,11 +66,12 @@ typedef struct symmetric_keyspace {
   // Polymorphism support
   size_t size;
   size_t fast_size;
-  state root;
-
-  symmetry symmetry;
-  monotonic_compressor compressor;
   size_t prefix_m;
+  state root;
+  monotonic_compressor compressor;
+
+  // Specific fields
+  symmetry symmetry;
 } symmetric_keyspace;
 
 // Function pointer type for flagging legal keys

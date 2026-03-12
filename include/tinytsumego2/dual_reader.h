@@ -23,7 +23,12 @@ typedef struct dual_graph_reader {
   dual_value *value_map;  // NOTE: (m)allocated in RAM
 
   // Pre-computed key generator
-  compressed_keyspace keyspace;  // NOTE: Only partially (m)allocated, do not free()
+  keyspace_type type;
+  union {
+    abstract_keyspace _;
+    compressed_keyspace compressed;
+    symmetric_keyspace symmetric;
+  } keyspace;  // NOTE: Only partially (m)allocated, do not free()
 
   // Identifiers of node values inside of self.value_map
   dual_value_id_t *value_ids;  // NOTE: Not (m)allocated, do not free()
@@ -36,6 +41,9 @@ typedef struct dual_graph_reader {
 
   // Memory map handle for resource acquisition and release
   char *buffer;
+
+  // Polymorphic method(s)
+  size_t (*to_key)(const struct dual_graph_reader *dgr, const state *s);
 } dual_graph_reader;
 
 // Information about a potential move

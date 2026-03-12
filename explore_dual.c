@@ -11,11 +11,11 @@ int main(int argc, char *argv[]) {
   }
   dual_graph_reader dgr = load_dual_graph_reader(argv[1]);
 
-  printf("Solution loaded: %d moves, key-space size = %zu\n\n", dgr.num_moves, dgr.keyspace.size);
+  printf("Solution loaded: %d moves, key-space size = %zu\n\n", dgr.num_moves, dgr.keyspace._.size);
 
   printf("Enter coordinates to navigate the game graph.\n Type 'q' to quit.\n\n");
 
-  state s = dgr.keyspace.keyspace.root;
+  state s = dgr.keyspace._.root;
 
   int width = s.wide ? WIDTH_16 : WIDTH;
   int height = s.wide ? HEIGHT_16 : HEIGHT;
