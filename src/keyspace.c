@@ -340,3 +340,12 @@ state from_fast_key(const symmetric_keyspace *sks, size_t key) {
   from_symmetric_bw_key(&(sks->symmetry), key, &(result.player), &(result.opponent));
   return result;
 }
+
+size_t to_fast_key(const symmetric_keyspace *sks, const state *s) {
+  const size_t key = to_symmetric_bw_key(&(sks->symmetry), s->player, s->opponent);
+  return (
+    s->button +
+    2 * (s->ko_threats + abs(sks->root.ko_threats)) +
+    sks->prefix_m * key
+  );
+}

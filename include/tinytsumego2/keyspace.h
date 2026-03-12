@@ -142,3 +142,6 @@ size_t remap_fast_key(const symmetric_keyspace *sks, size_t key);
 
 // Recover a canonical state from its unique index
 state from_fast_key(const symmetric_keyspace *sks, size_t key);
+
+// Convert a state to its unique canonical index
+size_t to_fast_key(const symmetric_keyspace *sks, const state *s);
