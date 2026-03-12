@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "tinytsumego2/state.h"
 #include "tinytsumego2/scoring.h"
+#include "tinytsumego2/dual_solver.h"
 
 // A collection of go problems to show to end-users
 // Normalized to the upper-left/north-western corner with the rest of the 19x19 goban empty
@@ -57,6 +58,8 @@ typedef struct collection {
   // Sub-problems that can be reached from the root
   size_t num_tsumegos;
   tsumego *tsumegos;
+  // Type of compression to use
+  keyspace_type type;
 } collection;
 
 // Get an array of hard-coded collections of tsumegos

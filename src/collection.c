@@ -64,6 +64,7 @@ collection rectangle_six() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
@@ -111,6 +112,7 @@ collection rectangle_eight() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
@@ -218,6 +220,7 @@ collection l_j_groups() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
@@ -289,10 +292,11 @@ collection notcher_122xy() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
-collection rectangular_goban(int width, int height) {
+collection rectangular_goban(int width, int height, keyspace_type type) {
   state root = {0};
   root.visual_area = rectangle(width, height);
   root.logical_area = root.visual_area;
@@ -321,6 +325,7 @@ collection rectangular_goban(int width, int height) {
     false,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    type,
   };
 }
 
@@ -377,6 +382,7 @@ collection carpenters_square() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
@@ -483,6 +489,7 @@ collection long_l_group() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
@@ -539,11 +546,12 @@ collection five_on_3rd() {
     true,
     sizeof(tsumegos) / sizeof(tsumego),
     ts,
+    COMPRESSED_KEYSPACE,
   };
 }
 
 collection* get_collections(size_t *num_collections) {
-  *num_collections = 16;
+  *num_collections = 17;
   collection *result = malloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
@@ -554,14 +562,15 @@ collection* get_collections(size_t *num_collections) {
   result[6] = long_l_group();
 
   size_t i = 7;
-  result[i+0] = rectangular_goban(3, 2);
-  result[i+1] = rectangular_goban(3, 3);
-  result[i+2] = rectangular_goban(4, 2);
-  result[i+3] = rectangular_goban(4, 3);
-  result[i+4] = rectangular_goban(4, 4);
-  result[i+5] = rectangular_goban(5, 2);
-  result[i+6] = rectangular_goban(5, 3);
-  result[i+7] = rectangular_goban(6, 2);
-  result[i+8] = rectangular_goban(7, 2);
+  result[i+0] = rectangular_goban(3, 2, COMPRESSED_KEYSPACE);
+  result[i+1] = rectangular_goban(3, 3, SYMMETRIC_KEYSPACE);
+  result[i+2] = rectangular_goban(4, 2, COMPRESSED_KEYSPACE);
+  result[i+3] = rectangular_goban(4, 3, COMPRESSED_KEYSPACE);
+  result[i+4] = rectangular_goban(4, 4, COMPRESSED_KEYSPACE);
+  result[i+5] = rectangular_goban(5, 2, COMPRESSED_KEYSPACE);
+  result[i+6] = rectangular_goban(5, 3, COMPRESSED_KEYSPACE);
+  result[i+7] = rectangular_goban(5, 4, SYMMETRIC_KEYSPACE);
+  result[i+8] = rectangular_goban(6, 2, COMPRESSED_KEYSPACE);
+  result[i+9] = rectangular_goban(7, 2, COMPRESSED_KEYSPACE);
   return result;
 }
