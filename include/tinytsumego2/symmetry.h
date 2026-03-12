@@ -4,7 +4,7 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
 
-// Symmetry reduction utilities to make (9x2), (10x2), (11x2), (12x2), (7x3), (8x3), 5x4, (6x4) and 5x5 gobans tractable
+// Symmetry reduction utilities to make (9x2), (10x2), (11x2), (12x2), 6x3, (7x3), 8x3, 5x4, (6x4) and 5x5 gobans tractable
 // Gobans in parenthesis are still work-in-progress
 
 // Bit flags for operations on the pulp i.e. stones outside the core used for symmetry detection/reduction
@@ -16,7 +16,7 @@
 typedef unsigned char mirror_op_t;
 
 // Function pointer type for mirroring without snapping
-typedef stones_t (*mirror_f)(const stones_t stones);
+typedef stones_t (*mirror_f)(stones_t stones);
 
 // Function pointer for reducing/manipulating keyspace based on a small core of stones
 typedef size_t (*core_idx_f)(stones_t black, stones_t white);
@@ -59,16 +59,24 @@ typedef struct symmetry {
   size_t size;
 } symmetry;
 
+stones_t stones_mirror_v_2(const stones_t stones);
 stones_t stones_mirror_v_3(const stones_t stones);
 stones_t stones_mirror_v_4(const stones_t stones);
 stones_t stones_mirror_v_5(const stones_t stones);
+stones_t stones_mirror_v_6(stones_t stones);
 
+stones_t stones_mirror_h_2(const stones_t stones);
 stones_t stones_mirror_h_3(const stones_t stones);
+stones_t stones_mirror_h_4(const stones_t stones);
 stones_t stones_mirror_h_5(const stones_t stones);
+stones_t stones_mirror_h_6(stones_t stones);
+stones_t stones_mirror_h_7(stones_t stones);
+stones_t stones_mirror_h_8(stones_t stones);
 
 stones_t stones_mirror_d_3(const stones_t stones);
 stones_t stones_mirror_d_4(const stones_t stones);
 stones_t stones_mirror_d_5(const stones_t stones);
+stones_t stones_mirror_d_6(const stones_t stones);
 
 symmetry compute_symmetry(const state *s);
 
