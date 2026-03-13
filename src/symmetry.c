@@ -393,6 +393,114 @@ void prepare_odd_even_symmetry(symmetry *sym, stones_t visual_area) {
   }
 }
 
+// . @ @ @ .
+// @ @ @ @ @
+// . @ @ @ .
+// wide = false
+
+// Compression ratio ~ 3.9 (vs. naïve ideal 4.0)
+#define ODD_ODD_CORE_SIZE (45414)
+
+size_t odd_odd_core_idx(stones_t black, stones_t white) {
+  size_t result = (black & 14) >> 1;
+  black >>= V_SHIFT;
+  result |= (black & 31) << 3;
+  black >>= V_SHIFT;
+  result |= (black & 14) << 7;
+
+  result |= (white & 14) << 10;
+  white >>= V_SHIFT;
+  result |= (white & 31) << 14;
+  white >>= V_SHIFT;
+  result |= (white & 14) << 18;
+
+  return result;
+}
+
+void prepare_odd_odd_symmetry(symmetry *sym, stones_t visual_area) {
+  stones_t core_mask = (rectangle(3, 3) << H_SHIFT) | (rectangle(5, 1) << V_SHIFT);
+  sym->pulp_dots = dots(visual_area ^ (core_mask << sym->core_shift), &(sym->pulp_count));
+  sym->core_idx = odd_odd_core_idx;
+  size_t size = 1 << 22;
+  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
+  sym->core_map = malloc(size * sizeof(size_t));
+  sym->core_m = 0;
+  sym->black_core = malloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = malloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
+  for (size_t idx = 0; idx < size; ++idx) {
+    stones_t c = idx;
+    stones_t black = (c & 7) << H_SHIFT;
+    c >>= 3;
+    black |= (c & 31) << V_SHIFT;
+    c >>= 5;
+    black |= (c & 7) << (2 * V_SHIFT + H_SHIFT);
+    c >>= 3;
+
+    stones_t white = (c & 7) << H_SHIFT;
+    c >>= 3;
+    white |= (c & 31) << V_SHIFT;
+    c >>= 5;
+    white |= (c & 7) << (2 * V_SHIFT + H_SHIFT);
+
+    // Skip overlapping
+    if (black & white) {
+      sym->pulp_ops[idx] = UCHAR_MAX;
+      sym->core_map[idx] = SIZE_MAX;
+      continue;
+    }
+
+    // Skip illegal
+    c = rectangle(7, 5);
+    int num_chains = 0;
+    stones_t *cs = chains(black << (V_SHIFT + H_SHIFT), &num_chains);
+    for (int i = 0; i < num_chains; ++i) {
+      if (!liberties(cs[i], c & ~(white << (V_SHIFT + H_SHIFT)))) {
+        sym->pulp_ops[idx] = UCHAR_MAX;
+        sym->core_map[idx] = SIZE_MAX;
+        free(cs);
+        goto next_idx;
+      }
+    }
+    free(cs);
+
+    cs = chains(white << (V_SHIFT + H_SHIFT), &num_chains);
+    for (int i = 0; i < num_chains; ++i) {
+      if (!liberties(cs[i], c & ~(black << (V_SHIFT + H_SHIFT)))) {
+        sym->pulp_ops[idx] = UCHAR_MAX;
+        sym->core_map[idx] = SIZE_MAX;
+        free(cs);
+        goto next_idx;
+      }
+    }
+    free(cs);
+
+    #ifdef CHECK_SYM_SANITY
+      assert(sym->core_idx(black, white) == idx);
+    #endif
+
+    sym->pulp_ops[idx] = least_of_2(stones_mirror_v_3, stones_mirror_h_5, &black, &white);
+    for (size_t i = 0; i < sym->core_m; ++i) {
+      if (black == sym->black_core[i] && white == sym->white_core[i]) {
+        sym->core_map[idx] = i;
+        // continue outer;
+        goto next_idx;
+      }
+    }
+    sym->core_map[idx] = sym->core_m;
+    sym->black_core[sym->core_m] = black;
+    sym->white_core[sym->core_m] = white;
+    sym->core_m++;
+
+    // Label to break out of inner loops
+    next_idx:
+  }
+
+  for (size_t i = 0; i < ODD_ODD_CORE_SIZE; ++i) {
+    sym->black_core[i] <<= sym->core_shift;
+    sym->white_core[i] <<= sym->core_shift;
+  }
+}
+
 // @ @ @
 // @ @ @
 // @ @ @
@@ -599,7 +707,9 @@ symmetry compute_symmetry(const state *s) {
       break;
     case 5:
       result.horizontal = s->wide ? stones_mirror_h_w5 : stones_mirror_h_5;
-      result.core_shift += s->wide ? 0 : 1;
+      if (!s->wide) {
+        result.core_shift += (h & 1) ? 0 : 1;
+      }
       break;
     case 6:
       result.horizontal = s->wide ? stones_mirror_h_w6 : stones_mirror_h_6;
@@ -607,7 +717,11 @@ symmetry compute_symmetry(const state *s) {
       break;
     case 7:
       result.horizontal = s->wide ? stones_mirror_h_w7 : stones_mirror_h_7;
-      result.core_shift += s->wide ? 1 : 2;
+      if (s->wide) {
+        result.core_shift += 1;
+      } else {
+        result.core_shift += (h & 1) ? 1 : 2;
+      }
       break;
     case 8:
       result.horizontal = s->wide ? stones_mirror_h_w8 : stones_mirror_h_8;
@@ -615,7 +729,11 @@ symmetry compute_symmetry(const state *s) {
       break;
     case 9:
       result.horizontal = s->wide ? stones_mirror_h_w9 : stones_mirror_h;
-      result.core_shift += s->wide ? 2 : 3;
+      if (s->wide) {
+        result.core_shift += 2;
+      } else {
+        result.core_shift += (h & 1) ? 2 : 3;
+      }
       break;
     default:
       assert(false && "Unsupported width");
@@ -661,6 +779,7 @@ symmetry compute_symmetry(const state *s) {
         break;
       case 5:
         result.diagonal = stones_mirror_d_5;
+        result.core_shift = H_SHIFT + V_SHIFT;
         break;
       case 6:
         result.diagonal = stones_mirror_d_6;
@@ -680,7 +799,7 @@ symmetry compute_symmetry(const state *s) {
   } else {
     if (w & 1) {
       if (h & 1) {
-        assert(false && "Odd-odd core not implemented yet");
+        prepare_odd_odd_symmetry(&result, s->visual_area);
       } else {
         if (h == 2) {
           assert(s->wide);

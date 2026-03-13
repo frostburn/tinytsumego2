@@ -569,7 +569,7 @@ collection* get_collections(size_t *num_collections) {
   result[i+3] = rectangular_goban(4, 3, false, SYMMETRIC_KEYSPACE);
   result[i+4] = rectangular_goban(4, 4, false, SYMMETRIC_KEYSPACE);
   result[i+5] = rectangular_goban(5, 2, true, SYMMETRIC_KEYSPACE);
-  result[i+6] = rectangular_goban(5, 3, false, COMPRESSED_KEYSPACE);
+  result[i+6] = rectangular_goban(5, 3, false, SYMMETRIC_KEYSPACE);
   result[i+7] = rectangular_goban(5, 4, true, SYMMETRIC_KEYSPACE);
   result[i+7].root.ko_threats = 1;
   result[i+8] = rectangular_goban(6, 2, true, SYMMETRIC_KEYSPACE);
