@@ -107,11 +107,6 @@ stones_t *chains_16(stones_t stones, int *num_chains) {
   return realloc(result, (*num_chains) * sizeof(stones_t));
 }
 
-#define HH0 (NORTH_WALL_16)
-#define HH1 (NORTH_WALL_16 << V_SHIFT_16)
-#define HH2 (NORTH_WALL_16 << (2 * V_SHIFT_16))
-#define HH3 (NORTH_WALL_16 << (3 * V_SHIFT_16))
-
 stones_t stones_mirror_v_16(stones_t stones) {
   return (
     ((stones & HH0) << (3 * V_SHIFT_16)) |

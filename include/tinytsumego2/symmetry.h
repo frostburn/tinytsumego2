@@ -78,6 +78,11 @@ stones_t stones_mirror_d_4(const stones_t stones);
 stones_t stones_mirror_d_5(const stones_t stones);
 stones_t stones_mirror_d_6(const stones_t stones);
 
+stones_t stones_mirror_v_w2(const stones_t stones);
+stones_t stones_mirror_h_w4(const stones_t stones);
+stones_t stones_mirror_h_w6(stones_t stones);
+stones_t stones_mirror_h_w8(stones_t stones);
+
 symmetry compute_symmetry(const state *s);
 
 size_t to_symmetric_bw_key(const symmetry *sym, const stones_t black, const stones_t white);

@@ -21,6 +21,20 @@
 #define SOUTH_WALL_16 (NORTH_WALL_16 << (V_SHIFT_16 * 3))
 #define EAST_WALL_16 (WEST_WALL_16 << 15)
 
+#define HH0 (NORTH_WALL_16)
+#define HH1 (NORTH_WALL_16 << V_SHIFT_16)
+#define HH2 (NORTH_WALL_16 << (2 * V_SHIFT_16))
+#define HH3 (NORTH_WALL_16 << (3 * V_SHIFT_16))
+
+#define VV0 (WEST_WALL_16)
+#define VV1 (WEST_WALL_16 << H_SHIFT_16)
+#define VV2 (WEST_WALL_16 << (2 * H_SHIFT_16))
+#define VV3 (WEST_WALL_16 << (3 * H_SHIFT_16))
+#define VV4 (WEST_WALL_16 << (4 * H_SHIFT_16))
+#define VV5 (WEST_WALL_16 << (5 * H_SHIFT_16))
+#define VV6 (WEST_WALL_16 << (6 * H_SHIFT_16))
+#define VV7 (WEST_WALL_16 << (7 * H_SHIFT_16))
+
 // Print a bit board with "." for 0 bits and "@" for 1 bits
 void print_stones_16(const stones_t stones);
 

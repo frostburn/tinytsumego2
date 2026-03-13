@@ -581,11 +581,12 @@ void prepare_even_square_symmetry(symmetry *sym, stones_t visual_area) {
   }
 }
 
+#include "symmetry16.inc.c"
+
 symmetry compute_symmetry(const state *s) {
   symmetry result = {0};
-  assert(!s->wide);
-  int w = width_of(s->visual_area);
-  int h = height_of(s->visual_area);
+  int w = s->wide ? width_of_16(s->visual_area) : width_of(s->visual_area);
+  int h = s->wide ? height_of_16(s->visual_area) : height_of(s->visual_area);
   switch (w) {
     case 2:
       assert(false && "Width of 2 not implemented. Try flipping input diagonally.");
@@ -594,23 +595,23 @@ symmetry compute_symmetry(const state *s) {
       result.horizontal = stones_mirror_h_3;
       break;
     case 4:
-      result.horizontal = stones_mirror_h_4;
+      result.horizontal = s->wide ? stones_mirror_h_w4 : stones_mirror_h_4;
       break;
     case 5:
       result.horizontal = stones_mirror_h_5;
       result.core_shift += H_SHIFT;
       break;
     case 6:
-      result.horizontal = stones_mirror_h_6;
-      result.core_shift += H_SHIFT;
+      result.horizontal = s->wide ? stones_mirror_h_w6 : stones_mirror_h_6;
+      result.core_shift += 1;
       break;
     case 7:
       result.horizontal = stones_mirror_h_7;
       result.core_shift += 2 * H_SHIFT;
       break;
     case 8:
-      result.horizontal = stones_mirror_h_8;
-      result.core_shift += 2 * H_SHIFT;
+      result.horizontal = s->wide ? stones_mirror_h_w8 : stones_mirror_h_8;
+      result.core_shift += 2;
       break;
     case 9:
       result.horizontal = stones_mirror_h;
@@ -622,7 +623,7 @@ symmetry compute_symmetry(const state *s) {
   }
   switch (h) {
     case 2:
-      result.vertical = stones_mirror_v_2;
+      result.vertical = s->wide ? stones_mirror_v_w2 : stones_mirror_v_2;
       break;
     case 3:
       result.vertical = stones_mirror_v_3;
@@ -702,7 +703,8 @@ symmetry compute_symmetry(const state *s) {
         }
         result.core_idx = even_odd_core_idx;
       } else {
-        assert(false && "Even-even cores not implemented yet");
+        assert(s->wide);
+        prepare_even_even_symmetry(&result, s->visual_area);
       }
     }
   }
