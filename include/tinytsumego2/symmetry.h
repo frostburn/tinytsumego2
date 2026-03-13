@@ -4,7 +4,7 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
 
-// Symmetry reduction utilities to make (9x2), (10x2), (11x2), (12x2), 6x3, (7x3), 8x3, 5x4, (6x4) and 5x5 gobans tractable
+// Symmetry reduction utilities to make 9x2, (10x2), (11x2), (12x2), 6x3, (7x3), 8x3, 5x4, 6x4 and 5x5 gobans tractable
 // Gobans in parenthesis are still work-in-progress
 
 // Bit flags for operations on the pulp i.e. stones outside the core used for symmetry detection/reduction
@@ -80,8 +80,11 @@ stones_t stones_mirror_d_6(const stones_t stones);
 
 stones_t stones_mirror_v_w2(const stones_t stones);
 stones_t stones_mirror_h_w4(const stones_t stones);
+stones_t stones_mirror_h_w5(const stones_t stones);
 stones_t stones_mirror_h_w6(stones_t stones);
+stones_t stones_mirror_h_w7(const stones_t stones);
 stones_t stones_mirror_h_w8(stones_t stones);
+stones_t stones_mirror_h_w9(stones_t stones);
 
 symmetry compute_symmetry(const state *s);
 

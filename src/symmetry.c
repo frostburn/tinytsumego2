@@ -598,24 +598,24 @@ symmetry compute_symmetry(const state *s) {
       result.horizontal = s->wide ? stones_mirror_h_w4 : stones_mirror_h_4;
       break;
     case 5:
-      result.horizontal = stones_mirror_h_5;
-      result.core_shift += H_SHIFT;
+      result.horizontal = s->wide ? stones_mirror_h_w5 : stones_mirror_h_5;
+      result.core_shift += s->wide ? 0 : 1;
       break;
     case 6:
       result.horizontal = s->wide ? stones_mirror_h_w6 : stones_mirror_h_6;
       result.core_shift += 1;
       break;
     case 7:
-      result.horizontal = stones_mirror_h_7;
-      result.core_shift += 2 * H_SHIFT;
+      result.horizontal = s->wide ? stones_mirror_h_w7 : stones_mirror_h_7;
+      result.core_shift += s->wide ? 1 : 2;
       break;
     case 8:
       result.horizontal = s->wide ? stones_mirror_h_w8 : stones_mirror_h_8;
       result.core_shift += 2;
       break;
     case 9:
-      result.horizontal = stones_mirror_h;
-      result.core_shift += 3 * H_SHIFT;
+      result.horizontal = s->wide ? stones_mirror_h_w9 : stones_mirror_h;
+      result.core_shift += s->wide ? 2 : 3;
       break;
     default:
       assert(false && "Unsupported width");
@@ -629,7 +629,8 @@ symmetry compute_symmetry(const state *s) {
       result.vertical = stones_mirror_v_3;
       break;
     case 4:
-      result.vertical = stones_mirror_v_4;
+      result.vertical = s->wide ? stones_mirror_v_16 : stones_mirror_v_4;
+      result.core_shift += s->wide ? V_SHIFT_16 : 0;
       break;
     case 5:
       result.vertical = stones_mirror_v_5;
@@ -679,7 +680,12 @@ symmetry compute_symmetry(const state *s) {
       if (h & 1) {
         assert(false && "Odd-odd core not implemented yet");
       } else {
-        prepare_odd_even_symmetry(&result, s->visual_area);
+        if (h == 2) {
+          assert(s->wide);
+          prepare_odd_two_symmetry(&result, s->visual_area);
+        } else {
+          prepare_odd_even_symmetry(&result, s->visual_area);
+        }
       }
     } else {
       if (h & 1) {

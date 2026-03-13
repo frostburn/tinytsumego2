@@ -552,7 +552,7 @@ collection five_on_3rd() {
 }
 
 collection* get_collections(size_t *num_collections) {
-  *num_collections = 19;
+  *num_collections = 20;
   collection *result = malloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
@@ -568,12 +568,13 @@ collection* get_collections(size_t *num_collections) {
   result[i+2] = rectangular_goban(4, 2, true, SYMMETRIC_KEYSPACE);
   result[i+3] = rectangular_goban(4, 3, false, SYMMETRIC_KEYSPACE);
   result[i+4] = rectangular_goban(4, 4, false, SYMMETRIC_KEYSPACE);
-  result[i+5] = rectangular_goban(5, 2, false, COMPRESSED_KEYSPACE);
+  result[i+5] = rectangular_goban(5, 2, true, SYMMETRIC_KEYSPACE);
   result[i+6] = rectangular_goban(5, 3, false, COMPRESSED_KEYSPACE);
   result[i+7] = rectangular_goban(5, 4, false, SYMMETRIC_KEYSPACE);
   result[i+8] = rectangular_goban(6, 2, true, SYMMETRIC_KEYSPACE);
   result[i+9] = rectangular_goban(6, 3, false, SYMMETRIC_KEYSPACE);
-  result[i+10] = rectangular_goban(7, 2, false, COMPRESSED_KEYSPACE);
+  result[i+10] = rectangular_goban(7, 2, true, SYMMETRIC_KEYSPACE);
   result[i+11] = rectangular_goban(8, 2, true, SYMMETRIC_KEYSPACE);
+  result[i+12] = rectangular_goban(9, 2, true, SYMMETRIC_KEYSPACE);
   return result;
 }
