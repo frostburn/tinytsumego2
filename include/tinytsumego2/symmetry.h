@@ -79,6 +79,7 @@ stones_t stones_mirror_d_5(const stones_t stones);
 stones_t stones_mirror_d_6(const stones_t stones);
 
 stones_t stones_mirror_v_w2(const stones_t stones);
+stones_t stones_mirror_h_w3(const stones_t stones);
 stones_t stones_mirror_h_w4(const stones_t stones);
 stones_t stones_mirror_h_w5(const stones_t stones);
 stones_t stones_mirror_h_w6(stones_t stones);

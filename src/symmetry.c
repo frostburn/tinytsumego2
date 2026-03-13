@@ -630,7 +630,9 @@ symmetry compute_symmetry(const state *s) {
       break;
     case 4:
       result.vertical = s->wide ? stones_mirror_v_16 : stones_mirror_v_4;
-      result.core_shift += s->wide ? V_SHIFT_16 : 0;
+      if (s->wide && !(w & 1)) {
+        result.core_shift += V_SHIFT_16;
+      }
       break;
     case 5:
       result.vertical = stones_mirror_v_5;
@@ -683,6 +685,8 @@ symmetry compute_symmetry(const state *s) {
         if (h == 2) {
           assert(s->wide);
           prepare_odd_two_symmetry(&result, s->visual_area);
+        } else if (s->wide && h == 4) {
+          prepare_odd_four_symmetry(&result, s->visual_area);
         } else {
           prepare_odd_even_symmetry(&result, s->visual_area);
         }

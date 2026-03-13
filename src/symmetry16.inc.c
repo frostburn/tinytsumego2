@@ -4,6 +4,14 @@ stones_t stones_mirror_v_w2(const stones_t stones) {
   return ((stones & NORTH_WALL_16) << V_SHIFT_16) | ((stones >> V_SHIFT_16) & NORTH_WALL_16);
 }
 
+stones_t stones_mirror_h_w3(const stones_t stones) {
+  return (
+    ((stones & VV0) << 2) |
+    (stones & VV1) |
+    ((stones & VV2) >> 2)
+  );
+}
+
 stones_t stones_mirror_h_w4(const stones_t stones) {
     return (
       ((stones & VV0) << 3) |
@@ -150,7 +158,7 @@ void prepare_even_even_symmetry(symmetry *sym, stones_t visual_area) {
 // @ @ @ @ @
 // wide = true, height = 2
 
-// Compression ratio 4.59 ? (vs. naïve ideal 4.0)
+// Compression ratio ~ 4.59 (vs. naïve ideal 4.0)
 #define ODD_TWO_CORE_SIZE (12857)
 
 size_t odd_two_core_idx(stones_t black, stones_t white) {
@@ -239,6 +247,122 @@ void prepare_odd_two_symmetry(symmetry *sym, stones_t visual_area) {
   }
 
   for (size_t i = 0; i < ODD_TWO_CORE_SIZE; ++i) {
+    sym->black_core[i] <<= sym->core_shift;
+    sym->white_core[i] <<= sym->core_shift;
+  }
+}
+
+// @ @ @
+// @ @ @
+// @ @ @
+// @ @ @
+// wide = true, (height = 4)
+
+// Compression ratio ~ 4.22 (vs. naïve ideal 4.0)
+#define ODD_FOUR_CORE_SIZE (125955)
+
+size_t odd_four_core_idx(stones_t black, stones_t white) {
+  size_t result = black & 7;
+  black >>= V_SHIFT_16;
+  result |= (black & 7) << 3;
+  black >>= V_SHIFT_16;
+  result |= (black & 7) << 6;
+  black >>= V_SHIFT_16;
+  result |= (black & 7) << 9;
+
+  result |= (white & 7) << 12;
+  white >>= V_SHIFT_16;
+  result |= (white & 7) << 15;
+  white >>= V_SHIFT_16;
+  result |= (white & 7) << 18;
+  white >>= V_SHIFT_16;
+  result |= (white & 7) << 21;
+
+  return result;
+}
+
+void prepare_odd_four_symmetry(symmetry *sym, stones_t visual_area) {
+  sym->pulp_dots = dots(visual_area ^ (rectangle_16(3, 4) << sym->core_shift), &(sym->pulp_count));
+  sym->core_idx = odd_four_core_idx;
+  size_t size = 1 << 24;
+  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
+  sym->core_map = malloc(size * sizeof(size_t));
+  sym->core_m = 0;
+  sym->black_core = malloc(ODD_FOUR_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = malloc(ODD_FOUR_CORE_SIZE * sizeof(stones_t));
+  for (size_t idx = 0; idx < size; ++idx) {
+    stones_t c = idx;
+    stones_t black = c & 7;
+    c >>= 3;
+    black |= (c & 7) << V_SHIFT_16;
+    c >>= 3;
+    black |= (c & 7) << (2 * V_SHIFT_16);
+    c >>= 3;
+    black |= (c & 7) << (3 * V_SHIFT_16);
+    c >>= 3;
+
+    stones_t white = c & 7;
+    c >>= 3;
+    white |= (c & 7) << V_SHIFT_16;
+    c >>= 3;
+    white |= (c & 7) << (2 * V_SHIFT_16);
+    c >>= 3;
+    white |= (c & 7) << (3 * V_SHIFT_16);
+
+    // Skip overlapping
+    if (black & white) {
+      sym->pulp_ops[idx] = UCHAR_MAX;
+      sym->core_map[idx] = SIZE_MAX;
+      continue;
+    }
+
+    // Skip illegal
+    c = rectangle_16(5, 4);
+    int num_chains = 0;
+    stones_t *cs = chains_16(black << 1, &num_chains);
+    for (int i = 0; i < num_chains; ++i) {
+      if (!liberties_16(cs[i], c & ~(white << 1))) {
+        sym->pulp_ops[idx] = UCHAR_MAX;
+        sym->core_map[idx] = SIZE_MAX;
+        free(cs);
+        goto next_idx;
+      }
+    }
+    free(cs);
+
+    cs = chains_16(white << 1, &num_chains);
+    for (int i = 0; i < num_chains; ++i) {
+      if (!liberties_16(cs[i], c & ~(black << 1))) {
+        sym->pulp_ops[idx] = UCHAR_MAX;
+        sym->core_map[idx] = SIZE_MAX;
+        free(cs);
+        goto next_idx;
+      }
+    }
+    free(cs);
+
+    #ifdef CHECK_SYM_SANITY
+      assert(sym->core_idx(black, white) == idx);
+    #endif
+
+    sym->pulp_ops[idx] = least_of_2(stones_mirror_v_16, stones_mirror_h_w3, &black, &white);
+    for (size_t i = 0; i < sym->core_m; ++i) {
+      if (black == sym->black_core[i] && white == sym->white_core[i]) {
+        sym->core_map[idx] = i;
+        // continue outer;
+        goto next_idx;
+      }
+    }
+    sym->core_map[idx] = sym->core_m;
+    sym->black_core[sym->core_m] = black;
+    sym->white_core[sym->core_m] = white;
+    sym->core_m++;
+
+    // Label to break out of inner loops
+    next_idx:
+  }
+
+  for (size_t i = 0; i < ODD_FOUR_CORE_SIZE; ++i) {
     sym->black_core[i] <<= sym->core_shift;
     sym->white_core[i] <<= sym->core_shift;
   }
