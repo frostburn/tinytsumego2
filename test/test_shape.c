@@ -12,7 +12,7 @@ void test_notchers_n_1() {
     , , W W W , , , x x x x x x x x \
     , W . b b W W , x x x x x x x x \
     W W @ . b b W W x x x x x x x x \
-    . . . . . . . . x x x x x x x x \
+    - . . . . . . - x x x x x x x x \
   ");
   expected.wide = true;
 
@@ -24,7 +24,7 @@ void test_notchers_n_1() {
     , , , , W W W , , , , , , x x x \
     , W W W b b W W W W W W , x x x \
     W W b b b . b b b b b W W x x x \
-    . . . . . . . . . . . . . x x x \
+    - . . . . . . . . . . . - x x x \
   ");
   expected.wide = true;
 
@@ -41,7 +41,7 @@ void test_notchers_n_2() {
     , , W W W W , , , x x x x x x x \
     , W . b b . W W , x x x x x x x \
     W W @ . . b b W W x x x x x x x \
-    . . . . . . . . . x x x x x x x \
+    - . . . . . . . - x x x x x x x \
   ");
   expected.wide = true;
 
@@ -53,7 +53,7 @@ void test_notchers_n_2() {
     , , , , , , , W W W W , , , , , \
     , W W W W W W W b b b W W W W , \
     W W b b b b b b . . b b b b W W \
-    . . . . . . . . . . . . . . . . \
+    - . . . . . . . . . . . . . . - \
   ");
   expected.wide = true;
 

@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "tinytsumego2/keyspace.h"
 #include "tinytsumego2/util.h"
 
@@ -45,13 +46,54 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
     }
   }
 
-  stones_t root_black = root->white_to_play ? root->opponent : root->player;
-  stones_t root_white = root->white_to_play ? root->player : root->opponent;
-  result.black_external_m = popcount(root->external & root_black) + 1;
-  result.white_external_m = popcount(root->external & root_white) + 1;
+  assert(popcount(root->external) < 16);
+
+  result.external_m = 1 << popcount(root->external);
+  stones_t *externals = calloc(result.external_m, sizeof(stones_t));
+  for (size_t i = 0; i < result.external_m; ++i) {
+    size_t key = i;
+    for (stones_t p = 1ULL; p; p <<= 1) {
+      if (root->external & p) {
+        if (key & 1) {
+          externals[i] |= p;
+        }
+        key >>= 1;
+      }
+    }
+  }
+
+  if (result.external_m == 1) {
+    result.external_prime = 1;
+    result.external_keys = calloc(1, sizeof(size_t));
+  } else {
+    // Construct a perfect hash
+    result.external_prime = result.external_m + 1;
+    result.external_keys = NULL;
+    while (true) {
+      result.external_keys = realloc(result.external_keys, result.external_prime * sizeof(size_t));
+      for (size_t i = 0; i < result.external_prime; ++i) {
+        result.external_keys[i] = SIZE_MAX;
+      }
+      for (size_t i = 0; i < result.external_m; ++i) {
+        state s = *root;
+        s.external = externals[i];
+        size_t idx = s.external % result.external_prime;
+        if (result.external_keys[idx] == SIZE_MAX || result.external_keys[idx] == i) {
+          result.external_keys[idx] = i;
+        } else {
+          goto increase_prime;
+        }
+      }
+      break;
+
+      increase_prime:
+      result.external_prime += 2;
+    }
+  }
+  free(externals);
 
   // Key inversion
-  result.prefix_m = 4 * result.ko_m * result.black_external_m * result.white_external_m;
+  result.prefix_m = 4 * result.ko_m * result.external_m;
   result.prefixes = malloc(result.prefix_m * sizeof(state));
   for (size_t key = 0; key < result.prefix_m; ++key) {
     result.prefixes[key] = from_tight_key(root, key, symmetric_threats);
@@ -120,9 +162,7 @@ size_t to_tight_key_fast(const tight_keyspace *tks, const state *s) {
     key += TRITS8_TABLE[(white >> tks->tritters[i].shift) & tks->tritters[i].mask] << 1;
   }
 
-  // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  key = key * tks->black_external_m + popcount(s->external & black);
-  key = key * tks->white_external_m + popcount(s->external & white);
+  key = key * tks->external_m + tks->external_keys[s->external % tks->external_prime];
 
   if (tks->symmetric_threats) {
     key = key * tks->ko_m + s->ko_threats + abs(tks->root.ko_threats);
@@ -162,6 +202,10 @@ state from_tight_key_fast(const tight_keyspace *tks, size_t key) {
 }
 
 void free_tight_keyspace(tight_keyspace *tks) {
+  tks->external_prime = 0;
+  free(tks->external_keys);
+  tks->external_keys = NULL;
+
   tks->num_tritters = 0;
   free(tks->tritters);
   tks->tritters = NULL;
@@ -248,7 +292,7 @@ compressed_keyspace create_compressed_keyspace(const state *root) {
   compressed_keyspace result = {0};
   result.root = *root;
   result.keyspace = create_tight_keyspace(root, true);
-  result.prefix_m = result.keyspace.prefix_m / result.keyspace.black_external_m / result.keyspace.white_external_m;
+  result.prefix_m = result.keyspace.prefix_m / result.keyspace.external_m;
   bool indicator(size_t key) {
     const state s = from_tight_key_fast(&(result.keyspace), key * result.prefix_m);
     if (target_in_atari(&s) || target_capturable(&s)) {

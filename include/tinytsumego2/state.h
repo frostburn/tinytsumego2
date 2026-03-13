@@ -5,9 +5,6 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/stones16.h"
 
-// Define if external liberty normalization is needed at the make_move() level
-// #define NORMALIZE_EXTERNAL_LIBERTIES
-
 // Game state
 typedef struct state
 {
@@ -32,8 +29,9 @@ typedef struct state
   // Stones that cannot be captured even if they run out of liberties.
   stones_t immortal;
 
-  // External liberties. Should be adjacent to the target. Always counts as empty space.
-  // Player/opponent flags indicate who can fill in the liberties. Fill order is normalized.
+  // External liberties. Always counts as empty space.
+  // Mainly designed to be adjacent to the target, but can be used to mark semi-controlled "crawlspace" on the first line.
+  // Player/opponent flags indicate who can fill in the liberties.
   stones_t external;
 
   // Number of consecutive passes made. Clearing a ko or taking the button doesn't qualify.
@@ -101,14 +99,6 @@ state parse_state(const char *visuals);
 // @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
 // @returns: A flag indicating if the move was legal
 move_result make_move(state *s, const stones_t move);
-
-// Return the unique index identifying a child state of a root state
-// Assumes external liberties (if any) are arranged in a contiguous block
-// Only a single pass is allowed. Do not index leaf nodes of the tree!
-size_t to_key(const state *root, const state *child);
-
-// Return the size of the key space of the given root state
-size_t keyspace_size(const state *root);
 
 // Return a unique index of a simple child state of a root state.
 // No passes or ko allowed.

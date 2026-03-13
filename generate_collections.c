@@ -61,7 +61,11 @@ int main(int argc, char *argv[]) {
       print_state(&(t.state));
       value v = get_dual_graph_value(&dg, &(t.state), NONE);
       printf(" value: %f, %f\n", v.low, v.high);
-      if (!isnan(t.value.low)) {
+      if (target_slug) {
+        if (t.value.low != v.low || t.value.high != v.high) {
+          fprintf(stderr, "** VALUE MISMATCH **\n");
+        }
+      } else if (!isnan(t.value.low)) {
         assert(t.value.low == v.low);
         assert(t.value.high == v.high);
       }

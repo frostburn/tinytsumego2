@@ -27,6 +27,11 @@ state notcher(const char *code) {
     (rectangle_16(width, 1) << (3 * V_SHIFT_16)) |
     (rectangle_16(width - 4, 1) << (2 * H_SHIFT_16 + 2 * V_SHIFT_16))
   );
+  stones_t external = 0ULL;
+
+  // First line "crawlspace"
+  external = single_16(0, 3) | single_16(width - 1, 3);
+  white |= external;
 
   // Second line
   for (int i = 0; i < 2; ++i) {
@@ -97,7 +102,8 @@ state notcher(const char *code) {
   result.player = black;
   result.opponent = white;
   result.logical_area = logical_area;
-  result.immortal = white;
+  result.immortal = white ^ external;
+  result.external = external;
 
   int num_chains;
   stones_t *cs = chains_16(black, &num_chains);

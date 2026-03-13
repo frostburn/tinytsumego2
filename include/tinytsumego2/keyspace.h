@@ -19,8 +19,9 @@ typedef struct tight_keyspace {
   size_t ko_m;
   int num_tritters;
   tritter *tritters;
-  size_t black_external_m;
-  size_t white_external_m;
+  size_t external_m;
+  size_t *external_keys;
+  size_t external_prime;
 
   size_t prefix_m;
   state *prefixes;
