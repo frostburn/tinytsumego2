@@ -183,20 +183,20 @@ void test_rectangle_six_no_liberties_capture_refutation() {
   print_state(&s);
 }
 
-void test_rectangle_six_keyspace() {
+void test_rectangle_six_tight_keyspace() {
   state root = rectangle_six();
-  size_t size = keyspace_size(&root);
+  size_t size = tight_keyspace_size(&root, false);
   printf("size = %zu\n", size);
-  assert(size == 122472);
+  assert(size == 5832);
 
-  size_t root_key = to_key(&root, &root);
+  size_t root_key = to_tight_key(&root, &root, false);
 
   state child = root;
   make_move(&child, pass());
-  size_t child_key = to_key(&root, &child);
+  size_t child_key = to_tight_key(&root, &child, false);
 
   make_move(&child, single(1, 0));
-  size_t grandchild_key = to_key(&root, &child);
+  size_t grandchild_key = to_tight_key(&root, &child, false);
 
   assert(root_key < size);
   assert(child_key < size);
@@ -206,7 +206,7 @@ void test_rectangle_six_keyspace() {
   assert(child_key != grandchild_key);
 }
 
-void test_rectangle_six_external_liberties_keyspace() {
+void test_rectangle_six_external_liberties_tight_keyspace() {
   state root = rectangle_six();
   root.visual_area = rectangle(5, 3);
   root.external = rectangle(1, 3) << 4;
@@ -214,31 +214,31 @@ void test_rectangle_six_external_liberties_keyspace() {
   root.player |= root.external;
   print_state(&root);
 
-  size_t size = keyspace_size(&root);
+  size_t size = tight_keyspace_size(&root, false);
   printf("size = %zu\n", size);
-  assert(size == 489888);
+  assert(size == 46656);
 
-  size_t root_key = to_key(&root, &root);
+  size_t root_key = to_tight_key(&root, &root, false);
 
   state child = root;
   make_move(&child, single(4, 1));
-  size_t child_key = to_key(&root, &child);
+  size_t child_key = to_tight_key(&root, &child, false);
 
   state alt = root;
   make_move(&alt, single(4, 2));
-  size_t alt_key = to_key(&root, &alt);
+  size_t alt_key = to_tight_key(&root, &alt, false);
 
   move_result r = make_move(&child, single(4, 1));
   assert(r == ILLEGAL);
-  size_t undo_key = to_key(&root, &child);
+  size_t undo_key = to_tight_key(&root, &child, false);
 
   make_move(&child, single(1, 1));
-  size_t grandchild_key = to_key(&root, &child);
+  size_t grandchild_key = to_tight_key(&root, &child, false);
 
   assert(root_key < size);
   assert(child_key < size);
   assert(grandchild_key < size);
-  assert(alt_key == child_key);
+  assert(alt_key != child_key); // Normalization off
   assert(undo_key == child_key);
   assert(root_key != child_key);
   assert(root_key != grandchild_key);
@@ -554,76 +554,6 @@ void test_struggle() {
   assert(r == TAKE_TARGET);
 }
 
-void test_bent_four_keyspace_coverage() {
-  state root = bent_four_in_the_corner();
-  print_state(&root);
-  size_t size = keyspace_size(&root);
-
-  state *states = malloc(100 * sizeof(state));
-  states[0] = root;
-  int num_states = 1;
-  int index = 0;
-
-  while (index < num_states) {
-    state parent = states[index++];
-    for (int i = 0; i < 64; ++i) {
-      state child = parent;
-      const move_result r = make_move(&child, 1ULL << i);
-      assert(compare(&child, &child) == 0);
-      if (r > TAKE_TARGET) {
-        bool novel = true;
-        for (int j = 0; j < num_states; ++j) {
-          if (equals(&child, states + j)) {
-            novel = false;
-            break;
-          }
-        }
-        if (novel) {
-          states[num_states++] = child;
-        }
-      }
-    }
-  }
-
-  printf("%d states expanded\n", num_states);
-  #ifdef NORMALIZE_EXTERNAL_LIBERTIES
-    assert(num_states == 55);
-  #else
-    assert(num_states == 76);
-  #endif
-
-  for (int i = 0; i < num_states; ++i) {
-    size_t my_key = to_key(&root, states + i);
-    assert(my_key < size);
-    for (int j = 0; j < i; ++j) {
-      size_t your_key = to_key(&root, states + j);
-      if (my_key == your_key) {
-        print_state(states + i);
-        print_state(states + j);
-      }
-      assert(compare(states + i, states + j) != 0);
-      #ifdef NORMALIZE_EXTERNAL_LIBERTIES
-        assert(my_key != your_key);
-      #endif
-    }
-  }
-
-  free(states);
-}
-
-void test_bent_four_debug_keys() {
-  state root = (state) {16547391ULL, 8727ULL, 3939336ULL, 12607538ULL, 0ULL, 3939336ULL, 12599328ULL, 8208ULL, 0, 0, 0, true, false};
-  state a = (state) {16547391ULL, 519ULL, 12607538ULL, 3939337ULL, 512ULL, 3939336ULL, 12607536ULL, 0ULL, 0, 0, 1, false, false};
-  state b = (state) {16547391ULL, 519ULL, 12607538ULL, 3939337ULL, 0ULL, 3939336ULL, 12607536ULL, 0ULL, 1, 0, 1, false, false};
-
-  print_state(&root);
-  print_state(&a);
-  print_state(&b);
-
-  assert(compare(&a, &b) != 0);
-  assert(to_key(&root, &a) != to_key(&root, &b));
-}
-
 void test_rectangle_tight_keys() {
   state root = rectangle_six();
   // Normalize representation
@@ -799,8 +729,8 @@ void test_illegal_ko() {
 int main() {
   test_rectangle_six_no_liberties_capture_mainline();
   test_rectangle_six_no_liberties_capture_refutation();
-  test_rectangle_six_keyspace();
-  test_rectangle_six_external_liberties_keyspace();
+  test_rectangle_six_tight_keyspace();
+  test_rectangle_six_external_liberties_tight_keyspace();
   test_parse();
   test_external_liberties();
   test_2x1_occupied();
@@ -810,8 +740,6 @@ int main() {
   test_wide_state();
   test_immortal_regions();
   test_struggle();
-  test_bent_four_keyspace_coverage();
-  test_bent_four_debug_keys();
   test_rectangle_tight_keys();
   test_bent_four_tight_keyspace();
   test_wide_keyspace();

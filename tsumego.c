@@ -74,6 +74,7 @@ static const char* TSUMEGO_NAMES[] = {
   "Rabbity Six Defense",
   "Rabbity Six Attack",
   "Double Ko Seki",
+  "Endgame Pushing",
   "Carpenter's Square",
   "Carpenter's Square (defender has threats)",
   "Carpenter's Square (1 liberty)"
@@ -462,12 +463,12 @@ tsumego get_tsumego(const char *name) {
     return single_valued(s, -7 + BUTTON_BONUS);
   }
 
-  // . . . . . .
+  // . . . . . -
   // . . . @ 0 0
   // . . . @ 0 0
   // . @ @ @ 0 0
   // . 0 0 0 0 0
-  // . 0 0 0 0 0
+  // - 0 0 0 0 0
 
   s.visual_area = rectangle(6, 6);
   s.logical_area = rectangle(3, 3) | rectangle(6, 1) | rectangle(1, 6);
@@ -475,6 +476,8 @@ tsumego get_tsumego(const char *name) {
   s.player = rectangle(6, 6) & ~s.opponent & ~s.logical_area;
   s.target = s.opponent;
   s.immortal = s.player;
+  s.external = single(5, 0) | single(0, 5);
+  s.player |= s.external;
   s.ko_threats = 0;
 
   if (strcmp(name, "Carpenter's Square") == 0) {
@@ -483,12 +486,12 @@ tsumego get_tsumego(const char *name) {
 
   s.ko_threats = -1;
   if (strcmp(name, "Carpenter's Square (defender has threats)") == 0) {
-    return single_valued(s, 14 - BUTTON_BONUS - KO_THREAT_BONUS);
+    return single_valued(s, 14 + BUTTON_BONUS - KO_THREAT_BONUS);
   }
 
   s.ko_threats = 0;
   s.external |= single(4, 2);
-  s.immortal ^= s.external;
+  s.immortal ^= single(4, 2);
   s.logical_area |= s.external;
   if (strcmp(name, "Carpenter's Square (1 liberty)") == 0) {
     return delay_valued(s, TARGET_CAPTURED_SCORE - BUTTON_BONUS, 19);
@@ -755,14 +758,25 @@ tsumego get_tsumego(const char *name) {
 
   s = notcher("133SS");
   if (strcmp(name, "Notcher 133SS Defense") == 0) {
-    return single_valued(s, -10 + BUTTON_BONUS);
+    return single_valued(s, -10 - BUTTON_BONUS);
   }
 
   temp = s.player;
   s.player = s.opponent;
   s.opponent = temp;
   if (strcmp(name, "Notcher 133SS Attack") == 0) {
-    return single_valued(s, 16 - BUTTON_BONUS);
+    return single_valued(s, 16 + BUTTON_BONUS);
+  }
+
+  s = parse_state("           \
+    + . . . . . . - xxxx xxxx \
+    + . . . . . . - xxxx xxxx \
+    B B B B W W W W xxxx xxxx \
+  ");
+  s.wide = true;
+
+  if (strcmp(name, "Endgame Pushing") == 0) {
+    return single_valued(s, 4 - BUTTON_BONUS);
   }
 
   fprintf(stderr, "Tsumego \"%s\" not found.\n", name);

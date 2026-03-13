@@ -297,14 +297,6 @@ move_result make_move(state *s, stones_t move) {
   }
 
   if (move & s->external) {
-    #ifdef NORMALIZE_EXTERNAL_LIBERTIES
-      // Normalize move placement inside the group of external liberties.
-      if (s->wide) {
-        move = 1ULL << ctz(flood_16(move, s->external));
-      } else {
-        move = 1ULL << ctz(flood(move, s->external));
-      }
-    #endif
     s->immortal |= move;
     s->external ^= move;
     result = FILL_EXTERNAL;
@@ -408,74 +400,6 @@ move_result make_move(state *s, stones_t move) {
   return result;
 }
 
-size_t to_key(const state *root, const state *child) {
-  size_t key = 0;
-  int j;
-
-  key = key * 2 + !!child->white_to_play;
-  key = key * 3 + child->button + 1;
-  key = key * (abs(root->ko_threats) + 1) + abs(child->ko_threats);
-  key = key * 2 + child->passes;
-
-  stones_t effective_area = root->logical_area & ~(root->target | root->immortal | root->external);
-
-  // Index ko
-  key *= popcount(effective_area) + 1;
-  j = 0;
-  for (int i = 0; i < 64; ++i) {
-    const stones_t p = 1ULL << i;
-    if (p & effective_area) {
-      j++;
-      if (p & child->ko) {
-        key += j;
-        break;
-      }
-    }
-  }
-
-  // Encode stones in ternary
-  for (int i = 0; i < 64; ++i) {
-    const stones_t p = 1ULL << i;
-    if (p & effective_area) {
-      key *= 3;
-      if (p & child->player) {
-        key += 1;
-      } else if (p & child->opponent) {
-        key += 2;
-      }
-    }
-  }
-
-  // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  stones_t player = root->white_to_play == child->white_to_play ? child->player : child->opponent;
-  stones_t opponent = root->white_to_play == child->white_to_play ? child->opponent : child->player;
-  key = key * (popcount(root->external & root->player) + 1) + popcount(child->external & player);
-  key = key * (popcount(root->external & root->opponent) + 1) + popcount(child->external & opponent);
-
-  return key;
-}
-
-size_t keyspace_size(const state *root) {
-  const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
-  size_t result = (
-    2 * // Player to play
-    3 * // Button ownership
-    (abs(root->ko_threats) + 1) * // Number of the remaining "external" ko threats
-    2 * // Passes
-    (num_moves + 1) * // Location (or absence) of the illegal ko square
-    (popcount(root->external & root->player) + 1) * // Number of external liberties filled by the player
-    (popcount(root->external & root->opponent) + 1) // Number of external liberties filled by the opponent
-  );
-  // Ternary encoding of stones
-  for (size_t i = 0; i < num_moves; ++i) {
-    if (result >= SIZE_MAX / 3) {
-      fprintf(stderr, "Warning: Keyspace overflow\n");
-    }
-    result *= 3;
-  }
-  return result;
-}
-
 size_t to_tight_key(const state *root, const state *child, const bool symmetric_threats) {
   size_t key = 0;
 
@@ -485,8 +409,7 @@ size_t to_tight_key(const state *root, const state *child, const bool symmetric_
   stones_t white = child->white_to_play ? child->player : child->opponent;
 
   // Encode stones in ternary
-  for (int i = 63; i >= 0; --i) {
-    const stones_t p = 1ULL << i;
+  for (stones_t p = LAST_STONE; p; p >>= 1) {
     if (p & effective_area) {
       key *= 3;
       if (p & black) {
@@ -497,11 +420,15 @@ size_t to_tight_key(const state *root, const state *child, const bool symmetric_
     }
   }
 
-  // For simplicity we assume that external liberties belonging to a given player form a contiguous chain
-  stones_t root_black = root->white_to_play ? root->opponent : root->player;
-  stones_t root_white = root->white_to_play ? root->player : root->opponent;
-  key = key * (popcount(root->external & root_black) + 1) + popcount(child->external & black);
-  key = key * (popcount(root->external & root_white) + 1) + popcount(child->external & white);
+  // Encode external liberties in binary
+  for (stones_t p = LAST_STONE; p; p >>= 1) {
+    if (p & root->external) {
+      key <<= 1;
+      if (p & child->external) {
+        key |= 1;
+      }
+    }
+  }
 
   if (symmetric_threats) {
     key = key * (2 * abs(root->ko_threats) + 1) + child->ko_threats + abs(root->ko_threats);
@@ -535,22 +462,19 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
     key /= m;
   }
 
-  stones_t root_white = root->white_to_play ? root->player : root->opponent;
-  m = (popcount(root->external & root_white) + 1);
-  size_t num_external = key % m;
-  key /= m;
+  result.external = 0;
 
-  for (size_t i = num_external + 1; i < m; ++i) {
-    result.external ^= LAST_STONE >> (clz(result.external & root_white));
-  }
+  stones_t black = 0;
+  stones_t white = 0;
 
-  stones_t root_black = root->white_to_play ? root->opponent : root->player;
-  m = (popcount(root->external & root_black) + 1);
-  num_external = key % m;
-  key /= m;
-
-  for (size_t i = num_external + 1; i < m; ++i) {
-    result.external ^= LAST_STONE >> (clz(result.external & root_black));
+  result.external = 0;
+  for (stones_t p = 1ULL; p; p <<= 1) {
+    if (root->external & p) {
+      if (key & 1) {
+        result.external |= p;
+      }
+      key >>= 1;
+    }
   }
 
   result.immortal ^= result.external;
@@ -558,10 +482,7 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
   stones_t special = root->target | root->immortal | root->external;
   stones_t effective_area = root->logical_area & ~special;
 
-  stones_t black = 0;
-  stones_t white = 0;
-  for (int i = 0; i < 64; ++i) {
-    const stones_t p = 1ULL << i;
+  for (stones_t p = 1ULL; p; p <<= 1) {
     if (p & effective_area) {
       switch (key % 3) {
         case 1:
@@ -574,6 +495,9 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
       key /= 3;
     }
   }
+
+  stones_t root_black = root->white_to_play ? root->opponent : root->player;
+  stones_t root_white = root->white_to_play ? root->player : root->opponent;
 
   if (result.white_to_play) {
     result.player = white | (root_white & special);
@@ -612,10 +536,9 @@ size_t tight_keyspace_size(const state *root, const bool symmetric_threats) {
   size_t result = (
     2 * // Player to play
     2 * // Button availability
+    (1 << popcount(root->external)) // External liberties
     // Passes ignored
     // Ko ignored
-    (popcount(root->external & root->player) + 1) * // Number of external liberties filled by the player
-    (popcount(root->external & root->opponent) + 1) // Number of external liberties filled by the opponent
   );
 
   // Number of the remaining "external" ko threats

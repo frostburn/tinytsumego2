@@ -118,11 +118,11 @@ collection rectangle_eight() {
 
 collection l_j_groups() {
   state root = parse_state("\
-          . . . . . . . B , \
-          . . . . . B B B , \
-          . w w w B , , , , \
-          . B + B , B , , , \
-          . B B , , , , , , \
+          . . . . . . . + B \
+          . . . . . . B B B \
+          . w w w B B , , , \
+          . B + B , , B , , \
+          + B B , , , , , , \
           B B , , , , , , , \
           , , , , , , , , , \
   ");
@@ -133,7 +133,7 @@ collection l_j_groups() {
               . . . w B B B , , \
               . w w w B , , , , \
               . B B B , B , , , \
-              . B , , , , , , , \
+              + B , , , , , , , \
               B B , , , , , , , \
   ");
   swap_players(&l_group);
@@ -145,7 +145,7 @@ collection l_j_groups() {
                     . . . w w B B B , \
                     . w w w B , , , , \
                     . B B B , B , , , \
-                    . B , , , , , , , \
+                    + B , , , , , , , \
                     B B , , , , , , , \
   ");
   float second_l_1_att_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
@@ -155,11 +155,11 @@ collection l_j_groups() {
   float second_l_1_def_score = -37 + BUTTON_BONUS;
 
   state j_group_att = parse_state(" \
-                  . . . 0 . . . B , \
+                  . . . 0 . . . + B \
                   . . . . 0 B B B , \
-                  . w w w B , , , , \
+                  . w w w B , , , B \
                   . B B B , B , , , \
-                  . B , , , , , , , \
+                  + B , , , , , , , \
                   B B , , , , , , , \
   ");
   float j_group_att_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
@@ -173,7 +173,7 @@ collection l_j_groups() {
                           . . . . 0 B B B , \
                           . w w w B , , , , \
                           . B B B , B , , , \
-                          . B , , , , , , , \
+                          + B , , , , , , , \
                           B B , , , , , , , \
   ");
   float straight_j_group_att_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
@@ -187,16 +187,26 @@ collection l_j_groups() {
   straight_j_group_def.ko_threats = -1;
   float straight_j_group_def_score = -35 - BUTTON_BONUS - KO_THREAT_BONUS;
 
-  state straight_j_group_ko = parse_state("\
+  state straight_j_group_ko = parse_state(" \
                           . . . . 0 . . B , \
                           . . . . 0 B B B , \
                           . w w w B , , , , \
                           . B + B , , , , , \
-                          . B B , B , , , , \
+                          + B B , B , , , , \
                           B B , , , , , , , \
   ");
   straight_j_group_ko.ko_threats = -1;
   float straight_j_group_ko_score = 37 - BUTTON_BONUS;
+
+  state small_hovercraft = parse_state("\
+                      . . . . . . . + B \
+                      . . . . 0 0 B B B \
+                      . w w w B B , , , \
+                      . B + B , , B , , \
+                      + B B , , , , , , \
+                      B B , , , , , , , \
+                      , , , , , , , , , \
+  ");
 
   tsumego tsumegos[] = {
     {"l-group", "L Group", l_group, true, {l_group_score, l_group_score}},
@@ -208,6 +218,7 @@ collection l_j_groups() {
     {"straight-j-group-attack", "Straight J Group (Attack)", straight_j_group_att, false, {straight_j_group_att_score, straight_j_group_att_score}},
     {"straight-j-group-sac", "Straight J Group (Sacrifice)", straight_j_group_sac, true, {straight_j_group_sac_score, straight_j_group_sac_score}},
     {"straight-j-group-ko", "Straight J Group (Ko)", straight_j_group_ko, true, {straight_j_group_ko_score, straight_j_group_ko_score}},
+    {"small-hovercraft", "Small Hovercraft", small_hovercraft, false, {NAN, NAN}},
   };
 
   tsumego *ts = malloc(sizeof(tsumegos));
@@ -229,7 +240,7 @@ collection notcher_122xy() {
   mirror_v(&root);
   root.visual_area |= root.visual_area << 1;
   root.opponent |= single_16(9, 0) | single_16(9, 1);
-  root.immortal = root.opponent;
+  root.immortal = root.opponent ^ root.external;
   root.ko_threats = 2;
 
   state def_122NN = root;
@@ -313,6 +324,7 @@ collection rectangular_goban(int width, int height, bool wide, keyspace_type typ
   tsumego *ts = malloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
+  // XXX: Leaks a tiny bit of memory
   char *slug = malloc(128 * sizeof(char));
   char *title = malloc(128 * sizeof(char));
 
@@ -332,30 +344,30 @@ collection rectangular_goban(int width, int height, bool wide, keyspace_type typ
 
 collection carpenters_square() {
   state root = parse_state("\
-          . . . . . . B , , \
+          . . . . . + B , , \
           . . . w B B B , , \
           . . . w B , , , , \
           . w w w + B , , , \
           . B B B B , , , , \
-          . B , , , , , , , \
+          + B , , , , , , , \
           B B , , , , , , , \
   ");
   root.ko_threats = 2;
 
   state no_libs = parse_state(" \
-              . . . . . . B , , \
+              . . . . . + B , , \
               . . . w B B , B , \
               . . . w B , , , , \
               . w w w B , , , , \
               . B B B , B , , , \
-              . B , , , , , , , \
+              + B , , , , , , , \
               B B , , , , , , , \
   ");
   float no_libs_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
 
   state seki = no_libs;
   seki.ko_threats = -1;
-  float seki_score = 41 - BUTTON_BONUS - KO_THREAT_BONUS;
+  float seki_score = 41 + BUTTON_BONUS - KO_THREAT_BONUS;
 
   state one_lib_att = root;
   one_lib_att.ko_threats = 0;
@@ -389,18 +401,18 @@ collection carpenters_square() {
 
 collection long_l_group() {
   state root = parse_state("\
-          . . . . . . . B , \
+          . . . . . . + B , \
           . . . . w B B B , \
           . w w w w B , , B \
           . . B + B B , , , \
           . B , B , , , , , \
-          . B , , , , , , , \
+          + B , , , , , , , \
           B B , , , , , , , \
   ");
   root.ko_threats = 2;
 
   state no_libs_mannen_ko = parse_state(" \
-                        . . . . . . . B , \
+                        . . . . . . + B , \
                         . . . . w B B , , \
                         . w w w w B , B , \
                         . B B B B , , , , \
@@ -422,7 +434,7 @@ collection long_l_group() {
   float no_libs_hane_ko_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
 
   state one_lib = parse_state(" \
-              . . . . . . . B , \
+              . . . . . . + B , \
               . . . . w B B B , \
               . w w w w B , , B \
               . B B + B B , , , \
@@ -435,21 +447,21 @@ collection long_l_group() {
   state one_lib_life = one_lib;
   one_lib_life.ko_threats = -1;
   make_move(&one_lib_life, single(1, 1));
-  float one_lib_life_score = -26 - BUTTON_BONUS + KO_THREAT_BONUS;
+  float one_lib_life_score = -35 - BUTTON_BONUS + KO_THREAT_BONUS;
 
   state hane_outside = parse_state("\
-                  . . . . . . . B , \
+                  . . . . . . + B , \
                   . . . . w B B B , \
                   . w w w w B , , B \
                   @ w B B B , B , , \
                   . B , , , , , , , \
-                  . B , , , , , , , \
+                  + B , , , , , , , \
                   B B , , , , , , , \
   ");
   float hane_outside_score = 43 - BUTTON_BONUS;
 
   state descent_1 = parse_state("\
-              . . . . . . . B , \
+              . . . . . . + B , \
               . . . . w B B B , \
               . w w w w B , , , \
               B B B B B B , , , \
