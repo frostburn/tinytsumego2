@@ -148,6 +148,16 @@ state from_tight_key_fast(const tight_keyspace *tks, size_t key) {
     }
     key /= TRIT_BLOCK_M;
   }
+  // Facilitate target_capturable() and target_in_atari()
+  if (tks->root.wide) {
+    result.target |= flood_16(result.player & result.target, result.player);
+    result.target |= flood_16(result.opponent & result.target, result.opponent);
+  } else {
+    result.target |= flood(result.player & result.target, result.player);
+    result.target |= flood(result.opponent & result.target, result.opponent);
+  }
+  result.logical_area &= ~result.target;
+
   return result;
 }
 
@@ -241,6 +251,9 @@ compressed_keyspace create_compressed_keyspace(const state *root) {
   result.prefix_m = result.keyspace.prefix_m / result.keyspace.black_external_m / result.keyspace.white_external_m;
   bool indicator(size_t key) {
     const state s = from_tight_key_fast(&(result.keyspace), key * result.prefix_m);
+    if (target_in_atari(&s) || target_capturable(&s)) {
+      return false;
+    }
     return is_legal(&s);
   }
   result.compressor = create_monotonic_compressor(result.keyspace.size / result.prefix_m, indicator);
@@ -287,6 +300,7 @@ symmetric_keyspace create_symmetric_keyspace(const state *root) {
   bool indicator(size_t key) {
     state s = *root;
     from_symmetric_bw_key(&(result.symmetry), key, &(s.player), &(s.opponent));
+    // Note that target stones are not supported with symmetries yet
     return is_legal(&s);
   }
 

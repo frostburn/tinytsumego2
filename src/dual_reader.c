@@ -206,7 +206,23 @@ dual_value get_dual_graph_reader_value_(const dual_graph_reader *dgr, const stat
   if (!depth) {
     return (dual_value){{-INFINITY, INFINITY}, {-INFINITY, INFINITY}};
   }
-  if (s->passes || s->ko) {
+  if (target_capturable(s)) {
+    float sc = take_target_score(s);
+    dual_value v = (dual_value){{sc, sc}, {sc, sc}};
+    if (!s->passes && !s->button) {
+      state child = *s;
+      const move_result r = make_move(&child, pass());
+      dual_value child_value = get_dual_graph_reader_value_(dgr, &child, depth - 1);
+      child_value.plain = apply_tactics(NONE, r, &child, child_value.plain);
+      child_value.forcing = apply_tactics(FORCING, r, &child, child_value.forcing);
+      v.plain.low = fmax(v.plain.low, child_value.plain.high);
+      v.plain.high = fmax(v.plain.high, child_value.plain.low);
+      v.forcing.low = fmax(v.forcing.low, child_value.forcing.high);
+      v.forcing.high = fmax(v.forcing.high, child_value.forcing.low);
+    }
+    return v;
+  }
+  if (s->passes || s->ko || target_in_atari(s)) {
     // Compensate for keyspace tightness using negamax
     dual_value v = (dual_value){{-INFINITY, -INFINITY}, {-INFINITY, -INFINITY}};
 
@@ -227,6 +243,7 @@ dual_value get_dual_graph_reader_value_(const dual_graph_reader *dgr, const stat
         // Don't break forcing logic
         child_value.forcing = simple_area;
       } else if (r <= TAKE_TARGET) {
+        assert(r != TAKE_TARGET);
         child_value.plain = score_terminal(r, &child);
         child_value.forcing = child_value.plain;
       } else {

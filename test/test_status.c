@@ -46,6 +46,7 @@ void test_seki() {
   ");
   print_state(&s);
   tsumego_status ts = get_tsumego_status(&s);
+  printf("%s\n", tsumego_status_string(ts));
   assert(strcmp("SD", tsumego_status_string(ts)) == 0);
   assert(ts.player_first.life == SEKI);
   assert(ts.player_first.initiative == GOTE);

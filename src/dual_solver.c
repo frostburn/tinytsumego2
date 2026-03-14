@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -109,7 +110,28 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
     *forcing_value = MAX_RANGE_Q7;
     return;
   }
-  if (s->passes || s->ko) {
+  if (target_capturable(s)) {
+    plain_value->low = take_target_score_q7(s);
+    plain_value->high = plain_value->low;
+    forcing_value->low = plain_value->low;
+    forcing_value->high = plain_value->low;
+
+    if (!s->passes && !s->button) {
+      state child = *s;
+      const move_result r = make_move(&child, pass());
+      table_value child_plain;
+      table_value child_forcing;
+      get_dual_graph_values(dg, &child, depth - 1, &child_plain, &child_forcing);
+      child_plain = apply_tactics_q7(NONE, r, &child, child_plain);
+      child_forcing = apply_tactics_q7(FORCING, r, &child, child_forcing);
+      if (child_plain.high > plain_value->low) plain_value->low = child_plain.high;
+      if (child_plain.low > plain_value->high) plain_value->high = child_plain.low;
+      if (child_forcing.high > forcing_value->low) forcing_value->low = child_forcing.high;
+      if (child_forcing.low > forcing_value->high) forcing_value->high = child_forcing.low;
+    }
+    return;
+  }
+  if (s->passes || s->ko || target_in_atari(s)) {
     // Compensate for keyspace tightness using negamax
     plain_value->low = SCORE_Q7_MIN;
     plain_value->high = SCORE_Q7_MIN;
@@ -122,6 +144,7 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
       table_value child_plain;
       table_value child_forcing;
       if (r <= TAKE_TARGET) {
+        assert(r != TAKE_TARGET);
         child_plain = score_terminal_q7(r, &child);
         child_forcing = child_plain;
       } else {
@@ -198,14 +221,15 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
     score_q7_t forcing_high = SCORE_Q7_MIN;
 
     state parent = dg->from_fast_key(dg, k);
+
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
       const move_result r = make_move(&child, dg->moves[j]);
       table_value child_plain;
       table_value child_forcing;
       if (r <= TAKE_TARGET) {
-        child_plain = score_terminal_q7(r, &child);
-        child_forcing = child_plain;
+        assert(r == ILLEGAL);
+        continue;
       } else {
         get_dual_graph_values(dg, &child, MAX_COMPENSATION_DEPTH, &child_plain, &child_forcing);
         child_plain = apply_tactics_q7(NONE, r, &child, child_plain);
@@ -236,7 +260,20 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
   if (!depth) {
     return MAX_RANGE_Q7;
   }
-  if (s->passes || s->ko) {
+  if (target_capturable(s)) {
+    score_q7_t low = take_target_score_q7(s);
+    score_q7_t high = low;
+    if (!s->passes && !s->button) {
+      state child = *s;
+      const move_result r = make_move(&child, pass());
+      table_value child_value = get_dual_graph_area_value_(dg, &child, depth - 1);
+      child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      if (child_value.high > low) low = child_value.high;
+      if (child_value.low > high) high = child_value.low;
+    }
+    return (table_value) {low, high};
+  }
+  if (s->passes || s->ko || target_in_atari(s)) {
     // Compensate for keyspace tightness using negamax
     score_q7_t low = SCORE_Q7_MIN;
     score_q7_t high = SCORE_Q7_MIN;
@@ -311,7 +348,8 @@ bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
       const move_result r = make_move(&child, dg->moves[j]);
       table_value child_value;
       if (r <= TAKE_TARGET) {
-        child_value = score_terminal_q7(r, &child);
+        assert(r == ILLEGAL);
+        continue;
       } else {
         child_value = get_dual_graph_area_value_(dg, &child, MAX_COMPENSATION_DEPTH);
         child_value = apply_tactics_q7(NONE, r, &child, child_value);
