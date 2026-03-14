@@ -592,6 +592,15 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
     }
   }
 
+  // Facilitate target_capturable() and target_in_atari()
+  if (root->wide) {
+    result.target |= flood_16(result.player & result.target, result.player);
+    result.target |= flood_16(result.opponent & result.target, result.opponent);
+  } else {
+    result.target |= flood(result.player & result.target, result.player);
+    result.target |= flood(result.opponent & result.target, result.opponent);
+  }
+
   result.logical_area &= ~(result.target | result.immortal);
   result.logical_area |= result.external;
 
@@ -1293,4 +1302,42 @@ stones_t* moves_of(const state *root, int *num_moves) {
   result[j] = pass();
 
   return result;
+}
+
+bool target_in_atari(const state *s) {
+  stones_t empty = (s->visual_area & ~s->opponent) | s->external;
+
+  int num_chains = 0;
+  stones_t *tcs = s->wide ? chains_16(s->target & s->player, &num_chains) : chains(s->target & s->player, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (tcs[i] & s->immortal) {
+      continue;
+    }
+    if (popcount(s->wide ? liberties_16(tcs[i], empty) : liberties(tcs[i], empty)) < 2) {
+      free(tcs);
+      return true;
+    }
+  }
+
+  free(tcs);
+  return false;
+}
+
+bool target_capturable(const state *s) {
+  stones_t empty = (s->visual_area & ~s->player) | s->external;
+
+  int num_chains = 0;
+  stones_t *tcs = s->wide ? chains_16(s->target & s->opponent, &num_chains) : chains(s->target & s->opponent, &num_chains);
+  for (int i = 0; i < num_chains; ++i) {
+    if (tcs[i] & s->immortal) {
+      continue;
+    }
+    if (popcount(s->wide ? liberties_16(tcs[i], empty) : liberties(tcs[i], empty)) < 2) {
+      free(tcs);
+      return true;
+    }
+  }
+
+  free(tcs);
+  return false;
 }

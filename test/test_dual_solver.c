@@ -62,7 +62,7 @@ void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 12; ++i) {
+  for (int i = 0; i < 8; ++i) {
     bool did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -102,6 +102,11 @@ void test_bulky_five() {
   assert(v.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
   assert(v.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
 
+  v = get_dual_graph_value(&dg, &root, FORCING);
+  printf("forcing low = %f\n", v.low);
+  assert(v.low == TARGET_CAPTURED_SCORE - BUTTON_BONUS - FORCE_BONUS);
+  assert(v.high == TARGET_CAPTURED_SCORE - BUTTON_BONUS);
+
   state terminal = dual_graph_low_terminal(&dg, &root, NONE);
   print_state(&terminal);
   stones_t empty = terminal.visual_area & ~(terminal.player | terminal.opponent);
@@ -124,7 +129,7 @@ void test_bent_four_in_the_corner_is_dead() {
   value v;
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 12; ++i) {
+  for (int i = 0; i < 9; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -157,7 +162,7 @@ void test_bent_four_in_the_might_be_seki() {
   value v;
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 12; ++i) {
+  for (int i = 0; i < 9; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -252,11 +257,33 @@ void test_no_moves_terminals() {
   assert(terminal.passes == 2);
 }
 
+void test_seki() {
+  state s = parse_state(" \
+        b . 0 B x x x x x \
+        b . 0 B x x x x x \
+        b . 0 B x x x x x \
+        W W B B x x x x x \
+  ");
+  print_state(&s);
+
+  dual_graph dg = create_dual_graph(&s, COMPRESSED_KEYSPACE);
+  while (iterate_dual_graph(&dg, true));
+
+  make_move(&s, single(1, 2));
+  print_state(&s);
+
+  value v = get_dual_graph_value(&dg, &s, NONE);
+  printf("%f, %f\n", v.low, v.high);
+  assert(v.low > -BIG_SCORE);
+  assert(v.low < BIG_SCORE);
+}
+
 int main() {
   test_bulky_five();
   test_bent_four_in_the_corner_is_dead();
   test_bent_four_in_the_might_be_seki();
   test_dead_three();
   test_no_moves_terminals();
+  test_seki();
   return 0;
 }

@@ -158,6 +158,12 @@ move_result normalize_immortal_regions(state *root, state *s);
 // Returns `true` if the state is legal. No chains without liberties etc.
 bool is_legal(const state *s);
 
+// Returns `true` if a chain of target stones can be captured with a single move.
+bool target_capturable(const state *s);
+
+// Returns `true` if a chain of player's target stones are in atari.
+bool target_in_atari(const state *s);
+
 // Mirror the state vertically in-place
 void mirror_v(state *s);
 
