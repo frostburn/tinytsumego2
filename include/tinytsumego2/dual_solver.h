@@ -38,6 +38,8 @@ typedef struct dual_graph {
   bool (*was_legal)(struct dual_graph *dg, size_t key);
   size_t (*remap_key)(struct dual_graph *dg, size_t key);
   state (*from_fast_key)(struct dual_graph *dg, size_t key);
+  bool (*in_atari)(const state *s);
+  bool (*can_take)(const state *s);
 } dual_graph;
 
 // Print the contents of a dual game graph

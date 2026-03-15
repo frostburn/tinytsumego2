@@ -45,6 +45,40 @@ state _from_fast_key(dual_graph *dg, size_t key) {
   return from_fast_key(&(dg->keyspace.symmetric), key);
 }
 
+bool in_atari_single(const state *s) {
+  stones_t target = s->target & s->player;
+  if (!target) {
+    return false;
+  }
+  if (target & s->immortal) {
+    return false;
+  }
+  stones_t empty = (s->visual_area & ~s->opponent) | s->external;
+  if (s->wide) {
+    return popcount(liberties_16(target, empty)) < 2;
+  }
+  return popcount(liberties(target, empty)) < 2;
+}
+
+bool can_take_single(const state *s) {
+  stones_t target = s->target & s->opponent;
+  if (!target) {
+    return false;
+  }
+  if (target & s->immortal) {
+    return false;
+  }
+  stones_t empty = (s->visual_area & ~s->player) | s->external;
+  if (s->wide) {
+    return popcount(liberties_16(target, empty)) < 2;
+  }
+  return popcount(liberties(target, empty)) < 2;
+}
+
+bool there_is_no_target(const state*) {
+  return false;
+}
+
 void print_dual_graph(dual_graph *dg) {
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     value pv = table_value_to_value(dg->plain_values[i]);
@@ -85,6 +119,26 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
     dg.from_fast_key = _from_fast_key;
   }
 
+  int num_player_chains = 0;
+  int num_opponent_chains = 0;
+  if (root->wide) {
+    free(chains_16(root->player & root->target, &num_player_chains));
+    free(chains_16(root->opponent & root->target, &num_opponent_chains));
+  } else {
+    free(chains(root->player & root->target, &num_player_chains));
+    free(chains(root->opponent & root->target, &num_opponent_chains));
+  }
+  if (!num_player_chains && !num_opponent_chains) {
+    dg.in_atari = there_is_no_target;
+    dg.can_take = there_is_no_target;
+  } else if (num_opponent_chains < 2 && num_opponent_chains < 2) {
+    dg.in_atari = in_atari_single;
+    dg.can_take = can_take_single;
+  } else {
+    dg.in_atari = target_in_atari;
+    dg.can_take = target_capturable;
+  }
+
   dg.moves = moves_of(root, &dg.num_moves);
 
   dg.plain_values = malloc(dg.keyspace._.size * sizeof(table_value));
@@ -110,7 +164,7 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
     *forcing_value = MAX_RANGE_Q7;
     return;
   }
-  if (target_capturable(s)) {
+  if (dg->can_take(s)) {
     plain_value->low = take_target_score_q7(s);
     plain_value->high = plain_value->low;
     forcing_value->low = plain_value->low;
@@ -131,7 +185,7 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
     }
     return;
   }
-  if (s->passes || s->ko || target_in_atari(s)) {
+  if (s->passes || s->ko || dg->in_atari(s)) {
     // Compensate for keyspace tightness using negamax
     plain_value->low = SCORE_Q7_MIN;
     plain_value->high = SCORE_Q7_MIN;
@@ -210,7 +264,7 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
       continue;
     }
     size_t i = dg->remap_key(dg, k);
-    // Don't evaluate if the range cannot be tightened
+    // Don'target evaluate if the range cannot be tightened
     if (dg->plain_values[i].low == dg->plain_values[i].high && dg->forcing_values[i].low == dg->forcing_values[i].high) {
       continue;
     }
@@ -260,7 +314,7 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
   if (!depth) {
     return MAX_RANGE_Q7;
   }
-  if (target_capturable(s)) {
+  if (dg->can_take(s)) {
     score_q7_t low = take_target_score_q7(s);
     score_q7_t high = low;
     if (!s->passes && !s->button) {
@@ -273,7 +327,7 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
     }
     return (table_value) {low, high};
   }
-  if (s->passes || s->ko || target_in_atari(s)) {
+  if (s->passes || s->ko || dg->in_atari(s)) {
     // Compensate for keyspace tightness using negamax
     score_q7_t low = SCORE_Q7_MIN;
     score_q7_t high = SCORE_Q7_MIN;

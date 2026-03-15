@@ -12,7 +12,7 @@
 #include "tinytsumego2/util.h"
 #include "tinytsumego2/keyspace.h"
 
-#define DUAL_READER_VERSION (1)
+#define DUAL_READER_VERSION (2)
 
 size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) {
   return to_compressed_key(&(dgr->keyspace.compressed), s);
