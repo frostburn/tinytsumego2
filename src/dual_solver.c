@@ -131,7 +131,7 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
   if (!num_player_chains && !num_opponent_chains) {
     dg.in_atari = there_is_no_target;
     dg.can_take = there_is_no_target;
-  } else if (num_opponent_chains < 2 && num_opponent_chains < 2) {
+  } else if (num_player_chains < 2 && num_opponent_chains < 2) {
     dg.in_atari = in_atari_single;
     dg.can_take = can_take_single;
   } else {
