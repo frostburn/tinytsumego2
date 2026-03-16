@@ -37,10 +37,16 @@ void test_bulky_five() {
   while(iterate_dual_graph(&dg, false));
   while(area_iterate_dual_graph(&dg, true));
 
+  size_t value_map_size = 0;
+  dual_table_value *value_map = create_value_map(&dg, &value_map_size);
+  printf("%zu unique value quads in the graph\n", value_map_size);
+  assert(value_map_size == 16);
+
   char *buffer = malloc(MEM_FILE_SIZE);
   FILE *stream = fmemopen(buffer, MEM_FILE_SIZE, "wb");
-  write_dual_graph(&dg, stream);
+  write_dual_graph(&dg, value_map, value_map_size, stream);
   fclose(stream);
+  free(value_map);
   free_dual_graph(&dg);
 
   dual_graph_reader dgr = {0};
@@ -92,10 +98,16 @@ void test_external_liberties() {
   while(iterate_dual_graph(&dg, false));
   while(area_iterate_dual_graph(&dg, true));
 
+  size_t value_map_size = 0;
+  dual_table_value *value_map = create_value_map(&dg, &value_map_size);
+  printf("%zu unique value quads in the graph\n", value_map_size);
+  assert(value_map_size == 31);
+
   char *buffer = malloc(MEM_FILE_SIZE);
   FILE *stream = fmemopen(buffer, MEM_FILE_SIZE, "wb");
-  write_dual_graph(&dg, stream);
+  write_dual_graph(&dg, value_map, value_map_size, stream);
   fclose(stream);
+  free(value_map);
   free_dual_graph(&dg);
 
   dual_graph_reader dgr = {0};

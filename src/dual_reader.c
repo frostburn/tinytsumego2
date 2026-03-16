@@ -1,5 +1,7 @@
+#define _GNU_SOURCE // Expose declaration of tdestroy()
 #include <assert.h>
 #include <math.h>
+#include <search.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -12,7 +14,7 @@
 #include "tinytsumego2/util.h"
 #include "tinytsumego2/keyspace.h"
 
-#define DUAL_READER_VERSION (2)
+#define DUAL_READER_VERSION (3)
 
 size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) {
   return to_compressed_key(&(dgr->keyspace.compressed), s);
@@ -22,7 +24,7 @@ size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) {
   return to_symmetric_key(&(dgr->keyspace.symmetric), s);
 }
 
-size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
+size_t write_dual_graph(const dual_graph *restrict dg, const dual_table_value *restrict value_map, size_t value_map_size, FILE *restrict stream) {
   int version = DUAL_READER_VERSION;
   size_t total = fwrite(&version, sizeof(int), 1, stream);
 
@@ -45,48 +47,24 @@ size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream) {
   total += fwrite(&(dg->num_moves), sizeof(int), 1, stream);
   total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream);
 
-  // The actual reader uses float values but we can write using a temporary fixed-point array
-  size_t num_unique = 0;
-  size_t capacity = 128;
-  score_q7_t *value_map = malloc(capacity * 4 * sizeof(score_q7_t));
-
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
-    size_t id;
-    for (id = 0; id < num_unique; ++id) {
-      if (
-        value_map[4*id + 0] == dg->plain_values[i].low &&
-        value_map[4*id + 1] == dg->plain_values[i].high &&
-        value_map[4*id + 2] == dg->forcing_values[i].low &&
-        value_map[4*id + 3] == dg->forcing_values[i].high
-      ) {
-        break;
-      }
-    }
-    if (id >= num_unique) {
-      if (num_unique >= capacity) {
-        capacity <<= 1;
-        value_map = realloc(value_map, capacity * 4 * sizeof(score_q7_t));
-      }
-      value_map[4*num_unique + 0] = dg->plain_values[i].low;
-      value_map[4*num_unique + 1] = dg->plain_values[i].high;
-      value_map[4*num_unique + 2] = dg->forcing_values[i].low;
-      value_map[4*num_unique + 3] = dg->forcing_values[i].high;
-      num_unique++;
-    }
+    dual_table_value v = (dual_table_value) {
+      dg->plain_values[i],
+      dg->forcing_values[i],
+    };
+    size_t id = ((dual_table_value *) bsearch(&v, value_map, value_map_size, sizeof(dual_table_value), compare_dual_table_values)) - value_map;
     dual_value_id_t vid = (dual_value_id_t) id;
     total += fwrite(&(vid), sizeof(dual_value_id_t), 1, stream);
   }
 
-  total += fwrite(&num_unique, sizeof(size_t), 1, stream);
-  for (size_t i = 0; i < num_unique; ++i) {
+  total += fwrite(&value_map_size, sizeof(size_t), 1, stream);
+  for (size_t i = 0; i < value_map_size; ++i) {
     dual_value v = (dual_value){
-      {score_q7_to_float(value_map[4*i + 0]), score_q7_to_float(value_map[4*i + 1])},
-      {score_q7_to_float(value_map[4*i + 2]), score_q7_to_float(value_map[4*i + 3])},
+      {score_q7_to_float(value_map[i].plain.low), score_q7_to_float(value_map[i].plain.high)},
+      {score_q7_to_float(value_map[i].forcing.low), score_q7_to_float(value_map[i].forcing.high)},
     };
     total += fwrite(&v, sizeof(dual_value), 1, stream);
   }
-
-  free(value_map);
 
   return total;
 }
@@ -96,6 +74,10 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
 
   int version = ((int *)map)[0];
   map += sizeof(int);
+  // Value mapping differs, but v2 still works with v3
+  if (DUAL_READER_VERSION == 3 && version == 2) {
+    version = 3;
+  }
   if (version != DUAL_READER_VERSION) {
     fprintf(stderr, "Unknown dual graph version %d\n", version);
     exit(EXIT_FAILURE);
@@ -474,4 +456,79 @@ state dual_graph_reader_low_terminal(dual_graph_reader *dgr, const state *origin
 state dual_graph_reader_high_terminal(dual_graph_reader *dgr, const state *origin, tactics ts) {
   state o = strip_aesthetics(dgr, origin);
   return dual_graph_reader_high_terminal_(dgr, &o, ts);
+}
+
+int compare_dual_table_values(const void *a_, const void *b_) {
+  dual_table_value *a = (dual_table_value*) a_;
+  dual_table_value *b = (dual_table_value*) b_;
+
+  if (a->plain.low < b->plain.low) {
+    return -1;
+  }
+  if (a->plain.low > b->plain.low) {
+    return 1;
+  }
+
+  if (a->plain.high < b->plain.high) {
+    return -1;
+  }
+  if (a->plain.high > b->plain.high) {
+    return 1;
+  }
+
+  if (a->forcing.low < b->forcing.low) {
+    return -1;
+  }
+  if (a->forcing.low > b->forcing.low) {
+    return 1;
+  }
+
+  if (a->forcing.high < b->forcing.high) {
+    return -1;
+  }
+  if (a->forcing.high > b->forcing.high) {
+    return 1;
+  }
+
+  return 0;
+}
+
+dual_table_value* create_value_map(dual_graph *dg, size_t *value_map_size) {
+  void *root = NULL;
+  dual_table_value *v;
+  dual_table_value **tv;
+  size_t num_unique = 0;
+
+  for (size_t i = 0; i < dg->keyspace._.size; ++i) {
+    v = malloc(sizeof(dual_table_value));
+    if (!v) {
+      exit(EXIT_FAILURE);
+    }
+    v->plain.low = dg->plain_values[i].low;
+    v->plain.high = dg->plain_values[i].high;
+    v->forcing.low = dg->forcing_values[i].low;
+    v->forcing.high = dg->forcing_values[i].high;
+    tv = tsearch(v, &root, compare_dual_table_values);
+    if (!tv) {
+      exit(EXIT_FAILURE);
+    }
+    if (*tv == v) {
+      num_unique++;
+    } else {
+      free(v);
+    }
+  }
+
+  dual_table_value *result = malloc(num_unique * sizeof(dual_table_value));
+
+  *value_map_size = 0;
+  void action(const void *nodep, VISIT which, int) {
+    if (which == postorder || which == leaf) {
+      result[(*value_map_size)++] = **(dual_table_value**) nodep;
+    }
+  }
+  twalk(root, action);
+  tdestroy(root, free);
+
+  return result;
 }

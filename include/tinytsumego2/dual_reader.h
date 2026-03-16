@@ -13,6 +13,11 @@ typedef struct dual_value {
   value forcing;
 } dual_value;
 
+typedef struct dual_table_value {
+  table_value plain;
+  table_value forcing;
+} dual_table_value;
+
 typedef struct dual_graph_reader {
   // Valid moves according to the root state
   int num_moves;
@@ -57,7 +62,7 @@ typedef struct move_info {
 } move_info;
 
 // Write a solved dual_graph instance to a stream in a format expected by the reader
-size_t write_dual_graph(const dual_graph *restrict dg, FILE *restrict stream);
+size_t write_dual_graph(const dual_graph *restrict dg, const dual_table_value *restrict value_map, size_t value_map_size, FILE *restrict stream);
 
 // Unroll `dgr->buffer` into struct fields
 void unbuffer_dual_graph_reader(dual_graph_reader *dgr);
@@ -85,3 +90,9 @@ state dual_graph_reader_low_terminal(dual_graph_reader *dgr, const state *origin
 
 // Navigate to an end state from the given starting state assuming the player can repeat moves
 state dual_graph_reader_high_terminal(dual_graph_reader *dgr, const state *origin, tactics ts);
+
+// Compare two dual_table_values. Compatible with qsort
+int compare_dual_table_values(const void *a_, const void *b_);
+
+// Prepare value map for `write_dual_graph()`
+dual_table_value* create_value_map(dual_graph *dg, size_t *value_map_size);
