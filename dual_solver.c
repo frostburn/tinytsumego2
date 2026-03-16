@@ -59,11 +59,16 @@ int main(int argc, char *argv[]) {
   } else {
     dual_graph dg = solve(get_tsumego(argv[1]), true);
     if (arg_count >= 3) {
+      size_t value_map_size = 0;
+      dual_table_value *value_map = create_value_map(&dg, &value_map_size);
+      printf("%zu unique value quads in the graph\n", value_map_size);
+
       char *filename = argv[2];
       printf("Saving result to %s\n", filename);
       FILE *f = fopen(filename, "wb");
-      write_dual_graph(&dg, f);
+      write_dual_graph(&dg, value_map, value_map_size, f);
       fclose(f);
+      free(value_map);
     }
     free_dual_graph(&dg);
   }
