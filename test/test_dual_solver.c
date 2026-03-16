@@ -62,7 +62,7 @@ void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 8; ++i) {
+  for (int i = 0; i < 9; ++i) {
     bool did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -129,7 +129,7 @@ void test_bent_four_in_the_corner_is_dead() {
   value v;
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 9; ++i) {
+  for (int i = 0; i < 10; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -141,7 +141,7 @@ void test_bent_four_in_the_corner_is_dead() {
   assert(v.low == -8 + BUTTON_BONUS - KO_THREAT_BONUS);
   assert(v.high == TARGET_CAPTURED_SCORE + BUTTON_BONUS - KO_THREAT_BONUS);
 
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 4; ++i) {
     did_change = area_iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -162,7 +162,7 @@ void test_bent_four_in_the_might_be_seki() {
   value v;
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  for (int i = 0; i < 9; ++i) {
+  for (int i = 0; i < 10; ++i) {
     did_change = iterate_dual_graph(&dg, true);
     assert(did_change);
   }
@@ -174,7 +174,7 @@ void test_bent_four_in_the_might_be_seki() {
   assert(v.low == 4 + BUTTON_BONUS + KO_THREAT_BONUS);
   assert(v.high == 4 + BUTTON_BONUS + KO_THREAT_BONUS);
 
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     did_change = area_iterate_dual_graph(&dg, true);
     assert(did_change);
   }

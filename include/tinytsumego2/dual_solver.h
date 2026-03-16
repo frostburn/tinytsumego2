@@ -6,6 +6,8 @@
 
 #define MAX_COMPENSATION_DEPTH (6)
 
+#define BATCH_SIZE (256)
+
 typedef enum {
   COMPRESSED_KEYSPACE,
   SYMMETRIC_KEYSPACE
@@ -40,6 +42,12 @@ typedef struct dual_graph {
   state (*from_fast_key)(struct dual_graph *dg, size_t key);
   bool (*in_atari)(const state *s);
   bool (*can_take)(const state *s);
+
+  // Parallel evaluation buffers
+  size_t batch_fast_keys[BATCH_SIZE];
+  size_t batch_keys[BATCH_SIZE];
+  table_value batch_plain[BATCH_SIZE];
+  table_value batch_forcing[BATCH_SIZE];
 } dual_graph;
 
 // Print the contents of a dual game graph
