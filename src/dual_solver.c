@@ -257,24 +257,17 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
   return (value) {NAN, NAN};
 }
 
-bool iterate_dual_graph(dual_graph *dg, bool verbose) {
-  size_t num_updated = 0;
-  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
-    if (!dg->was_legal(dg, k)) {
-      continue;
-    }
-    size_t i = dg->remap_key(dg, k);
-    // Don'target evaluate if the range cannot be tightened
-    if (dg->plain_values[i].low == dg->plain_values[i].high && dg->forcing_values[i].low == dg->forcing_values[i].high) {
-      continue;
-    }
+size_t update_dual_graph_batch(dual_graph *dg) {
+  #pragma omp parallel for schedule(dynamic, 1)
+  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+    state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
+    size_t i = dg->batch_keys[k];
+
     // Perform negamax (with memory to break delay shuffling)
     score_q7_t plain_low = dg->plain_values[i].low;
     score_q7_t plain_high = SCORE_Q7_MIN;
     score_q7_t forcing_low = dg->forcing_values[i].low;
     score_q7_t forcing_high = SCORE_Q7_MIN;
-
-    state parent = dg->from_fast_key(dg, k);
 
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
@@ -294,14 +287,54 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
       if (child_forcing.high > forcing_low) forcing_low = child_forcing.high;
       if (child_forcing.low > forcing_high) forcing_high = child_forcing.low;
     }
+    dg->batch_plain[k] = (table_value) {plain_low, plain_high};
+    dg->batch_forcing[k] = (table_value) {forcing_low, forcing_high};
+  }
+
+  size_t num_updated = 0;
+  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+    size_t i = dg->batch_keys[k];
     if (
-      dg->plain_values[i].low != plain_low || dg->plain_values[i].high != plain_high ||
-      dg->forcing_values[i].low != forcing_low || dg->forcing_values[i].high != forcing_high
+      dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high ||
+      dg->forcing_values[i].low != dg->batch_forcing[k].low || dg->forcing_values[i].high != dg->batch_forcing[k].high
     ) {
-      dg->plain_values[i] = (table_value) {plain_low, plain_high};
-      dg->forcing_values[i] = (table_value) {forcing_low, forcing_high};
+      dg->plain_values[i] = dg->batch_plain[k];
+      dg->forcing_values[i] = dg->batch_forcing[k];
       num_updated++;
     }
+  }
+  return num_updated;
+}
+
+bool iterate_dual_graph(dual_graph *dg, bool verbose) {
+  size_t num_updated = 0;
+  size_t batch_size = 0;
+  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+    if (!dg->was_legal(dg, k)) {
+      continue;
+    }
+    size_t i = dg->remap_key(dg, k);
+    // Don'target evaluate if the range cannot be tightened
+    if (dg->plain_values[i].low == dg->plain_values[i].high && dg->forcing_values[i].low == dg->forcing_values[i].high) {
+      continue;
+    }
+
+    dg->batch_fast_keys[batch_size] = k;
+    dg->batch_keys[batch_size] = i;
+
+    batch_size++;
+    if (batch_size >= BATCH_SIZE) {
+      num_updated += update_dual_graph_batch(dg);
+      batch_size = 0;
+    }
+  }
+  if (batch_size) {
+    // Pad incomplete batch
+    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
+      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
+      dg->batch_keys[i] = dg->batch_keys[0];
+    }
+    num_updated += update_dual_graph_batch(dg);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
@@ -384,19 +417,15 @@ value get_dual_graph_area_value(dual_graph *dg, const state *s) {
   return table_value_to_value(get_dual_graph_area_value_(dg, s, MAX_COMPENSATION_DEPTH));
 }
 
-bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
-  size_t num_updated = 0;
-  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
-    if (!dg->was_legal(dg, k)) {
-      continue;
-    }
-    size_t i = dg->remap_key(dg, k);
+size_t update_dual_graph_area_batch(dual_graph *dg) {
+  #pragma omp parallel for schedule(dynamic, 1)
+  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+    state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
 
     // Perform negamax
     score_q7_t low = SCORE_Q7_MIN;
     score_q7_t high = SCORE_Q7_MIN;
 
-    state parent = dg->from_fast_key(dg, k);
     for (int j = 0; j < dg->num_moves; ++j) {
       state child = parent;
       const move_result r = make_move(&child, dg->moves[j]);
@@ -411,12 +440,46 @@ bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
       if (child_value.high > low) low = child_value.high;
       if (child_value.low > high) high = child_value.low;
     }
+    dg->batch_plain[k] = (table_value) {low, high};
+  }
+
+  size_t num_updated = 0;
+  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+    size_t i = dg->batch_keys[k];
     if (
-      dg->plain_values[i].low != low || dg->plain_values[i].high != high
+      dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high
     ) {
-      dg->plain_values[i] = (table_value) {low, high};
+      dg->plain_values[i] = dg->batch_plain[k];
       num_updated++;
     }
+  }
+  return num_updated;
+}
+
+bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
+  size_t num_updated = 0;
+  size_t batch_size = 0;
+  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+    if (!dg->was_legal(dg, k)) {
+      continue;
+    }
+
+    dg->batch_fast_keys[batch_size] = k;
+    dg->batch_keys[batch_size] = dg->remap_key(dg, k);
+
+    batch_size++;
+    if (batch_size >= BATCH_SIZE) {
+      num_updated += update_dual_graph_area_batch(dg);
+      batch_size = 0;
+    }
+  }
+  if (batch_size) {
+    // Pad incomplete batch
+    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
+      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
+      dg->batch_keys[i] = dg->batch_keys[0];
+    }
+    num_updated += update_dual_graph_area_batch(dg);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
