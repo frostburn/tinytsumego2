@@ -10,7 +10,8 @@
 
 typedef enum {
   COMPRESSED_KEYSPACE,
-  SYMMETRIC_KEYSPACE
+  SYMMETRIC_KEYSPACE,
+  MOCK_KEYSPACE
 } keyspace_type;
 
 // An implicit game graph. All enumerable game states are evaluated even if they're not reachable from the root.
@@ -57,7 +58,7 @@ void print_dual_graph(dual_graph *dg);
 dual_graph create_dual_graph(const state *root, keyspace_type type);
 
 // Work-around for having to re-define `struct dual_graph` in Python ctypes
-dual_graph* allocate_dual_graph(const state *root);
+dual_graph* allocate_dual_graph(const state *root, keyspace_type type);
 
 // Get the value range of a state in the game graph
 value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts);

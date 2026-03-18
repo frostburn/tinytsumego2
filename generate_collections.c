@@ -72,16 +72,18 @@ int main(int argc, char *argv[]) {
     }
     if (path) {
       size_t value_map_size = 0;
-      dual_table_value *value_map = create_value_map(&dg, &value_map_size);
+      frozen_hash_table fht = prepare_frozen_hash(&dg, &value_map_size);
       printf("%zu unique value quads in the graph\n", value_map_size);
 
       char *filename = malloc((strlen(path) + strlen(collections[i].slug) + strlen(".bin") + 1) * sizeof(char));
       sprintf(filename, "%s%s.bin", path, collections[i].slug);
       printf("Storing solution to %s\n", filename);
       FILE *f = fopen(filename, "wb");
-      write_dual_graph(&dg, value_map, value_map_size, f);
+      write_dual_graph(&dg, &fht, f);
       fclose(f);
-      free(value_map);
+      free(fht.bulk_map);
+      free(fht.tail_keys);
+      free(fht.tail_values);
       free(filename);
       free_dual_graph(&dg);
       free(collections[i].tsumegos);
