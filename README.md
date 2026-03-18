@@ -13,7 +13,7 @@ git submodule update
 
 Install GCC:
 ```bash
-sudo apt install build-install
+sudo apt install build-essential
 ```
 
 Install CMake:
