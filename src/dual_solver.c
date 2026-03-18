@@ -110,13 +110,16 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
     dg.was_legal = _was_compressed_legal;
     dg.remap_key = _remap_tight_key;
     dg.from_fast_key = _from_tight_key;
-  } else {
+  } else if (type == SYMMETRIC_KEYSPACE) {
     dg.keyspace.symmetric = create_symmetric_keyspace(root);
     dg.to_key = _to_symmetric_key;
     dg.from_key = _from_symmetric_key;
     dg.was_legal = _was_symmetric_legal;
     dg.remap_key = _remap_fast_key;
     dg.from_fast_key = _from_fast_key;
+  } else {
+    fprintf(stderr, "Mock keyspaces cannot be directly constructed\n");
+    exit(EXIT_FAILURE);
   }
 
   int num_player_chains = 0;
@@ -152,9 +155,9 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
   return dg;
 }
 
-dual_graph* allocate_dual_graph(const state *root) {
+dual_graph* allocate_dual_graph(const state *root, keyspace_type type) {
   dual_graph *result = malloc(sizeof(dual_graph));
-  *result = create_dual_graph(root, COMPRESSED_KEYSPACE);
+  *result = create_dual_graph(root, type);
   return result;
 }
 
@@ -584,8 +587,11 @@ state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts) 
 void free_dual_graph(dual_graph *dg) {
   if (dg->type == COMPRESSED_KEYSPACE) {
     free_compressed_keyspace(&(dg->keyspace.compressed));
-  } else {
+  } else if (dg->type == SYMMETRIC_KEYSPACE) {
     free_symmetric_keyspace(&(dg->keyspace.symmetric));
+  } else {
+    fprintf(stderr, "Mock keyspaces cannot be directly freed\n");
+    exit(EXIT_FAILURE);
   }
 
   free(dg->moves);

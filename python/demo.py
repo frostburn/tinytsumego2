@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
   lib.print_state(ps)
 
-  pdg = lib.allocate_dual_graph(ps)
+  pdg = lib.allocate_dual_graph(ps, COMPRESSED_KEYSPACE)
   while lib.iterate_dual_graph(pdg, True):
     pass
   root_value = lib.get_dual_graph_value(pdg, ps, FORCING)

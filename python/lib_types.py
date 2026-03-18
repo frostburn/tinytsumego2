@@ -22,6 +22,7 @@ FORCING = 2
 # enum keyspace_type
 COMPRESSED_KEYSPACE = 0
 SYMMETRIC_KEYSPACE = 1
+MOCK_KEYSPACE = 2
 
 # stones.h bitboards
 WIDTH = 9
