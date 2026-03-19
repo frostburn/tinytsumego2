@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "tinytsumego2/status.h"
 #include "tinytsumego2/shape.h"
+#include "tinytsumego2/util.h"
 
 #define A_MAX (3)
 #define B_MAX (4)
@@ -22,14 +23,14 @@ int main(int argc, char *argv[]) {
   }
 
   printf("Computing...\n");
-  tsumego_status *tss = malloc(A_MAX * B_MAX * sizeof(tsumego_status));
+  tsumego_status *tss = xmalloc(A_MAX * B_MAX * sizeof(tsumego_status));
   #pragma omp parallel for collapse(2)
   for (int a = 1; a <= A_MAX; ++a) {
     for (int b = 1; b <= B_MAX; ++b) {
       if (x == y && b < a) {
         continue;
       }
-      char *code = malloc(26 * sizeof(char));
+      char *code = xmalloc(26 * sizeof(char));
       sprintf(code, "%d%d%d%c%c", n, a, b, x, y);
       state s = notcher(code);
       tsumego_status ts = get_tsumego_status(&s);

@@ -6,6 +6,7 @@
 #include "tinytsumego2/collection.h"
 #include "tinytsumego2/dual_solver.h"
 #include "tinytsumego2/dual_reader.h"
+#include "tinytsumego2/util.h"
 
 int main(int argc, char *argv[]) {
   if (argc <= 2) {
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]) {
     path = argv[1];
     if (path[strlen(path) - 1] != '/') {
       // XXX: Leaks a tiny bit of memory
-      path = malloc((strlen(argv[1]) + 2) * sizeof(char));
+      path = xmalloc((strlen(argv[1]) + 2) * sizeof(char));
       memcpy(path, argv[1], strlen(argv[1]) * sizeof(char));
       path[strlen(argv[1])] = '/';
       path[strlen(argv[1]) + 1] = 0;
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
       frozen_hash_table fht = prepare_frozen_hash(&dg, &value_map_size);
       printf("%zu unique value quads in the graph\n", value_map_size);
 
-      char *filename = malloc((strlen(path) + strlen(collections[i].slug) + strlen(".bin") + 1) * sizeof(char));
+      char *filename = xmalloc((strlen(path) + strlen(collections[i].slug) + strlen(".bin") + 1) * sizeof(char));
       sprintf(filename, "%s%s.bin", path, collections[i].slug);
       printf("Storing solution to %s\n", filename);
       FILE *f = fopen(filename, "wb");

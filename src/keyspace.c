@@ -37,7 +37,7 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
     }
     if (run_length >= 8 || (run_length && !(p & effective_area))) {
       result.num_tritters++;
-      result.tritters = realloc(result.tritters, result.num_tritters * sizeof(tritter));
+      result.tritters = xrealloc(result.tritters, result.num_tritters * sizeof(tritter));
       result.tritters[result.num_tritters - 1] = (tritter) {m, shift, (1 << run_length) - 1};
 
       run_length = 0;
@@ -49,7 +49,7 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
   assert(popcount(root->external) < 16);
 
   result.external_m = 1 << popcount(root->external);
-  stones_t *externals = calloc(result.external_m, sizeof(stones_t));
+  stones_t *externals = xcalloc(result.external_m, sizeof(stones_t));
   for (size_t i = 0; i < result.external_m; ++i) {
     size_t key = i;
     for (stones_t p = 1ULL; p; p <<= 1) {
@@ -64,13 +64,13 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
 
   if (result.external_m == 1) {
     result.external_prime = 1;
-    result.external_keys = calloc(1, sizeof(size_t));
+    result.external_keys = xcalloc(1, sizeof(size_t));
   } else {
     // Construct a perfect hash
     result.external_prime = result.external_m + 1;
     result.external_keys = NULL;
     while (true) {
-      result.external_keys = realloc(result.external_keys, result.external_prime * sizeof(size_t));
+      result.external_keys = xrealloc(result.external_keys, result.external_prime * sizeof(size_t));
       for (size_t i = 0; i < result.external_prime; ++i) {
         result.external_keys[i] = SIZE_MAX;
       }
@@ -94,20 +94,20 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
 
   // Key inversion
   result.prefix_m = 4 * result.ko_m * result.external_m;
-  result.prefixes = malloc(result.prefix_m * sizeof(state));
+  result.prefixes = xmalloc(result.prefix_m * sizeof(state));
   for (size_t key = 0; key < result.prefix_m; ++key) {
     result.prefixes[key] = from_tight_key(root, key, symmetric_threats);
   }
 
   int effective_size = popcount(effective_area);
   result.num_blocks = ceil_div(effective_size, TRIT_BLOCK_SIZE);
-  result.black_blocks = malloc(result.num_blocks * sizeof(stones_t*));
-  result.white_blocks = malloc(result.num_blocks * sizeof(stones_t*));
+  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
+  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
   m = result.prefix_m;
   int i;
   for (i = 0; i < effective_size / TRIT_BLOCK_SIZE; i++) {
-    result.black_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
-    result.white_blocks[i] = malloc(TRIT_BLOCK_M * sizeof(stones_t));
+    result.black_blocks[i] = xmalloc(TRIT_BLOCK_M * sizeof(stones_t));
+    result.white_blocks[i] = xmalloc(TRIT_BLOCK_M * sizeof(stones_t));
     for (size_t j = 0; j < TRIT_BLOCK_M; ++j) {
       state s = from_tight_key(root, j * m, symmetric_threats);
       result.black_blocks[i][j] = s.player & effective_area;
@@ -120,8 +120,8 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
     tail_m *= 3;
   }
   if (tail_m != 1) {
-    result.black_blocks[i] = malloc(tail_m * sizeof(stones_t));
-    result.white_blocks[i] = malloc(tail_m * sizeof(stones_t));
+    result.black_blocks[i] = xmalloc(tail_m * sizeof(stones_t));
+    result.white_blocks[i] = xmalloc(tail_m * sizeof(stones_t));
     for (size_t j = 0; j < tail_m; ++j) {
       state s = from_tight_key(root, j * m, symmetric_threats);
       result.black_blocks[i][j] = s.player & effective_area;
@@ -227,8 +227,8 @@ monotonic_compressor create_monotonic_compressor(size_t num_keys, indicator_f in
   monotonic_compressor result = {0};
   result.uncompressed_size = num_keys;
   result.num_checkpoints = ceil_divz(num_keys, 1 << CHAR_BIT);
-  result.checkpoints = malloc(result.num_checkpoints * sizeof(size_t));
-  result.deltas = malloc(num_keys * sizeof(unsigned char));
+  result.checkpoints = xmalloc(result.num_checkpoints * sizeof(size_t));
+  result.deltas = xmalloc(num_keys * sizeof(unsigned char));
 
   size_t num_legal = 0;
   size_t last_checkpoint = 0;

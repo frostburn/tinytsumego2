@@ -124,7 +124,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   dgr->num_moves = ((int*) map)[0];
   map += sizeof(int);
 
-  dgr->moves = malloc(dgr->num_moves * sizeof(stones_t));
+  dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
   for (int i = 0; i < dgr->num_moves; ++i) {
     dgr->moves[i] = ((stones_t *) map)[i];
   }
@@ -136,7 +136,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   dgr->value_table.bulk_map_size = ((size_t*) map)[0];
   map += sizeof(size_t);
 
-  dgr->value_table.bulk_map = malloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
+  dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
   for (size_t i = 0; i < dgr->value_table.bulk_map_size; ++i) {
     dgr->value_table.bulk_map[i] = ((dual_table_value *)map)[i];
   }
@@ -279,7 +279,7 @@ dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state
 }
 
 dual_graph_reader* allocate_dual_graph_reader(const char *filename) {
-  dual_graph_reader *result = malloc(sizeof(dual_graph_reader));
+  dual_graph_reader *result = xmalloc(sizeof(dual_graph_reader));
   *result = load_dual_graph_reader(filename);
   return result;
 }
@@ -312,7 +312,7 @@ state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
 }
 
 move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos) {
-  move_info *result = malloc(dgr->num_moves * sizeof(move_info));
+  move_info *result = xmalloc(dgr->num_moves * sizeof(move_info));
   *num_move_infos = 0;
 
   state parent = strip_aesthetics(dgr, s);
@@ -321,7 +321,7 @@ move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const stat
 
   float lows_high = -INFINITY;
   float highs_low = -INFINITY;
-  dual_value *child_values = malloc(dgr->num_moves * sizeof(dual_value));
+  dual_value *child_values = xmalloc(dgr->num_moves * sizeof(dual_value));
   for (int i = 0; i < dgr->num_moves; ++i) {
     state child = parent;
     const move_result r = make_move(&child, dgr->moves[i]);
@@ -519,10 +519,7 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
 
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     // Allocate value and count
-    v = malloc(sizeof(tree_value));
-    if (!v) {
-      exit(EXIT_FAILURE);
-    }
+    v = xmalloc(sizeof(tree_value));
     // Abuse struct overlap
     v->plain.low = dg->plain_values[i].low;
     v->plain.high = dg->plain_values[i].high;
@@ -543,7 +540,7 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
     }
   }
 
-  dual_table_value *value_map = malloc((*num_unique) * sizeof(dual_table_value));
+  dual_table_value *value_map = xmalloc((*num_unique) * sizeof(dual_table_value));
 
   size_t i = 0;
   void action(const void *nodep, VISIT which, int) {
@@ -583,25 +580,13 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
 
   tdestroy(root, free);
 
-  value_map = realloc(value_map, n * sizeof(dual_table_value));
-  if (!value_map) {
-    exit(EXIT_FAILURE);
-  }
+  value_map = xrealloc(value_map, n * sizeof(dual_table_value));
   qsort(value_map, n, sizeof(dual_table_value), compare_dual_table_values);
 
-  size_t *tail_keys = malloc(tail_size * sizeof(size_t));
-  if (!tail_keys) {
-    exit(EXIT_FAILURE);
-  }
-  dual_table_value *tail_values = malloc(tail_size * sizeof(dual_table_value));
-  if (!tail_values) {
-    exit(EXIT_FAILURE);
-  }
+  size_t *tail_keys = xmalloc(tail_size * sizeof(size_t));
+  dual_table_value *tail_values = xmalloc(tail_size * sizeof(dual_table_value));
 
-  v = malloc(sizeof(dual_table_value));
-  if (!v) {
-    exit(EXIT_FAILURE);
-  }
+  v = xmalloc(sizeof(dual_table_value));
   size_t j = 0;
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     v->plain.low = dg->plain_values[i].low;

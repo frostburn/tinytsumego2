@@ -7,6 +7,7 @@
 #include "tinytsumego2/state.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/shape.h"
+#include "tinytsumego2/util.h"
 
 collection rectangle_six() {
   state root = parse_state("\
@@ -54,7 +55,7 @@ collection rectangle_six() {
     {"two-liberties", "Two Outside Liberties", two_libs, true, {two_libs_score, two_libs_score}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -102,7 +103,7 @@ collection rectangle_eight() {
     {"one-liberty", "One Outside Liberty", one_lib, true, {one_lib_score, one_lib_score}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -221,7 +222,7 @@ collection l_j_groups() {
     {"small-hovercraft", "Small Hovercraft", small_hovercraft, false, {NAN, NAN}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -293,7 +294,7 @@ collection notcher_122xy() {
     {"122SS-attack", "122SS Attack", att_122SS, false, {score_att_122SS, score_att_122SS}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -321,12 +322,12 @@ collection rectangular_goban(int width, int height, bool wide, keyspace_type typ
     {"empty", "Empty Board", empty, false, {NAN, NAN}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   // XXX: Leaks a tiny bit of memory
-  char *slug = malloc(128 * sizeof(char));
-  char *title = malloc(128 * sizeof(char));
+  char *slug = xmalloc(128 * sizeof(char));
+  char *title = xmalloc(128 * sizeof(char));
 
   sprintf(slug, "%dx%d", width, height);
   sprintf(title, "%dx%d Goban", width, height);
@@ -385,7 +386,7 @@ collection carpenters_square() {
     {"one-liberty-defense", "One Outside Liberty (Defense)", one_lib_def, false, {one_lib_def_score, one_lib_def_score}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -492,7 +493,7 @@ collection long_l_group() {
     {"2nd-descent", "Second Descent", descent_2, false, {descent_2_score, descent_2_score}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -549,7 +550,7 @@ collection five_on_3rd() {
     {"eternal-life", "Eternal Life", eternal_life, false, {BUTTON_BONUS - TARGET_CAPTURED_SCORE, -4 - BUTTON_BONUS}},
   };
 
-  tsumego *ts = malloc(sizeof(tsumegos));
+  tsumego *ts = xmalloc(sizeof(tsumegos));
   memcpy(ts, tsumegos, sizeof(tsumegos));
 
   return (collection) {
@@ -565,7 +566,7 @@ collection five_on_3rd() {
 
 collection* get_collections(size_t *num_collections) {
   *num_collections = 20;
-  collection *result = malloc(*num_collections * sizeof(collection));
+  collection *result = xmalloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
   result[2] = notcher_122xy();

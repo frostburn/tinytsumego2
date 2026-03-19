@@ -3,7 +3,7 @@
 
 bitmatrix create_bitmatrix(int width, int height) {
   bitmatrix result = (bitmatrix) {width, height, ceil_div(width, UINT_BITS), NULL};
-  result.data = calloc(result.n_row_cells * ((size_t) height), sizeof(unsigned int));
+  result.data = xcalloc(result.n_row_cells * ((size_t) height), sizeof(unsigned int));
   return result;
 }
 

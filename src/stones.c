@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tinytsumego2/stones.h"
+#include "tinytsumego2/util.h"
 
 void print_stones(const stones_t stones) {
   // Column headers
@@ -101,7 +102,7 @@ char row_of(const stones_t stone) {
 }
 
 stones_t *chains(stones_t stones, int *num_chains) {
-  stones_t *result = malloc(MAX_CHAINS * sizeof(stones_t));
+  stones_t *result = xmalloc(MAX_CHAINS * sizeof(stones_t));
   *num_chains = 0;
 
   // Nub alignment on the goban
@@ -141,7 +142,7 @@ stones_t *chains(stones_t stones, int *num_chains) {
 }
 
 stones_t *dots(stones_t stones, int *num_dots) {
-  stones_t *result = malloc(64 * sizeof(stones_t));
+  stones_t *result = xmalloc(64 * sizeof(stones_t));
   *num_dots = 0;
   stones_t p = 1ULL;
   while (stones) {
