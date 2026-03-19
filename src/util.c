@@ -18,6 +18,10 @@ size_t ceil_divz(size_t x, size_t y) {
 }
 
 void* xmalloc(size_t size) {
+  if (size == 0) {
+    return NULL;
+  }
+
   void *ptr = malloc(size);
   if (ptr == NULL) {
     allocation_failure("malloc", 1, size);
@@ -26,6 +30,10 @@ void* xmalloc(size_t size) {
 }
 
 void* xcalloc(size_t count, size_t size) {
+  if (count == 0 || size == 0) {
+    return NULL;
+  }
+
   void *ptr = calloc(count, size);
   if (ptr == NULL) {
     allocation_failure("calloc", count, size);
@@ -34,6 +42,11 @@ void* xcalloc(size_t count, size_t size) {
 }
 
 void* xrealloc(void *ptr, size_t size) {
+  if (size == 0) {
+    free(ptr);
+    return NULL;
+  }
+
   void *result = realloc(ptr, size);
   if (result == NULL) {
     allocation_failure("realloc", 1, size);
