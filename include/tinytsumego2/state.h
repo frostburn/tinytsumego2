@@ -5,175 +5,222 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/stones16.h"
 
-// Game state
+/**
+ * @file state.h
+ * @brief Full game-state representation and move-generation primitives.
+ */
+
+/**
+ * @brief Complete mutable game state for a tinytsumego position.
+ */
 typedef struct state
 {
-  // The visual playing area. Zeroed bits signify the edge of the board.
+  /** @brief Visible playing area; zero bits mark board edges for rendering. */
   stones_t visual_area;
 
-  // The logical playing area. Moves cannot be made inside zeroed bits. Outside stones are for decoration.
+  /** @brief Legal playing area; zero bits are not legal move locations. */
   stones_t logical_area;
 
-  // Stones of the player to make the next move.
+  /** @brief Stones belonging to the side to move. */
   stones_t player;
 
-  // Stones of the player the made the last move.
+  /** @brief Stones belonging to the side that moved previously. */
   stones_t opponent;
 
-  // The zero bitboard. Or a single bit signifying the illegal ko recapture.
+  /** @brief Ko restriction, or zero when no ko is active. */
   stones_t ko;
 
-  // Tsumego target(s) to be captured or saved depending on the problem.
+  /** @brief Target stones to save or capture depending on the problem. */
   stones_t target;
 
-  // Stones that cannot be captured even if they run out of liberties.
+  /** @brief Stones that remain on the board even without liberties. */
   stones_t immortal;
 
-  // External liberties. Always counts as empty space.
-  // Mainly designed to be adjacent to the target, but can be used to mark semi-controlled "crawlspace" on the first line.
-  // Player/opponent flags indicate who can fill in the liberties.
+  /**
+   * @brief External liberties treated as permanently empty space.
+   *
+   * These are mainly used to model crawlspace and off-board liberties adjacent
+   * to the target group.
+   */
   stones_t external;
 
-  // Number of consecutive passes made. Clearing a ko or taking the button doesn't qualify.
+  /** @brief Number of consecutive passes. */
   int passes;
 
-  // Number of external ko threats available. Negative numbers signify that the opponent has ko threats.
+  /** @brief Signed count of external ko threats; negative means the opponent leads. */
   int ko_threats;
 
-  // Indicate the owner of the button. Awarded to the first player to make a passing move. Worth a quarter-point of area score.
-  // -1: opponent has button
-  //  0: button not awarded yet
-  // +1: player has button
+  /**
+   * @brief Owner of the button bonus.
+   *
+   * `-1` means the opponent owns it, `0` means it is unclaimed, and `+1`
+   * means the current player owns it.
+   */
   int button;
 
-  // Indicate which color "player" refers to.
+  /** @brief True when `player` should be interpreted as white stones. */
   bool white_to_play;
 
-  // Use stones with a width of 16 instead
+  /** @brief Select the alternate 16x4 stone helpers when true. */
   bool wide;
 } state;
 
-// Result of making a move (ordered to facilitate game graph expansion)
+/**
+ * @brief Classification of the result of attempting a move.
+ *
+ * The values are ordered to simplify game-graph expansion.
+ */
 typedef enum move_result
 {
-  // Non-moves
+  /** @brief Move was illegal. */
   ILLEGAL,
 
-  // Game-ending moves
-  TARGET_LOST, // Not a legal move but can happen as an optimization
+  /** @brief Optimization sentinel indicating the target has already been lost. */
+  TARGET_LOST,
+  /** @brief Second consecutive pass, ending the local game. */
   SECOND_PASS,
+  /** @brief Move captures the target stones. */
   TAKE_TARGET,
 
-  // Non-constructive moves
+  /** @brief Non-constructive move that only clears ko state. */
   CLEAR_KO,
+  /** @brief Passing move that claims the button bonus. */
   TAKE_BUTTON,
+  /** @brief Regular pass. */
   PASS,
 
-  // Constructive moves
+  /** @brief Move fills an external liberty. */
   FILL_EXTERNAL,
+  /** @brief Ordinary constructive move. */
   NORMAL,
+  /** @brief Move spends a ko threat and immediately retakes. */
   KO_THREAT_AND_RETAKE,
 } move_result;
 
-// Print a game state with ANSI colors
+/** @brief Print a game state using ANSI colors. */
 void print_state(const state *s);
 
-// Print the representation string of a game state
+/** @brief Print the compact string representation of a game state. */
 void repr_state(const state *s);
 
-// Parse a game state from a string
-// . Empty playable space
-// , Empty unplayable space
-// * Empty space temporarily unavailable due to a ko
-// x Void used to pad lines to full 9 squares
-// @ Black stone
-// b Target black stone
-// B Immortal black stone
-// 0 White stone
-// w Target white stone
-// W Immortal white stone
+/**
+ * @brief Parse a state from the engine's ASCII board representation.
+ *
+ * Accepted characters:
+ * - `.` empty playable space
+ * - `,` empty unplayable space
+ * - `*` temporary ko point
+ * - `x` void used to pad lines to full width
+ * - `@` black stone
+ * - `b` target black stone
+ * - `B` immortal black stone
+ * - `0` white stone
+ * - `w` target white stone
+ * - `W` immortal white stone
+ *
+ * @param visuals Null-terminated ASCII board description.
+ * @return Parsed game state.
+ */
 state parse_state(const char *visuals);
 
-// Make a single move in a game state
-// @param s: current game state
-// @param move: bit board with a single bit flipped for the move to play or the zero board for a pass
-// @returns: A flag indicating if the move was legal
+/**
+ * @brief Play a move in-place.
+ *
+ * @param s Current game state to mutate.
+ * @param move Single-bit move location, or pass() to pass.
+ * @return Result describing legality and tactical consequences of the move.
+ */
 move_result make_move(state *s, const stones_t move);
 
-// Return a unique index of a simple child state of a root state.
-// No passes or ko allowed.
-// Button must be owned by the player if taken.
+/**
+ * @brief Encode a simple child state as a unique integer key.
+ *
+ * The child must be derived from `root` without passes or active ko. If the
+ * button has been taken, it must belong to the player.
+ */
 size_t to_tight_key(const state *root, const state *child, const bool symmetric_threats);
 
-// Reconstruct a simple state based on its unique index w.r.t. a root state.
+/** @brief Decode a simple child-state key produced by to_tight_key(). */
 state from_tight_key(const state *root, size_t key, const bool symmetric_threats);
 
-// Return the size of the simple key space of the given root state
+/** @brief Return the size of the simple key space rooted at `root`. */
 size_t tight_keyspace_size(const state *root, const bool symmetric_threats);
 
-// Compare two unique indices. Compatible with qsort.
+/** @brief Compare two integer keys. Compatible with qsort(). */
 int compare_keys(const void *a_, const void *b_);
 
-// Count the difference between the number of player's stones and liberties and opponent's stones and liberties
+/** @brief Score stones and liberties using Chinese-style counting. */
 int chinese_liberty_score(const state *s);
 
-// Chinese-like score but ownership is anticipated
+/** @brief Score the position while anticipating ownership of unsettled points. */
 int compensated_liberty_score(const state *s);
 
-// Count the difference between areas without trying to remove dead stones
+/** @brief Count simple area without removing dead stones. */
 int simple_area_score(const state *s);
 
-// Return true if two game states are the same. False otherwise.
+/** @brief Return true when two game states are identical. */
 bool equals(const state *a, const state *b);
 
-// Compare two child states of a common root state. Compatible with qsort.
+/** @brief Compare two child states of a common root. Compatible with qsort(). */
 int compare(const void *a_, const void *b_);
 
-// Compare two simple child states of a common root state. Compatible with qsort.
+/** @brief Compare two simple child states of a common root. Compatible with qsort(). */
 int compare_simple(const void *a_, const void *b_);
 
-// Get a hash of a state. Collisions can happen but child states of a common root state should hash reasonably well.
+/** @brief Compute the first hash used for state bucketing and bloom filters. */
 stones_t hash_a(const state *s);
 
-// Get a hash of a state. Collisions can happen but child states of a common root state should hash reasonably well.
+/** @brief Compute the second hash used for state bucketing and bloom filters. */
 stones_t hash_b(const state *s);
 
-// Apply Benson's Algorithm for Unconditional Life by removing unconditional eye-space from logical playing area.
-// Returns TAKE_TARGET or TARGET_LOST if the process captures target stones as a side effect.
+/**
+ * @brief Apply Benson's algorithm for unconditional life.
+ *
+ * Removes unconditional eye-space from the logical area. The operation may also
+ * determine that target stones are captured as a side effect.
+ */
 move_result apply_benson(state *s);
 
-// Play out regions surrounded by immortal stones of the opponent.
+/** @brief Play out regions surrounded by the opponent's immortal stones. */
 move_result normalize_immortal_regions(state *root, state *s);
 
-// Returns `true` if the state is legal. No chains without liberties etc.
+/** @brief Return true when the state satisfies legality constraints. */
 bool is_legal(const state *s);
 
-// Returns `true` if a chain of target stones can be captured with a single move.
+/** @brief Return true when a target chain can be captured in one move. */
 bool target_capturable(const state *s);
 
-// Returns `true` if a chain of player's target stones are in atari.
+/** @brief Return true when the current player's target stones are in atari. */
 bool target_in_atari(const state *s);
 
-// Mirror the state vertically in-place
+/** @brief Mirror a state across the horizontal axis in place. */
 void mirror_v(state *s);
 
-// Mirror the state horizontally in-place
+/** @brief Mirror a state across the vertical axis in place. */
 void mirror_h(state *s);
 
-// Mirror the state diagonally in-place
+/** @brief Mirror a state across the main diagonal in place. */
 void mirror_d(state *s);
 
-// Returns `true` if applying `mirror_d` preserves all information. Assumes the state is legal
+/**
+ * @brief Test whether diagonal mirroring preserves all state information.
+ *
+ * Assumes the state is legal.
+ */
 bool can_mirror_d(const state *s);
 
-// Snap state to the upper left corner. Assumes the state is legal
+/** @brief Snap a legal state to the upper-left corner in place. */
 void snap(state *s);
 
-// Compute the status of the target stones assuming the other player keeps passing
+/** @brief Resolve the target status assuming the opponent keeps passing. */
 move_result struggle(const state *s);
 
-// Return the potential moves of a root state including passing
+/**
+ * @brief Enumerate potential moves from a root state.
+ *
+ * The returned list includes pass(). The caller must free the returned array.
+ */
 stones_t* moves_of(const state *root, int *num_moves);
 
-// Pass without incrementing pass count
+/** @brief Swap player/opponent roles without incrementing the pass count. */
 void swap_players(state *s);

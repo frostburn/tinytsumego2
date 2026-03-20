@@ -4,37 +4,56 @@
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/keyspace.h"
 
+/**
+ * @file complete_solver.h
+ * @brief Full game-graph solver for single-value analysis.
+ */
+
+/** @brief Maximum search depth for delayed-capture compensation. */
 #define MAX_COMPENSATION_DEPTH (6)
 
-// An implicit game graph. All enumerable game states are evaluated even if they're not reachable from the root.
+/**
+ * @brief Implicit game graph where every enumerable state is evaluated.
+ */
 typedef struct complete_graph {
-  // Pre-computed key generator
+  /** @brief Precomputed key generator for this root state. */
   tight_keyspace keyspace;
 
-  // Tactics used during solving
+  /** @brief Tactical scoring mode used while solving. */
   tactics tactics;
 
-  // Valid moves according to the root state
+  /** @brief Number of legal root moves represented in `moves`. */
   int num_moves;
+  /** @brief Legal root moves, typically including pass(). */
   stones_t *moves;
 
-  // The values are indexed by tight keys
+  /** @brief Node values indexed by tight-key index. */
   table_value *values;
 } complete_graph;
 
-// Print the contents of a complete game graph
+/** @brief Print the contents of a complete game graph. */
 void print_complete_graph(complete_graph *cg);
 
-// Create a complete game graph based on a root state.
-// The second argument controls the bonus for delaying inevitable target loss.
+/**
+ * @brief Build a complete game graph rooted at `root`.
+ *
+ * @param root Root state for enumeration.
+ * @param ts Tactical scoring mode.
+ * @return Newly created complete graph. Use free_complete_graph() when done.
+ */
 complete_graph create_complete_graph(const state *root, tactics ts);
 
-// Get the value range of a state in the game graph
+/** @brief Look up the solved value range for a state in a complete graph. */
 value get_complete_graph_value(complete_graph *cg, const state *s);
 
-// Apply negamax to a complete game graph until it converges.
-// Second argument stops iteration once the root value has converged.
+/**
+ * @brief Iterate negamax until convergence.
+ *
+ * @param fg Graph to solve.
+ * @param root_only Stop once the root value has converged.
+ * @param verbose Print progress information when true.
+ */
 void solve_complete_graph(complete_graph *fg, bool root_only, bool verbose);
 
-// Free memory allocated by a complete game graph
+/** @brief Release all heap allocations owned by a complete graph. */
 void free_complete_graph(complete_graph *fg);

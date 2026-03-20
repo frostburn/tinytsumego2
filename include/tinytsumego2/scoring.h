@@ -3,101 +3,123 @@
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
 
-// Conversion factor between 32-bit floating-point and 16-bit fixed-point
+/**
+ * @file scoring.h
+ * @brief Fixed-point scoring utilities for solved tinytsumego positions.
+ */
+
+/** @brief Conversion factor from floating-point scores to Q7 fixed-point. */
 #define FLOAT_TO_SCORE_Q7 (128)
-
-// Large value for capturing the target stones
+/** @brief Large win value used when the target is captured. */
 #define TARGET_CAPTURED_SCORE (200)
+/** @brief Q7 representation of TARGET_CAPTURED_SCORE. */
 #define TARGET_CAPTURED_SCORE_Q7 (TARGET_CAPTURED_SCORE * FLOAT_TO_SCORE_Q7)
-
-// The maximum regular score (and then some)
+/** @brief Maximum regular score plus headroom for tactical bonuses. */
 #define BIG_SCORE (WIDTH * HEIGHT + 10)
+/** @brief Q7 representation of BIG_SCORE. */
 #define BIG_SCORE_Q7 (BIG_SCORE * FLOAT_TO_SCORE_Q7)
-
-// Delaying inevitable capture is incentivized
+/** @brief Q7 bonus for delaying inevitable capture. */
 #define DELAY_Q7 (FLOAT_TO_SCORE_Q7 / 2)
+/** @brief Floating-point bonus for delaying inevitable capture. */
 #define DELAY_BONUS (0.5f)
-
-// Taking the button awards 1/4 points. Not 1/2 to make it clear that playing the last dame is preferable to passing.
+/** @brief Q7 bonus for taking the button. */
 #define BUTTON_Q7 (FLOAT_TO_SCORE_Q7 / 4)
+/** @brief Floating-point bonus for taking the button. */
 #define BUTTON_BONUS (BUTTON_Q7 / (float) FLOAT_TO_SCORE_Q7)
-
-// Saving up abstract "external" ko-threats is incentivized
+/** @brief Q7 bonus for saving an external ko threat. */
 #define KO_THREAT_Q7 (FLOAT_TO_SCORE_Q7 / 32)
+/** @brief Floating-point bonus for saving an external ko threat. */
 #define KO_THREAT_BONUS (KO_THREAT_Q7 / (float) FLOAT_TO_SCORE_Q7)
-
-// Playing forcing moves is incentivized but not so much as to override taking the button
-// The idea is to play as many forcing moves as possible and still get to tenuki
+/** @brief Q7 bonus for playing forcing moves. */
 #define FORCE_Q7 ((FLOAT_TO_SCORE_Q7 / 64) * 31)
+/** @brief Floating-point bonus for playing forcing moves. */
 #define FORCE_BONUS (31.0f / 64)
-
-// Limits and special values
+/** @brief Maximum representable Q7 score. */
 #define SCORE_Q7_MAX (SHRT_MAX)
+/** @brief Minimum representable Q7 score. */
 #define SCORE_Q7_MIN (-SHRT_MAX)
+/** @brief Sentinel used to represent an undefined Q7 score. */
 #define SCORE_Q7_NAN (-32768)
 
-// One bit of the fractional part saved up for comparison shenanigans
-
-// 16-bit fixed-point datatype to save up on space
+/** @brief Signed 16-bit Q7 fixed-point score type. */
 typedef signed short int score_q7_t;
 
-// Extra incentives for actions outside of the final score
+/**
+ * @brief Tactical scoring adjustments used during search.
+ */
 typedef enum tactics {
-  // No special rewards
+  /** @brief Use plain game-theoretic scoring without extra rewards. */
   NONE,
-
-  // Delaying the capture of your target stones is rewarded
+  /** @brief Reward delaying inevitable capture of the target. */
   DELAY,
-
-  // Playing non-passing moves while the button is on the table awards points. Simulates forcing moves during a ko-fight
+  /** @brief Reward forcing moves while the button remains available. */
   FORCING,
 } tactics;
 
-// Score range for a given game state. States with loops may not converge to a single score.
+/** @brief Lower and upper floating-point bounds for a game state's score. */
 typedef struct value {
   float low;
   float high;
 } value;
 
-// Use 16-bit values to save space
+/** @brief Lower and upper Q7 bounds for a game state's score. */
 typedef struct table_value {
   score_q7_t low;
   score_q7_t high;
 } table_value;
 
-// Conversions between fixed-point and floating-point
+/** @brief Convert a Q7 fixed-point score to floating point. */
 float score_q7_to_float(score_q7_t amount);
+
+/** @brief Convert a floating-point score to Q7 fixed point. */
 score_q7_t float_to_score_q7(float amount);
 
-// Chinese-like score with bonus for taking the button and saving up ko-threats
+/** @brief Compute Chinese-like score with button and ko-threat bonuses in Q7 form. */
 score_q7_t score_q7(const state *s);
+
+/** @brief Compute Chinese-like score with button and ko-threat bonuses. */
 float score(const state *s);
 
-// Big score for capturing the target. Stone score not included to reduce weird play. Button and ko threat bonuses are included
+/** @brief Score a state where the target has been lost, returned in Q7 form. */
 score_q7_t target_lost_score_q7(const state *s);
+
+/** @brief Score a state where the target has been lost. */
 float target_lost_score(const state *s);
 
-// Big score for losing the target. Button and ko threat bonuses are included
+/** @brief Score a state where the target has been captured, returned in Q7 form. */
 score_q7_t take_target_score_q7(const state *s);
+
+/** @brief Score a state where the target has been captured. */
 float take_target_score(const state *s);
 
-// Incentivize delaying if the target stones cannot be saved
+/** @brief Apply the delay bonus to a Q7 score. */
 score_q7_t delay_capture_q7(score_q7_t my_score);
+
+/** @brief Apply the delay bonus to a floating-point score. */
 float delay_capture(float my_score);
 
-// Incentivize playing forcing moves
+/** @brief Apply the forcing-move bonus to a Q7 score. */
 score_q7_t reward_force_q7(score_q7_t my_score);
+
+/** @brief Apply the forcing-move bonus to a floating-point score. */
 float reward_force(float my_score);
 
-// Give score based on the move result and switch to parent's perspective
+/** @brief Score a terminal move result in Q7 form and convert to the parent's perspective. */
 table_value score_terminal_q7(const move_result r, const state *child);
+
+/** @brief Score a terminal move result and convert to the parent's perspective. */
 value score_terminal(const move_result r, const state *child);
 
-// Apply tactics to the value of a child node and swap to parent's perspective
+/** @brief Apply tactical bonuses to a child value in Q7 form and swap perspective. */
 table_value apply_tactics_q7(const tactics ts, const move_result r, const state *child, const table_value child_value);
+
+/** @brief Apply tactical bonuses to a child value and swap perspective. */
 value apply_tactics(const tactics ts, const move_result r, const state *child, const value child_value);
 
+/** @brief Convert a Q7 range to floating point. */
 value table_value_to_value(table_value v);
 
+/** @brief Full representable Q7 range. */
 static const table_value MAX_RANGE_Q7 = (table_value) {SCORE_Q7_MIN, SCORE_Q7_MAX};
+/** @brief Undefined Q7 range. */
 static const table_value NAN_RANGE_Q7 = (table_value) {SCORE_Q7_NAN, SCORE_Q7_NAN};

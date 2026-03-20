@@ -5,43 +5,54 @@
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
 
-// Read-only version of complete_solver memory mapped directly from the filesystem
+/**
+ * @file complete_reader.h
+ * @brief Memory-mapped read-only access to serialized complete solver output.
+ */
 
+/**
+ * @brief Read-only view of a serialized complete_graph.
+ */
 typedef struct complete_graph_reader {
-  // Pre-computed key generator
-  tight_keyspace keyspace;  // NOTE: (m)allocated in RAM
+  /** @brief Tight keyspace metadata recreated in RAM. */
+  tight_keyspace keyspace;
 
-  // Tactics used during solving
+  /** @brief Tactical mode used when solving the graph. */
   tactics tactics;
 
-  // Valid moves according to the root state
+  /** @brief Number of legal root moves. */
   int num_moves;
-  stones_t *moves;  // NOTE: (m)allocated in RAM
+  /** @brief Root move list allocated in RAM. */
+  stones_t *moves;
 
-  // List of unique value ranges in the graph
-  value *value_map;  // NOTE: (m)allocated in RAM
+  /** @brief Unique solved value ranges allocated in RAM. */
+  value *value_map;
 
-  // Identifiers of node values inside of self.value_map
-  value_id_t *value_ids;  // NOTE: Not (m)allocated, do not free()
+  /** @brief Serialized indices into value_map stored inside the mapped file. */
+  value_id_t *value_ids;
 
-  // For resource acquisition and release
+  /** @brief File metadata for resource management. */
   struct stat sb;
 
-  // File descriptor for resource acquisition and release
+  /** @brief File descriptor backing the memory map. */
   int fd;
 
-  // Memory map handle for resource acquisition and release
+  /** @brief Pointer to the memory-mapped file contents. */
   char *buffer;
 } complete_graph_reader;
 
-// Write a solved complete_graph instance to a stream in a format expected by the reader
+/**
+ * @brief Serialize a solved complete graph to a stream.
+ *
+ * @return Number of bytes written.
+ */
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream);
 
-// Load a complete_graph_reader from the given file
+/** @brief Load a complete graph reader from a serialized file. */
 complete_graph_reader load_complete_graph_reader(const char *filename);
 
-// Get the value range of a state in a memory mapped game graph
+/** @brief Look up the solved value range of a state in a mapped graph. */
 value get_complete_graph_reader_value(const complete_graph_reader *cgr, const state *s);
 
-// Release resources associated with a complete_graph_reader instance
+/** @brief Release the resources associated with a complete graph reader. */
 void unload_complete_graph_reader(complete_graph_reader *cgr);
