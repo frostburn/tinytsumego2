@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "tinytsumego2/complete_solver.h"
+#include "tinytsumego2/util.h"
 
 #define MAX_INITIALIZATION_DEPTH (1024)
 
@@ -41,7 +42,7 @@ complete_graph create_complete_graph(const state *root, tactics ts) {
 
   cg.moves = moves_of(root, &cg.num_moves);
 
-  cg.values = malloc(cg.keyspace.size * sizeof(table_value));
+  cg.values = xmalloc(cg.keyspace.size * sizeof(table_value));
 
   return cg;
 }

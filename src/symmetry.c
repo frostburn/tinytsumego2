@@ -331,11 +331,11 @@ void prepare_odd_even_symmetry(symmetry *sym, stones_t visual_area) {
   sym->pulp_dots = dots(visual_area ^ (core_mask << sym->core_shift), &(sym->pulp_count));
   sym->core_idx = odd_even_core_idx;
   size_t size = 1 << 20;
-  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
-  sym->core_map = malloc(size * sizeof(size_t));
+  sym->pulp_ops = xmalloc(size * sizeof(mirror_op_t));
+  sym->core_map = xmalloc(size * sizeof(size_t));
   sym->core_m = 0;
-  sym->black_core = malloc(ODD_EVEN_CORE_SIZE * sizeof(stones_t));
-  sym->white_core = malloc(ODD_EVEN_CORE_SIZE * sizeof(stones_t));
+  sym->black_core = xmalloc(ODD_EVEN_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = xmalloc(ODD_EVEN_CORE_SIZE * sizeof(stones_t));
   for (size_t idx = 0; idx < size; ++idx) {
     stones_t c = idx;
     stones_t black = c & 7;
@@ -422,11 +422,11 @@ void prepare_odd_odd_symmetry(symmetry *sym, stones_t visual_area) {
   sym->pulp_dots = dots(visual_area ^ (core_mask << sym->core_shift), &(sym->pulp_count));
   sym->core_idx = odd_odd_core_idx;
   size_t size = 1 << 22;
-  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
-  sym->core_map = malloc(size * sizeof(size_t));
+  sym->pulp_ops = xmalloc(size * sizeof(mirror_op_t));
+  sym->core_map = xmalloc(size * sizeof(size_t));
   sym->core_m = 0;
-  sym->black_core = malloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
-  sym->white_core = malloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
+  sym->black_core = xmalloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = xmalloc(ODD_ODD_CORE_SIZE * sizeof(stones_t));
   for (size_t idx = 0; idx < size; ++idx) {
     stones_t c = idx;
     stones_t black = (c & 7) << H_SHIFT;
@@ -529,11 +529,11 @@ void prepare_odd_square_symmetry(symmetry *sym, stones_t visual_area) {
   sym->pulp_dots = dots(visual_area ^ (rectangle(3, 3) << sym->core_shift), &(sym->pulp_count));
   sym->core_idx = odd_square_core_idx;
   size_t size = 1 << 18;
-  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
-  sym->core_map = malloc(size * sizeof(size_t));
+  sym->pulp_ops = xmalloc(size * sizeof(mirror_op_t));
+  sym->core_map = xmalloc(size * sizeof(size_t));
   sym->core_m = 0;
-  sym->black_core = malloc(ODD_SQUARE_CORE_SIZE * sizeof(stones_t));
-  sym->white_core = malloc(ODD_SQUARE_CORE_SIZE * sizeof(stones_t));
+  sym->black_core = xmalloc(ODD_SQUARE_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = xmalloc(ODD_SQUARE_CORE_SIZE * sizeof(stones_t));
   for (size_t idx = 0; idx < size; ++idx) {
     stones_t c = idx;
     stones_t black = c & 7;
@@ -631,11 +631,11 @@ void prepare_even_square_symmetry(symmetry *sym, stones_t visual_area) {
   sym->pulp_dots = dots(visual_area ^ (core_mask << sym->core_shift), &(sym->pulp_count));
   sym->core_idx = even_square_core_idx;
   size_t size = 1 << 16;
-  sym->pulp_ops = malloc(size * sizeof(mirror_op_t));
-  sym->core_map = malloc(size * sizeof(size_t));
+  sym->pulp_ops = xmalloc(size * sizeof(mirror_op_t));
+  sym->core_map = xmalloc(size * sizeof(size_t));
   sym->core_m = 0;
-  sym->black_core = malloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
-  sym->white_core = malloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
+  sym->black_core = xmalloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
+  sym->white_core = xmalloc(EVEN_SQUARE_CORE_SIZE * sizeof(stones_t));
   for (size_t idx = 0; idx < size; ++idx) {
     stones_t c = idx;
     stones_t black = (c & 3) << H_SHIFT;
@@ -839,14 +839,14 @@ symmetry compute_symmetry(const state *s) {
   }
 
   result.num_blocks = ceil_div(result.pulp_count, TRIT_BLOCK_SIZE);
-  result.black_blocks = malloc(result.num_blocks * sizeof(stones_t*));
-  result.white_blocks = malloc(result.num_blocks * sizeof(stones_t*));
+  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
+  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
 
   size_t m = 1;
   int i;
   for (i = 0; i < result.pulp_count / TRIT_BLOCK_SIZE; ++i) {
-    result.black_blocks[i] = calloc(TRIT_BLOCK_M, sizeof(stones_t));
-    result.white_blocks[i] = calloc(TRIT_BLOCK_M, sizeof(stones_t));
+    result.black_blocks[i] = xcalloc(TRIT_BLOCK_M, sizeof(stones_t));
+    result.white_blocks[i] = xcalloc(TRIT_BLOCK_M, sizeof(stones_t));
     for (size_t j = 0; j < TRIT_BLOCK_M; ++j) {
       size_t key = m * j;
       for (int k = result.pulp_count - 1; k >= 0; --k) {
@@ -869,8 +869,8 @@ symmetry compute_symmetry(const state *s) {
     tail_m *= 3;
   }
   if (tail_m != 1) {
-    result.black_blocks[i] = calloc(tail_m, sizeof(stones_t));
-    result.white_blocks[i] = calloc(tail_m, sizeof(stones_t));
+    result.black_blocks[i] = xcalloc(tail_m, sizeof(stones_t));
+    result.white_blocks[i] = xcalloc(tail_m, sizeof(stones_t));
     for (size_t j = 0; j < tail_m; ++j) {
       size_t key = m * j;
       for (int k = result.pulp_count - 1; k >= 0; --k) {

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "jkiss/jkiss.h"
 #include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/util.h"
 
 size_t _to_compressed_key(dual_graph *dg, const state *s) {
   return to_compressed_key(&(dg->keyspace.compressed), s);
@@ -144,8 +145,8 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
 
   dg.moves = moves_of(root, &dg.num_moves);
 
-  dg.plain_values = malloc(dg.keyspace._.size * sizeof(table_value));
-  dg.forcing_values = malloc(dg.keyspace._.size * sizeof(table_value));
+  dg.plain_values = xmalloc(dg.keyspace._.size * sizeof(table_value));
+  dg.forcing_values = xmalloc(dg.keyspace._.size * sizeof(table_value));
 
   for (size_t i = 0; i < dg.keyspace._.size; ++i) {
     dg.plain_values[i] = MAX_RANGE_Q7;
@@ -156,7 +157,7 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
 }
 
 dual_graph* allocate_dual_graph(const state *root, keyspace_type type) {
-  dual_graph *result = malloc(sizeof(dual_graph));
+  dual_graph *result = xmalloc(sizeof(dual_graph));
   *result = create_dual_graph(root, type);
   return result;
 }

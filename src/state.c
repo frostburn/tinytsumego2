@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "tinytsumego2/bitmatrix.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/util.h"
 
 void print_state(const state *s) {
   stones_t black, white;
@@ -1214,7 +1215,7 @@ move_result struggle(const state *s) {
 
 stones_t* moves_of(const state *root, int *num_moves) {
   *num_moves = popcount(root->logical_area) + 1;
-  stones_t *result = malloc(*num_moves * sizeof(stones_t));
+  stones_t *result = xmalloc(*num_moves * sizeof(stones_t));
 
   int j = 0;
   for (stones_t p = 1ULL; p; p <<= 1) {

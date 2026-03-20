@@ -19,7 +19,7 @@ size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict st
 
   // The actual reader uses float values but we can write using a temporary fixed-point array
   size_t num_unique = 0;
-  table_value *value_map = calloc(VALUE_MAP_SIZE, sizeof(table_value));
+  table_value *value_map = xcalloc(VALUE_MAP_SIZE, sizeof(table_value));
 
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
     size_t id;
@@ -67,7 +67,7 @@ complete_graph_reader load_complete_graph_reader(const char *filename) {
   result.num_moves = ((int*) map)[0];
   map += sizeof(int);
 
-  result.moves = malloc(result.num_moves * sizeof(stones_t));
+  result.moves = xmalloc(result.num_moves * sizeof(stones_t));
   for (int i = 0; i < result.num_moves; ++i) {
     result.moves[i] = ((stones_t *) map)[i];
   }
@@ -76,7 +76,7 @@ complete_graph_reader load_complete_graph_reader(const char *filename) {
   result.value_ids = (value_id_t *)map;
   map += sizeof(value_id_t) * result.keyspace.size;
 
-  result.value_map = malloc(VALUE_MAP_SIZE * sizeof(value));
+  result.value_map = xmalloc(VALUE_MAP_SIZE * sizeof(value));
   for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
     result.value_map[i] = ((value *)map)[i];
   }
