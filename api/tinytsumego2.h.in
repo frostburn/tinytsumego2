@@ -1,8 +1,22 @@
 #pragma once
 
+/**
+ * @file tinytsumego2.h
+ * @brief Generated top-level public metadata for the shared library build.
+ */
+
+/** @brief CMake project name for the current build. */
 #define PROJECT_NAME "@PROJECT_NAME@"
+/** @brief Major version component for the current build. */
 #define VERSION_MAJOR "@VERSION_MAJOR@"
+/** @brief Minor version component for the current build. */
 #define VERSION_MINOR "@VERSION_MINOR@"
+/** @brief Patch version component for the current build. */
 #define VERSION_PATCH "@VERSION_PATCH@"
 
+/**
+ * @brief Write a human-readable version string into the provided buffer.
+ *
+ * @param out Output buffer large enough to hold the formatted version string.
+ */
 void version(char *out);

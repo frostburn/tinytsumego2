@@ -11,11 +11,11 @@
 #include "tinytsumego2/util.h"
 
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream) {
-  size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream);
-  total += fwrite(&(cg->keyspace.symmetric_threats), sizeof(bool), 1, stream);
-  total += fwrite(&(cg->tactics), sizeof(tactics), 1, stream);
-  total += fwrite(&(cg->num_moves), sizeof(int), 1, stream);
-  total += fwrite(cg->moves, sizeof(stones_t), cg->num_moves, stream);
+  size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream) * sizeof(state);
+  total += fwrite(&(cg->keyspace.symmetric_threats), sizeof(bool), 1, stream) * sizeof(bool);
+  total += fwrite(&(cg->tactics), sizeof(tactics), 1, stream) * sizeof(tactics);
+  total += fwrite(&(cg->num_moves), sizeof(int), 1, stream) * sizeof(int);
+  total += fwrite(cg->moves, sizeof(stones_t), cg->num_moves, stream) * sizeof(stones_t);
 
   // The actual reader uses float values but we can write using a temporary fixed-point array
   size_t num_unique = 0;
@@ -36,12 +36,12 @@ size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict st
       }
     }
     value_id_t vid = (value_id_t) id;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream);
+    total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
   }
 
   for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
     value v = table_value_to_value(value_map[i]);
-    total += fwrite(&v, sizeof(value), 1, stream);
+    total += fwrite(&v, sizeof(value), 1, stream) * sizeof(value);
   }
 
   free(value_map);
