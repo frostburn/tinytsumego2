@@ -5,62 +5,54 @@
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/dual_solver.h"
 
-// A collection of go problems to show to end-users
-// Normalized to the upper-left/north-western corner with the rest of the 19x19 goban empty
+/**
+ * @file collection.h
+ * @brief Hard-coded tsumego collections exposed through the HTTP bridge.
+ *
+ * Collections are normalized to the upper-left corner of a 19x19 board with
+ * the rest of the board left empty.
+ */
 
-// GET api/tsumego/
-// {
-//    "collections": ["rectangle-six", ...]
-// }
-
-// GET api/tsumego/{collection: rectangle-six}/
-// {
-//    "title": "Rectangular Six in the Corner",
-//    "root": {"visualArea": [511, 511, ...]},
-//    "tsumegos": ["no-liberties", "one-liberty", ...]
-// }
-
-// GET api/tsumego/{collection: rectangle-six}/{tsumego: no-liberties}/
-// {
-//    "title": "Rectangular Six in the Corner",
-//    "subtitle": "No Outside Liberties",
-//    "state": {"visualArea": [511, 511, ...]},
-//    "botToPlay": false
-// }
-//
-
-// POST api/tsumego/{collection: rectangle-six}/
-// In: {"state": {...}}
-// Out: {"moves": [...], ...}
-
+/**
+ * @brief One named tsumego entry within a collection.
+ */
 typedef struct tsumego {
-  // URL-friendly name
+  /** @brief URL-friendly identifier. */
   char *slug;
-  // User-friendly name
+  /** @brief User-facing subtitle. */
   char *subtitle;
-  // The game state must be enumerable from the collection root (enumeration may be abused for aesthetics)
+  /** @brief Problem state enumerable from the collection root. */
   state state;
-  // Allowing the book/computer to play first lets us catalogue classic "dead" shapes
+  /** @brief True when the book/computer should move first. */
   bool bot_to_play;
-  // Value is used to verify collection generation (use {NAN, NAN} to skip)
+  /** @brief Expected solved value used when validating generated data. */
   value value;
 } tsumego;
 
+/**
+ * @brief A named set of related tsumego problems.
+ */
 typedef struct collection {
-  // URL-friendly name
+  /** @brief URL-friendly identifier. */
   char *slug;
-  // User-friendly name
+  /** @brief User-facing title. */
   char *title;
-  // Dual-graph root in the upper-left corner. Solutions should be preserved if goban is extended to full 19x19.
+  /** @brief Root position in the upper-left corner. */
   state root;
-  // Can the goban be extended to full 19x19?
+  /** @brief True when the shape can be embedded in a full 19x19 board. */
   bool can_stretch;
-  // Sub-problems that can be reached from the root
+  /** @brief Number of sub-problems reachable from the root. */
   size_t num_tsumegos;
+  /** @brief Array of tsumego entries. */
   tsumego *tsumegos;
-  // Type of compression to use
+  /** @brief Keyspace type to use when solving the collection. */
   keyspace_type type;
 } collection;
 
-// Get an array of hard-coded collections of tsumegos
+/**
+ * @brief Return the built-in collections used by the API bridge.
+ *
+ * @param num_collections Output parameter receiving the collection count.
+ * @return Pointer to a static array of collections.
+ */
 collection* get_collections(size_t *num_collections);
