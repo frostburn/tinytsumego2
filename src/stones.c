@@ -123,12 +123,11 @@ stones_t *dots(stones_t stones, int *num_dots) {
   stones_t *result = malloc(64 * sizeof(stones_t));
   *num_dots = 0;
   stones_t p = 1ULL;
-  while (stones) {
+  for (; stones; p <<= 1) {
     if (p & stones) {
       result[(*num_dots)++] = p;
       stones ^= p;
     }
-    p <<= 1;
   }
   return realloc(result, (*num_dots) * sizeof(stones_t));
 }

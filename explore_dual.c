@@ -95,8 +95,8 @@ int main(int argc, char *argv[]) {
       if (row != '\n' && row != EOF) {
         // Flush stdin
         int c;
-        while ((c = getchar()) != '\n' && c != EOF) {
-        }
+        while ((c = getchar()) != '\n' && c != EOF)
+          ;
       }
 
       if (!num_assigned) {
