@@ -290,7 +290,7 @@ void test_frozen_hash_table() {
   fht.bulk_ids = NULL;
 
   const size_t mem_file_size = (MEM_FILE_SIZE + dg.keyspace._.size * sizeof(value_id_t) + fht.bulk_map_size * sizeof(dual_table_value) +
-                                fht.tail_size * (sizeof(size_t) + sizeof(dual_table_value)));
+                                fht.tail_size * sizeof(dual_table_value) + (fht.tail_size / 2) * sizeof(size_t));
 
   char *buffer = malloc(mem_file_size);
   for (size_t i = 0; i < mem_file_size; ++i) {

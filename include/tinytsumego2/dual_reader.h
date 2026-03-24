@@ -44,7 +44,7 @@ typedef struct frozen_hash_table {
   /** @brief Values stored in the sparse tail section. */
   dual_table_value *tail_values;
 
-  /** @brief Sorted keys used with `bsearch()` for tail lookups. */
+  /** @brief Sorted odd-index tail keys used to derive tail lookup positions. */
   size_t *tail_keys;
 } frozen_hash_table;
 

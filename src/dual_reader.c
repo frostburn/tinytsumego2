@@ -15,7 +15,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DUAL_READER_VERSION (4)
+#define DUAL_READER_VERSION (5)
+
+static inline size_t frozen_tail_keys_size(size_t tail_size) { return tail_size / 2; }
 
 size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) { return to_compressed_key(&(dgr->keyspace.compressed), s); }
 
@@ -59,7 +61,7 @@ size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *
 
   total += fwrite(&(fht->tail_size), sizeof(size_t), 1, stream) * sizeof(size_t);
   total += fwrite(fht->tail_values, sizeof(dual_table_value), fht->tail_size, stream) * sizeof(dual_table_value);
-  total += fwrite(fht->tail_keys, sizeof(size_t), fht->tail_size, stream) * sizeof(size_t);
+  total += fwrite(fht->tail_keys, sizeof(size_t), frozen_tail_keys_size(fht->tail_size), stream) * sizeof(size_t);
 
   return total;
 }
@@ -141,7 +143,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   dgr->value_table.tail_values = (dual_table_value *)map;
   map += dgr->value_table.tail_size * sizeof(dual_table_value);
   dgr->value_table.tail_keys = (size_t *)map;
-  map += dgr->value_table.tail_size * sizeof(size_t);
+  map += frozen_tail_keys_size(dgr->value_table.tail_size) * sizeof(size_t);
 }
 
 dual_graph_reader load_dual_graph_reader(const char *filename) {
@@ -576,7 +578,7 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
   value_map = xrealloc(value_map, n * sizeof(dual_table_value));
   qsort(value_map, n, sizeof(dual_table_value), compare_dual_table_values);
 
-  size_t *tail_keys = xmalloc(tail_size * sizeof(size_t));
+  size_t *tail_keys = xmalloc(frozen_tail_keys_size(tail_size) * sizeof(size_t));
   dual_table_value *tail_values = xmalloc(tail_size * sizeof(dual_table_value));
 
   v = xmalloc(sizeof(dual_table_value));
@@ -587,7 +589,9 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
     v->forcing.low = dg->forcing_values[i].low;
     v->forcing.high = dg->forcing_values[i].high;
     if (!bsearch(v, value_map, n, sizeof(dual_table_value), compare_dual_table_values)) {
-      tail_keys[j] = i;
+      if (j % 2 == 1) {
+        tail_keys[j / 2] = i;
+      }
       tail_values[j++] = *v;
     }
   }
@@ -600,8 +604,9 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
 dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key) {
   value_id_t vid = fht->bulk_ids[key];
   if (vid == VALUE_ID_SENTINEL) {
+    const size_t tail_keys_size = frozen_tail_keys_size(fht->tail_size);
     size_t lo = 0;
-    size_t hi = fht->tail_size;
+    size_t hi = tail_keys_size;
     while (lo < hi) {
       size_t mid = lo + (hi - lo) / 2;
       size_t mid_key = fht->tail_keys[mid];
@@ -611,8 +616,11 @@ dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key)
         hi = mid;
       }
     }
-    assert(lo < fht->tail_size && fht->tail_keys[lo] == key);
-    size_t i = lo;
+    size_t i = 2 * lo;
+    if (lo < tail_keys_size && fht->tail_keys[lo] == key) {
+      i += 1;
+    }
+    assert(i < fht->tail_size);
     return fht->tail_values[i];
   }
   return fht->bulk_map[vid];
