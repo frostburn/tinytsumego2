@@ -600,7 +600,19 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
 dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key) {
   value_id_t vid = fht->bulk_ids[key];
   if (vid == VALUE_ID_SENTINEL) {
-    size_t i = ((size_t *)bsearch(&key, fht->tail_keys, fht->tail_size, sizeof(size_t), compare_keys)) - fht->tail_keys;
+    size_t lo = 0;
+    size_t hi = fht->tail_size;
+    while (lo < hi) {
+      size_t mid = lo + (hi - lo) / 2;
+      size_t mid_key = fht->tail_keys[mid];
+      if (mid_key < key) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    assert(lo < fht->tail_size && fht->tail_keys[lo] == key);
+    size_t i = lo;
     return fht->tail_values[i];
   }
   return fht->bulk_map[vid];
