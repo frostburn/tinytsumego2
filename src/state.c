@@ -511,8 +511,8 @@ size_t tight_keyspace_size(const state *root, const bool symmetric_threats) {
   size_t result = (2 *                             // Player to play
                    2 *                             // Button availability
                    (1 << popcount(root->external)) // External liberties
-                   // Passes ignored
-                   // Ko ignored
+                                                   // Passes ignored
+                                                   // Ko ignored
   );
 
   // Number of the remaining "external" ko threats
