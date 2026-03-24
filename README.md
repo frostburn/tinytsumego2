@@ -40,14 +40,17 @@ Install it (Ubuntu/Debian):
 sudo apt install clang-format
 ```
 
-Run it across the repository:
+Check formatting from the `build` directory after configuring CMake:
 ```bash
-clang-format -i $(find . -path ./jkiss -prune -o -type f \( -name "*.c" -o -name "*.h" \) -print)
+cmake ..
+make lint
 ```
 
-Check formatting without modifying files:
+`make lint` checks C and header files in this repository and excludes both the `jkiss` submodule and your build tree.
+
+If you want to apply formatting in-place from the `build` directory, run:
 ```bash
-clang-format --dry-run --Werror $(find . -path ./jkiss -prune -o -type f \( -name "*.c" -o -name "*.h" \) -print)
+make format
 ```
 
 ## Running the server
