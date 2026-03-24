@@ -1,9 +1,9 @@
 #pragma once
-#include <stdio.h>
-#include <sys/stat.h>
 #include "tinytsumego2/complete_solver.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
+#include <stdio.h>
+#include <sys/stat.h>
 
 /**
  * @file complete_reader.h

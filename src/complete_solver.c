@@ -1,31 +1,26 @@
+#include "tinytsumego2/complete_solver.h"
+#include "tinytsumego2/util.h"
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/complete_solver.h"
-#include "tinytsumego2/util.h"
 
 #define MAX_INITIALIZATION_DEPTH (1024)
 
 void print_complete_graph(complete_graph *cg) {
   switch (cg->tactics) {
-    case NONE:
-      printf("No special tactics\n");
-      break;
-    case DELAY:
-      printf("Delay tactics used\n");
-      break;
-    case FORCING:
-      printf("Forcing tactics used\n");
-      break;
+  case NONE:
+    printf("No special tactics\n");
+    break;
+  case DELAY:
+    printf("Delay tactics used\n");
+    break;
+  case FORCING:
+    printf("Forcing tactics used\n");
+    break;
   }
   for (size_t i = 0; i < cg->keyspace.size; ++i) {
     value v = table_value_to_value(cg->values[i]);
-    printf(
-      "#%zu: %f, %f\n",
-      i,
-      v.low,
-      v.high
-    );
+    printf("#%zu: %f, %f\n", i, v.low, v.high);
   }
 }
 
@@ -63,15 +58,12 @@ table_value get_complete_graph_value_(complete_graph *cg, const state *s, int de
       if (r <= TAKE_TARGET) {
         child_value = score_terminal_q7(r, &child);
       } else {
-        child_value = apply_tactics_q7(
-          cg->tactics,
-          r,
-          &child,
-          get_complete_graph_value_(cg, &child, depth - 1)
-        );
+        child_value = apply_tactics_q7(cg->tactics, r, &child, get_complete_graph_value_(cg, &child, depth - 1));
       }
-      if (child_value.high > low) low = child_value.high;
-      if (child_value.low > high) high = child_value.low;
+      if (child_value.high > low)
+        low = child_value.high;
+      if (child_value.low > high)
+        high = child_value.low;
     }
     return (table_value){low, high};
   }
@@ -174,18 +166,15 @@ void solve_complete_graph(complete_graph *cg, bool root_only, bool verbose) {
         if (r <= TAKE_TARGET) {
           child_value = score_terminal_q7(r, &child);
         } else {
-          child_value = apply_tactics_q7(
-            cg->tactics,
-            r,
-            &child,
-            get_complete_graph_value_(cg, &child, MAX_COMPENSATION_DEPTH)
-          );
+          child_value = apply_tactics_q7(cg->tactics, r, &child, get_complete_graph_value_(cg, &child, MAX_COMPENSATION_DEPTH));
         }
-        if (child_value.high > low) low = child_value.high;
-        if (child_value.low > high) high = child_value.low;
+        if (child_value.high > low)
+          low = child_value.high;
+        if (child_value.low > high)
+          high = child_value.low;
       }
       if (cg->values[i].low != low || cg->values[i].high != high) {
-        cg->values[i] = (table_value) {low, high};
+        cg->values[i] = (table_value){low, high};
         num_updated++;
       }
     }

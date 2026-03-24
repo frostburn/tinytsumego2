@@ -1,7 +1,7 @@
 #pragma once
 
-#include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/stones.h"
 #include "tinytsumego2/symmetry.h"
 
 /**
@@ -107,7 +107,7 @@ size_t decompress_key(const monotonic_compressor *mc, const size_t compressed_ke
 bool has_key(const monotonic_compressor *mc, const size_t compressed_key);
 
 /** @brief Release allocations owned by a monotonic compressor. */
-void free_monotonic_compressor (monotonic_compressor *mc);
+void free_monotonic_compressor(monotonic_compressor *mc);
 
 /** @brief Convert a child state of the root to its compressed legal-state index. */
 size_t to_compressed_key(const compressed_keyspace *cks, const state *s);

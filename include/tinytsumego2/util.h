@@ -1,14 +1,14 @@
 #pragma once
 
 #include <assert.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /**
  * @file util.h
@@ -28,13 +28,13 @@ int ceil_div(int x, int y);
 size_t ceil_divz(size_t x, size_t y);
 
 /** @brief Allocate `size` bytes or abort on failure. */
-void* xmalloc(size_t size);
+void *xmalloc(size_t size);
 
 /** @brief Allocate and zero-initialize `count * size` bytes or abort on failure. */
-void* xcalloc(size_t count, size_t size);
+void *xcalloc(size_t count, size_t size);
 
 /** @brief Resize an allocation or abort on failure. */
-void* xrealloc(void *ptr, size_t size);
+void *xrealloc(void *ptr, size_t size);
 
 /**
  * @brief Memory-map a file for read-only access.
@@ -44,4 +44,4 @@ void* xrealloc(void *ptr, size_t size);
  * @param fd Output file descriptor used to keep the mapping alive.
  * @return Pointer to the mapped file contents.
  */
-char* file_to_mmap(const char *filename, struct stat *sb, int *fd);
+char *file_to_mmap(const char *filename, struct stat *sb, int *fd);

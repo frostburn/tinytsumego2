@@ -1,9 +1,9 @@
+#include "tinytsumego2/shape.h"
+#include "tinytsumego2/status.h"
+#include "tinytsumego2/util.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/status.h"
-#include "tinytsumego2/shape.h"
-#include "tinytsumego2/util.h"
 
 #define A_MAX (3)
 #define B_MAX (4)
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
   printf("Computing...\n");
   tsumego_status *tss = xmalloc(A_MAX * B_MAX * sizeof(tsumego_status));
-  #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
   for (int a = 1; a <= A_MAX; ++a) {
     for (int b = 1; b <= B_MAX; ++b) {
       if (x == y && b < a) {

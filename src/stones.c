@@ -1,12 +1,12 @@
+#include "tinytsumego2/stones.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/stones.h"
 
 void print_stones(const stones_t stones) {
   // Column headers
   printf(" ");
   for (int i = 0; i < WIDTH; i++) {
-      printf(" %c", 'A' + i);
+    printf(" %c", 'A' + i);
   }
   printf("\n");
 
@@ -19,12 +19,11 @@ void print_stones(const stones_t stones) {
     // Stone indicators
     if ((1ULL << i) & stones) {
       printf(" @");
-    }
-    else {
+    } else {
       printf(" .");
     }
 
-    if (i % WIDTH == WIDTH - 1){
+    if (i % WIDTH == WIDTH - 1) {
       printf("\n");
     }
   }
@@ -42,43 +41,23 @@ stones_t rectangle(const int width, const int height) {
   return r;
 }
 
-stones_t single(const int x, const int y) {
-  return 1ULL << (x * H_SHIFT + y * V_SHIFT);
-}
+stones_t single(const int x, const int y) { return 1ULL << (x * H_SHIFT + y * V_SHIFT); }
 
-stones_t pass() {
-  return 0ULL;
-}
+stones_t pass() { return 0ULL; }
 
-int popcount(const stones_t stones) {
-  return __builtin_popcountll(stones);
-}
+int popcount(const stones_t stones) { return __builtin_popcountll(stones); }
 
-int ctz(const stones_t stones) {
-  return __builtin_ctzll(stones);
-}
+int ctz(const stones_t stones) { return __builtin_ctzll(stones); }
 
-int clz(const stones_t stones) {
-  return __builtin_clzll(stones);
-}
+int clz(const stones_t stones) { return __builtin_clzll(stones); }
 
 stones_t liberties(const stones_t stones, const stones_t empty) {
-  return (
-    ((stones & WEST_BLOCK) << H_SHIFT) |
-    ((stones >> H_SHIFT) & WEST_BLOCK) |
-    (stones << V_SHIFT) |
-    (stones >> V_SHIFT)
-  ) & ~stones & empty;
+  return (((stones & WEST_BLOCK) << H_SHIFT) | ((stones >> H_SHIFT) & WEST_BLOCK) | (stones << V_SHIFT) | (stones >> V_SHIFT)) & ~stones &
+         empty;
 }
 
 stones_t cross(const stones_t stones) {
-  return (
-    ((stones & WEST_BLOCK) << H_SHIFT) |
-    ((stones >> H_SHIFT) & WEST_BLOCK) |
-    (stones << V_SHIFT) |
-    (stones >> V_SHIFT) |
-    stones
-  );
+  return (((stones & WEST_BLOCK) << H_SHIFT) | ((stones >> H_SHIFT) & WEST_BLOCK) | (stones << V_SHIFT) | (stones >> V_SHIFT) | stones);
 }
 
 stones_t blob(stones_t stones) {
@@ -174,21 +153,10 @@ stones_t stones_mirror_h(stones_t stones) {
 }
 
 stones_t stones_mirror_d(stones_t stones) {
-  return (
-    (stones & D0) |
-    ((stones & D1) << D_SHIFT) |
-    ((stones >> D_SHIFT) & D1) |
-    ((stones & D2) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & D2) |
-    ((stones & D3) << (3 * D_SHIFT)) |
-    ((stones >> (3 * D_SHIFT)) & D3) |
-    ((stones & D4) << (4 * D_SHIFT)) |
-    ((stones >> (4 * D_SHIFT)) & D4) |
-    ((stones & D5) << (5 * D_SHIFT)) |
-    ((stones >> (5 * D_SHIFT)) & D5) |
-    ((stones & D6) << (6 * D_SHIFT)) |
-    ((stones >> (6 * D_SHIFT)) & D6)
-  );
+  return ((stones & D0) | ((stones & D1) << D_SHIFT) | ((stones >> D_SHIFT) & D1) | ((stones & D2) << (2 * D_SHIFT)) |
+          ((stones >> (2 * D_SHIFT)) & D2) | ((stones & D3) << (3 * D_SHIFT)) | ((stones >> (3 * D_SHIFT)) & D3) |
+          ((stones & D4) << (4 * D_SHIFT)) | ((stones >> (4 * D_SHIFT)) & D4) | ((stones & D5) << (5 * D_SHIFT)) |
+          ((stones >> (5 * D_SHIFT)) & D5) | ((stones & D6) << (6 * D_SHIFT)) | ((stones >> (6 * D_SHIFT)) & D6));
 }
 
 stones_t stones_snap(stones_t stones) {
@@ -204,9 +172,7 @@ stones_t stones_snap(stones_t stones) {
   return stones;
 }
 
-bool is_contiguous(const stones_t stones) {
-  return flood(1ULL << ctz(stones), stones) == stones;
-}
+bool is_contiguous(const stones_t stones) { return flood(1ULL << ctz(stones), stones) == stones; }
 
 int width_of(const stones_t stones) {
   stones_t w = EAST_WALL;
@@ -254,7 +220,7 @@ int offset_v(stones_t stones) {
   if (!stones) {
     return 0;
   }
-  for(int result = 0;; result++) {
+  for (int result = 0;; result++) {
     if (stones & NORTH_WALL) {
       return result;
     }
@@ -266,10 +232,10 @@ int offset_v(stones_t stones) {
 
 coordinates coords_of(const stones_t stone) {
   if (!stone) {
-    return (coordinates) {-1, -1};
+    return (coordinates){-1, -1};
   }
   int i = ctz(stone);
-  return (coordinates) {i % WIDTH, i / WIDTH};
+  return (coordinates){i % WIDTH, i / WIDTH};
 }
 
 #ifndef NDEBUG
@@ -278,12 +244,8 @@ stones_t flood(register stones_t source, register const stones_t target) {
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK) << H_SHIFT) |
-      ((source >> H_SHIFT) & WEST_BLOCK) |
-      (source << V_SHIFT) |
-      (source >> V_SHIFT)
-    ) & target;
+    source |=
+        (((source & WEST_BLOCK) << H_SHIFT) | ((source >> H_SHIFT) & WEST_BLOCK) | (source << V_SHIFT) | (source >> V_SHIFT)) & target;
   } while (temp != source);
   return source;
 }
@@ -292,12 +254,8 @@ stones_t bleed(register stones_t source, register const stones_t target) {
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK) << H_SHIFT) |
-      ((source >> H_SHIFT) & WEST_BLOCK) |
-      (source << V_SHIFT) |
-      (source >> V_SHIFT)
-    ) & target;
+    source |=
+        (((source & WEST_BLOCK) << H_SHIFT) | ((source >> H_SHIFT) & WEST_BLOCK) | (source << V_SHIFT) | (source >> V_SHIFT)) & target;
   } while (temp != source);
   return source;
 }

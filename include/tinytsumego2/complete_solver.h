@@ -1,8 +1,8 @@
 #pragma once
-#include <stdbool.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
 #include "tinytsumego2/keyspace.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
+#include <stdbool.h>
 
 /**
  * @file complete_solver.h

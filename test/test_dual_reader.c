@@ -1,10 +1,10 @@
+#include "tinytsumego2/dual_reader.h"
+#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/dual_reader.h"
 
 #define MEM_FILE_SIZE (1000000)
 
@@ -34,8 +34,10 @@ void test_bulky_five() {
   const state root = bulky_five();
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  while(iterate_dual_graph(&dg, false));
-  while(area_iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, false))
+    ;
+  while (area_iterate_dual_graph(&dg, true))
+    ;
 
   size_t value_map_size = 0;
   frozen_hash_table fht = prepare_frozen_hash(&dg, &value_map_size);
@@ -56,9 +58,9 @@ void test_bulky_five() {
 
   for (size_t i = 0; i < dgr.value_table.bulk_map_size; ++i) {
     dual_table_value tv = dgr.value_table.bulk_map[i];
-    dual_value v = (dual_value) {
-      {score_q7_to_float(tv.plain.low), score_q7_to_float(tv.plain.high)},
-      {score_q7_to_float(tv.forcing.low), score_q7_to_float(tv.forcing.high)},
+    dual_value v = (dual_value){
+        {score_q7_to_float(tv.plain.low), score_q7_to_float(tv.plain.high)},
+        {score_q7_to_float(tv.forcing.low), score_q7_to_float(tv.forcing.high)},
     };
     printf("#%zu: (%f, %f), (%f, %f)\n", i, v.plain.low, v.plain.high, v.forcing.low, v.forcing.high);
   }
@@ -99,8 +101,10 @@ void test_external_liberties() {
   const state root = rectangle_six();
   print_state(&root);
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  while(iterate_dual_graph(&dg, false));
-  while(area_iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, false))
+    ;
+  while (area_iterate_dual_graph(&dg, true))
+    ;
 
   size_t value_map_size = 0;
   frozen_hash_table fht = prepare_frozen_hash(&dg, &value_map_size);
@@ -121,9 +125,9 @@ void test_external_liberties() {
 
   for (size_t i = 0; i < dgr.value_table.bulk_map_size; ++i) {
     dual_table_value tv = dgr.value_table.bulk_map[i];
-    dual_value v = (dual_value) {
-      {score_q7_to_float(tv.plain.low), score_q7_to_float(tv.plain.high)},
-      {score_q7_to_float(tv.forcing.low), score_q7_to_float(tv.forcing.high)},
+    dual_value v = (dual_value){
+        {score_q7_to_float(tv.plain.low), score_q7_to_float(tv.plain.high)},
+        {score_q7_to_float(tv.forcing.low), score_q7_to_float(tv.forcing.high)},
     };
     printf("#%zu: (%f, %f), (%f, %f)\n", i, v.plain.low, v.plain.high, v.forcing.low, v.forcing.high);
   }
@@ -204,10 +208,10 @@ void test_external_liberties() {
       right_found = true;
     }
   }
-  #ifndef NORMALIZE_EXTERNAL_LIBERTIES
-    assert(left_found);
-    assert(!right_found);
-  #endif
+#ifndef NORMALIZE_EXTERNAL_LIBERTIES
+  assert(left_found);
+  assert(!right_found);
+#endif
 
   unload_dual_graph_reader(&dgr);
 
@@ -231,7 +235,7 @@ void test_frozen_hash_table() {
   dg.forcing_values = malloc(dg.keyspace._.size * sizeof(table_value));
 
   for (size_t i = 0; i < num_rare; ++i) {
-    dg.plain_values[i].low = (score_q7_t) (i + 1);
+    dg.plain_values[i].low = (score_q7_t)(i + 1);
     dg.plain_values[i].high = 0;
     dg.forcing_values[i].low = 0;
     dg.forcing_values[i].high = 0;
@@ -241,16 +245,16 @@ void test_frozen_hash_table() {
     size_t i0 = num_rare + i;
     size_t i1 = num_rare + num_uncommon + i;
     dg.plain_values[i0].low = dg.plain_values[i1].low = 0;
-    dg.plain_values[i0].high = dg.plain_values[i1].high = (score_q7_t) (i + 1);  // Intentional overflow to negative
+    dg.plain_values[i0].high = dg.plain_values[i1].high = (score_q7_t)(i + 1); // Intentional overflow to negative
     dg.forcing_values[i0].low = dg.forcing_values[i1].low = 0;
     dg.forcing_values[i0].high = dg.forcing_values[i1].high = 0;
   }
 
   for (size_t i = 0; i < num_common; ++i) {
-    size_t j = num_rare + 2 * num_uncommon + 3*i;
+    size_t j = num_rare + 2 * num_uncommon + 3 * i;
     dg.plain_values[j + 0].low = dg.plain_values[j + 1].low = dg.plain_values[j + 2].low = 0;
     dg.plain_values[j + 0].high = dg.plain_values[j + 1].high = dg.plain_values[j + 2].high = 0;
-    dg.forcing_values[j + 0].low = dg.forcing_values[j + 1].low = dg.forcing_values[j + 2].low = (score_q7_t) (i + 1);
+    dg.forcing_values[j + 0].low = dg.forcing_values[j + 1].low = dg.forcing_values[j + 2].low = (score_q7_t)(i + 1);
     dg.forcing_values[j + 0].high = dg.forcing_values[j + 1].high = dg.forcing_values[j + 2].high = 0;
   }
 
@@ -264,12 +268,12 @@ void test_frozen_hash_table() {
   // Mock bulk map
   fht.bulk_ids = malloc(dg.keyspace._.size * sizeof(value_id_t));
   for (size_t i = 0; i < dg.keyspace._.size; ++i) {
-    dual_table_value v = (dual_table_value) {
-      dg.plain_values[i],
-      dg.forcing_values[i],
+    dual_table_value v = (dual_table_value){
+        dg.plain_values[i],
+        dg.forcing_values[i],
     };
     dual_table_value *tv = bsearch(&v, fht.bulk_map, fht.bulk_map_size, sizeof(dual_table_value), compare_dual_table_values);
-    fht.bulk_ids[i] = tv ? (value_id_t) (tv - fht.bulk_map) : VALUE_ID_SENTINEL;
+    fht.bulk_ids[i] = tv ? (value_id_t)(tv - fht.bulk_map) : VALUE_ID_SENTINEL;
   }
 
   // Make sure it works
@@ -285,12 +289,8 @@ void test_frozen_hash_table() {
   free(fht.bulk_ids);
   fht.bulk_ids = NULL;
 
-  const size_t mem_file_size = (
-    MEM_FILE_SIZE +
-    dg.keyspace._.size * sizeof(value_id_t) +
-    fht.bulk_map_size * sizeof(dual_table_value) +
-    fht.tail_size * (sizeof(size_t) + sizeof(dual_table_value))
-  );
+  const size_t mem_file_size = (MEM_FILE_SIZE + dg.keyspace._.size * sizeof(value_id_t) + fht.bulk_map_size * sizeof(dual_table_value) +
+                                fht.tail_size * (sizeof(size_t) + sizeof(dual_table_value)));
 
   char *buffer = malloc(mem_file_size);
   for (size_t i = 0; i < mem_file_size; ++i) {

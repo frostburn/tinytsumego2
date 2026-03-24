@@ -1,57 +1,57 @@
+#include "tinytsumego2/status.h"
+#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/scoring.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/status.h"
 
-static const char* UNKNOWN_STATUS = "? ";
+static const char *UNKNOWN_STATUS = "? ";
 
-static const char* DEAD_DEAD = "D ";
-static const char* KO_DEAD = "KD";
-static const char* SEKI_DEAD = "SD";
-static const char* ALIVE_DEAD = "LD";
+static const char *DEAD_DEAD = "D ";
+static const char *KO_DEAD = "KD";
+static const char *SEKI_DEAD = "SD";
+static const char *ALIVE_DEAD = "LD";
 
-static const char* SEKI_SEKI = "S ";
-static const char* KO_KO = "K ";
-static const char* SEKI_KO = "SK";
+static const char *SEKI_SEKI = "S ";
+static const char *KO_KO = "K ";
+static const char *SEKI_KO = "SK";
 
-static const char* ALIVE_KO = "LK";
-static const char* ALIVE_SEKI = "LS";
-static const char* ALIVE_ALIVE = "L ";
+static const char *ALIVE_KO = "LK";
+static const char *ALIVE_SEKI = "LS";
+static const char *ALIVE_ALIVE = "L ";
 
-const char* tsumego_status_string(tsumego_status ts) {
+const char *tsumego_status_string(tsumego_status ts) {
   if (ts.player_first.life == SUPER_KO || ts.opponent_first.life == SUPER_KO) {
     return UNKNOWN_STATUS;
   }
   if (ts.opponent_first.life == DEAD) {
     switch (ts.player_first.life) {
-      case DEAD:
-        return DEAD_DEAD;
-      case DEAD_UNLESS_KO_2:
-      case DEAD_UNLESS_KO_1:
-      case ALIVE_UNLESS_KO_1:
-      case ALIVE_UNLESS_KO_2:
-        return KO_DEAD;
-      case SEKI:
-        return SEKI_DEAD;
-      case ALIVE:
-        return ALIVE_DEAD;
-      default:
+    case DEAD:
+      return DEAD_DEAD;
+    case DEAD_UNLESS_KO_2:
+    case DEAD_UNLESS_KO_1:
+    case ALIVE_UNLESS_KO_1:
+    case ALIVE_UNLESS_KO_2:
+      return KO_DEAD;
+    case SEKI:
+      return SEKI_DEAD;
+    case ALIVE:
+      return ALIVE_DEAD;
+    default:
     }
   }
   if (ts.player_first.life == ALIVE) {
     switch (ts.opponent_first.life) {
-      case DEAD_UNLESS_KO_2:
-      case DEAD_UNLESS_KO_1:
-      case ALIVE_UNLESS_KO_1:
-      case ALIVE_UNLESS_KO_2:
-        return ALIVE_KO;
-      case SEKI:
-        return ALIVE_SEKI;
-      case ALIVE:
-        return ALIVE_ALIVE;
-      default:
+    case DEAD_UNLESS_KO_2:
+    case DEAD_UNLESS_KO_1:
+    case ALIVE_UNLESS_KO_1:
+    case ALIVE_UNLESS_KO_2:
+      return ALIVE_KO;
+    case SEKI:
+      return ALIVE_SEKI;
+    case ALIVE:
+      return ALIVE_ALIVE;
+    default:
     }
   }
   if (ts.player_first.life == SEKI) {
@@ -80,7 +80,8 @@ tsumego_status get_tsumego_status(const state *s) {
   base.button = 0;
 
   dg = create_dual_graph(&base, COMPRESSED_KEYSPACE);
-  while(iterate_dual_graph(&dg, false));
+  while (iterate_dual_graph(&dg, false))
+    ;
 
   // Player first
   c = base;
@@ -174,7 +175,7 @@ tsumego_status get_tsumego_status(const state *s) {
   c.player = base.opponent;
   c.opponent = base.player;
   c.white_to_play = !base.white_to_play;
-  c.ko_threats = -2;  // Resist with maximum resources
+  c.ko_threats = -2; // Resist with maximum resources
   v = get_dual_graph_value(&dg, &c, NONE);
   if (v.low != v.high) {
     result.opponent_first.life = SUPER_KO;

@@ -1,7 +1,7 @@
+#include "tinytsumego2/dual_solver.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/dual_solver.h"
 
 void verify_goban(stones_t visual_area) {
   state root = {0};
@@ -11,11 +11,13 @@ void verify_goban(stones_t visual_area) {
 
   printf("Symmetric iteration\n");
   dual_graph sg = create_dual_graph(&root, SYMMETRIC_KEYSPACE);
-  while(iterate_dual_graph(&sg, true));
+  while (iterate_dual_graph(&sg, true))
+    ;
 
   printf("Dual iteration\n");
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  while(iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, true))
+    ;
 
   for (size_t i = 0; i < dg.keyspace._.size; ++i) {
     state s = from_compressed_key(&(dg.keyspace.compressed), i);

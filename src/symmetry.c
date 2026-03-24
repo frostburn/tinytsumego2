@@ -1,179 +1,87 @@
+#include "tinytsumego2/symmetry.h"
+#include "tinytsumego2/util.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "tinytsumego2/symmetry.h"
-#include "tinytsumego2/util.h"
 
 #define CHECK_SYM_SANITY
 
 #define TRIT_BLOCK_SIZE (8)
 #define TRIT_BLOCK_M (6561)
 
-stones_t stones_mirror_v_2(const stones_t stones) {
-  return ((stones & H0) << V_SHIFT) | ((stones & H1) >> V_SHIFT);
-}
+stones_t stones_mirror_v_2(const stones_t stones) { return ((stones & H0) << V_SHIFT) | ((stones & H1) >> V_SHIFT); }
 
 stones_t stones_mirror_v_3(const stones_t stones) {
-  return (
-    ((stones & H0) << (2 * V_SHIFT)) |
-    (stones & H1) |
-    ((stones & H2) >> (2 * V_SHIFT))
-  );
+  return (((stones & H0) << (2 * V_SHIFT)) | (stones & H1) | ((stones & H2) >> (2 * V_SHIFT)));
 }
 
 stones_t stones_mirror_v_4(const stones_t stones) {
-    return (
-      ((stones & H0) << (3 * V_SHIFT)) |
-      ((stones & H1) << V_SHIFT) |
-      ((stones & H2) >> V_SHIFT) |
-      ((stones & H3) >> (3 * V_SHIFT))
-  );
+  return (((stones & H0) << (3 * V_SHIFT)) | ((stones & H1) << V_SHIFT) | ((stones & H2) >> V_SHIFT) | ((stones & H3) >> (3 * V_SHIFT)));
 }
 
 stones_t stones_mirror_v_5(const stones_t stones) {
-  return (
-    ((stones & H0) << (4 * V_SHIFT)) |
-    ((stones & H1) << (2 * V_SHIFT)) |
-    (stones & H2) |
-    ((stones & H3) >> (2 * V_SHIFT)) |
-    ((stones & H4) >> (4 * V_SHIFT))
-  );
+  return (((stones & H0) << (4 * V_SHIFT)) | ((stones & H1) << (2 * V_SHIFT)) | (stones & H2) | ((stones & H3) >> (2 * V_SHIFT)) |
+          ((stones & H4) >> (4 * V_SHIFT)));
 }
 
 stones_t stones_mirror_v_6(stones_t stones) {
-  stones = (
-    ((stones & (H0 | H1 | H2)) << (3 * V_SHIFT)) |
-    ((stones & (H3 | H4 | H5)) >> (3 * V_SHIFT))
-  );
-  return (
-    ((stones & (H0 | H3)) << (2 * V_SHIFT)) |
-    (stones & (H1 | H4)) |
-    ((stones & (H2 | H5)) >> (2 * V_SHIFT))
-  );
+  stones = (((stones & (H0 | H1 | H2)) << (3 * V_SHIFT)) | ((stones & (H3 | H4 | H5)) >> (3 * V_SHIFT)));
+  return (((stones & (H0 | H3)) << (2 * V_SHIFT)) | (stones & (H1 | H4)) | ((stones & (H2 | H5)) >> (2 * V_SHIFT)));
 }
 
-stones_t stones_mirror_h_2(const stones_t stones) {
-  return ((stones & V0) << H_SHIFT) | ((stones & V1) >> H_SHIFT);
-}
+stones_t stones_mirror_h_2(const stones_t stones) { return ((stones & V0) << H_SHIFT) | ((stones & V1) >> H_SHIFT); }
 
 stones_t stones_mirror_h_3(const stones_t stones) {
-  return (
-    ((stones & V0) << (2 * H_SHIFT)) |
-    (stones & V1) |
-    ((stones & V2) >> (2 * H_SHIFT))
-  );
+  return (((stones & V0) << (2 * H_SHIFT)) | (stones & V1) | ((stones & V2) >> (2 * H_SHIFT)));
 }
 
 stones_t stones_mirror_h_4(const stones_t stones) {
-    return (
-      ((stones & V0) << (3 * H_SHIFT)) |
-      ((stones & V1) << H_SHIFT) |
-      ((stones & V2) >> H_SHIFT) |
-      ((stones & V3) >> (3 * H_SHIFT))
-  );
+  return (((stones & V0) << (3 * H_SHIFT)) | ((stones & V1) << H_SHIFT) | ((stones & V2) >> H_SHIFT) | ((stones & V3) >> (3 * H_SHIFT)));
 }
 
 stones_t stones_mirror_h_5(const stones_t stones) {
-  return (
-    ((stones & V0) << (4 * H_SHIFT)) |
-    ((stones & V1) << (2 * H_SHIFT)) |
-    (stones & V2) |
-    ((stones & V3) >> (2 * H_SHIFT)) |
-    ((stones & V4) >> (4 * H_SHIFT))
-  );
+  return (((stones & V0) << (4 * H_SHIFT)) | ((stones & V1) << (2 * H_SHIFT)) | (stones & V2) | ((stones & V3) >> (2 * H_SHIFT)) |
+          ((stones & V4) >> (4 * H_SHIFT)));
 }
 
 stones_t stones_mirror_h_6(stones_t stones) {
-  stones = (
-    ((stones & (V0 | V1 | V2)) << (3 * H_SHIFT)) |
-    ((stones & (V3 | V4 | V5)) >> (3 * H_SHIFT))
-  );
-  return (
-    ((stones & (V0 | V3)) << (2 * H_SHIFT)) |
-    (stones & (V1 | V4)) |
-    ((stones & (V2 | V5)) >> (2 * H_SHIFT))
-  );
+  stones = (((stones & (V0 | V1 | V2)) << (3 * H_SHIFT)) | ((stones & (V3 | V4 | V5)) >> (3 * H_SHIFT)));
+  return (((stones & (V0 | V3)) << (2 * H_SHIFT)) | (stones & (V1 | V4)) | ((stones & (V2 | V5)) >> (2 * H_SHIFT)));
 }
 
 stones_t stones_mirror_h_7(stones_t stones) {
-  stones = (
-    ((stones >> (4 * H_SHIFT)) & (V0 | V1 | V2)) |
-    (stones & V3) |
-    ((stones & (V0 | V1 | V2)) << (4 * H_SHIFT))
-  );
-  return (
-    ((stones >> (2 * H_SHIFT)) & (V0 | V4)) |
-    (stones & (V1 | V3 | V5)) |
-    ((stones & (V0 | V4)) << (2 * H_SHIFT))
-  );
+  stones = (((stones >> (4 * H_SHIFT)) & (V0 | V1 | V2)) | (stones & V3) | ((stones & (V0 | V1 | V2)) << (4 * H_SHIFT)));
+  return (((stones >> (2 * H_SHIFT)) & (V0 | V4)) | (stones & (V1 | V3 | V5)) | ((stones & (V0 | V4)) << (2 * H_SHIFT)));
 }
 
 stones_t stones_mirror_h_8(stones_t stones) {
-  stones = (
-    ((stones & (V0 | V1 | V2 | V3)) << (4 * H_SHIFT)) |
-    ((stones & (V4 | V5 | V6 | V7)) >> (4 * H_SHIFT))
-  );
-  stones = (
-    ((stones & (V0 | V1 | V4 | V5)) << (2 * H_SHIFT)) |
-    ((stones & (V2 | V3 | V6 | V7)) >> (2 * H_SHIFT))
-  );
-  return (
-    ((stones & (V0 | V2 | V4 | V6)) << H_SHIFT) |
-    ((stones & (V1 | V3 | V5 | V7)) >> H_SHIFT)
-  );
+  stones = (((stones & (V0 | V1 | V2 | V3)) << (4 * H_SHIFT)) | ((stones & (V4 | V5 | V6 | V7)) >> (4 * H_SHIFT)));
+  stones = (((stones & (V0 | V1 | V4 | V5)) << (2 * H_SHIFT)) | ((stones & (V2 | V3 | V6 | V7)) >> (2 * H_SHIFT)));
+  return (((stones & (V0 | V2 | V4 | V6)) << H_SHIFT) | ((stones & (V1 | V3 | V5 | V7)) >> H_SHIFT));
 }
 
 stones_t stones_mirror_d_3(const stones_t stones) {
-  return (
-    (stones & D0) |
-    ((stones & D1) << D_SHIFT) |
-    ((stones >> D_SHIFT) & D1) |
-    ((stones & D2) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & D2)
-  );
+  return ((stones & D0) | ((stones & D1) << D_SHIFT) | ((stones >> D_SHIFT) & D1) | ((stones & D2) << (2 * D_SHIFT)) |
+          ((stones >> (2 * D_SHIFT)) & D2));
 }
 
 stones_t stones_mirror_d_4(const stones_t stones) {
-  return (
-    (stones & D0) |
-    ((stones & D1) << D_SHIFT) |
-    ((stones >> D_SHIFT) & D1) |
-    ((stones & D2) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & D2) |
-    ((stones & D3) << (3 * D_SHIFT)) |
-    ((stones >> (3 * D_SHIFT)) & D3)
-  );
+  return ((stones & D0) | ((stones & D1) << D_SHIFT) | ((stones >> D_SHIFT) & D1) | ((stones & D2) << (2 * D_SHIFT)) |
+          ((stones >> (2 * D_SHIFT)) & D2) | ((stones & D3) << (3 * D_SHIFT)) | ((stones >> (3 * D_SHIFT)) & D3));
 }
 
 stones_t stones_mirror_d_5(const stones_t stones) {
-  return (
-    (stones & D0) |
-    ((stones & D1) << D_SHIFT) |
-    ((stones >> D_SHIFT) & D1) |
-    ((stones & D2) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & D2) |
-    ((stones & D3) << (3 * D_SHIFT)) |
-    ((stones >> (3 * D_SHIFT)) & D3) |
-    ((stones & D4) << (4 * D_SHIFT)) |
-    ((stones >> (4 * D_SHIFT)) & D4)
-  );
+  return ((stones & D0) | ((stones & D1) << D_SHIFT) | ((stones >> D_SHIFT) & D1) | ((stones & D2) << (2 * D_SHIFT)) |
+          ((stones >> (2 * D_SHIFT)) & D2) | ((stones & D3) << (3 * D_SHIFT)) | ((stones >> (3 * D_SHIFT)) & D3) |
+          ((stones & D4) << (4 * D_SHIFT)) | ((stones >> (4 * D_SHIFT)) & D4));
 }
 
 stones_t stones_mirror_d_6(const stones_t stones) {
-  return (
-    (stones & D0) |
-    ((stones & D1) << D_SHIFT) |
-    ((stones >> D_SHIFT) & D1) |
-    ((stones & D2) << (2 * D_SHIFT)) |
-    ((stones >> (2 * D_SHIFT)) & D2) |
-    ((stones & D3) << (3 * D_SHIFT)) |
-    ((stones >> (3 * D_SHIFT)) & D3) |
-    ((stones & D4) << (4 * D_SHIFT)) |
-    ((stones >> (4 * D_SHIFT)) & D4) |
-    ((stones & D5) << (5 * D_SHIFT)) |
-    ((stones >> (5 * D_SHIFT)) & D5)
-  );
+  return ((stones & D0) | ((stones & D1) << D_SHIFT) | ((stones >> D_SHIFT) & D1) | ((stones & D2) << (2 * D_SHIFT)) |
+          ((stones >> (2 * D_SHIFT)) & D2) | ((stones & D3) << (3 * D_SHIFT)) | ((stones >> (3 * D_SHIFT)) & D3) |
+          ((stones & D4) << (4 * D_SHIFT)) | ((stones >> (4 * D_SHIFT)) & D4) | ((stones & D5) << (5 * D_SHIFT)) |
+          ((stones >> (5 * D_SHIFT)) & D5));
 }
 
 mirror_op_t least_of_2(mirror_f vertical, mirror_f horizontal, stones_t *black, stones_t *white) {
@@ -322,9 +230,7 @@ size_t odd_even_core_idx(stones_t black, stones_t white) {
   return result;
 }
 
-size_t even_odd_core_idx(stones_t black, stones_t white) {
-  return odd_even_core_idx(stones_mirror_d_4(black), stones_mirror_d_4(white));
-}
+size_t even_odd_core_idx(stones_t black, stones_t white) { return odd_even_core_idx(stones_mirror_d_4(black), stones_mirror_d_4(white)); }
 
 void prepare_odd_even_symmetry(symmetry *sym, stones_t visual_area) {
   stones_t core_mask = rectangle(3, 4) ^ (rectangle(1, 2) << (H_SHIFT + V_SHIFT));
@@ -366,9 +272,9 @@ void prepare_odd_even_symmetry(symmetry *sym, stones_t visual_area) {
       continue;
     }
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_2(stones_mirror_v_4, stones_mirror_h_3, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -383,8 +289,8 @@ void prepare_odd_even_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < ODD_EVEN_CORE_SIZE; ++i) {
@@ -474,9 +380,9 @@ void prepare_odd_odd_symmetry(symmetry *sym, stones_t visual_area) {
     }
     free(cs);
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_2(stones_mirror_v_3, stones_mirror_h_5, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -491,8 +397,8 @@ void prepare_odd_odd_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < ODD_ODD_CORE_SIZE; ++i) {
@@ -570,9 +476,9 @@ void prepare_odd_square_symmetry(symmetry *sym, stones_t visual_area) {
       continue;
     }
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_3(stones_mirror_v_3, stones_mirror_h_3, stones_mirror_d_3, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -587,8 +493,8 @@ void prepare_odd_square_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < ODD_SQUARE_CORE_SIZE; ++i) {
@@ -662,9 +568,9 @@ void prepare_even_square_symmetry(symmetry *sym, stones_t visual_area) {
       continue;
     }
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_3(stones_mirror_v_4, stones_mirror_h_4, stones_mirror_d_4, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -679,8 +585,8 @@ void prepare_even_square_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < EVEN_SQUARE_CORE_SIZE; ++i) {
@@ -696,100 +602,100 @@ symmetry compute_symmetry(const state *s) {
   int w = s->wide ? width_of_16(s->visual_area) : width_of(s->visual_area);
   int h = s->wide ? height_of_16(s->visual_area) : height_of(s->visual_area);
   switch (w) {
-    case 2:
-      assert(false && "Width of 2 not implemented. Try flipping input diagonally.");
-      break;
-    case 3:
-      result.horizontal = stones_mirror_h_3;
-      break;
-    case 4:
-      result.horizontal = s->wide ? stones_mirror_h_w4 : stones_mirror_h_4;
-      break;
-    case 5:
-      result.horizontal = s->wide ? stones_mirror_h_w5 : stones_mirror_h_5;
-      if (!s->wide) {
-        result.core_shift += (h & 1) ? 0 : 1;
-      }
-      break;
-    case 6:
-      result.horizontal = s->wide ? stones_mirror_h_w6 : stones_mirror_h_6;
+  case 2:
+    assert(false && "Width of 2 not implemented. Try flipping input diagonally.");
+    break;
+  case 3:
+    result.horizontal = stones_mirror_h_3;
+    break;
+  case 4:
+    result.horizontal = s->wide ? stones_mirror_h_w4 : stones_mirror_h_4;
+    break;
+  case 5:
+    result.horizontal = s->wide ? stones_mirror_h_w5 : stones_mirror_h_5;
+    if (!s->wide) {
+      result.core_shift += (h & 1) ? 0 : 1;
+    }
+    break;
+  case 6:
+    result.horizontal = s->wide ? stones_mirror_h_w6 : stones_mirror_h_6;
+    result.core_shift += 1;
+    break;
+  case 7:
+    result.horizontal = s->wide ? stones_mirror_h_w7 : stones_mirror_h_7;
+    if (s->wide) {
       result.core_shift += 1;
-      break;
-    case 7:
-      result.horizontal = s->wide ? stones_mirror_h_w7 : stones_mirror_h_7;
-      if (s->wide) {
-        result.core_shift += 1;
-      } else {
-        result.core_shift += (h & 1) ? 1 : 2;
-      }
-      break;
-    case 8:
-      result.horizontal = s->wide ? stones_mirror_h_w8 : stones_mirror_h_8;
+    } else {
+      result.core_shift += (h & 1) ? 1 : 2;
+    }
+    break;
+  case 8:
+    result.horizontal = s->wide ? stones_mirror_h_w8 : stones_mirror_h_8;
+    result.core_shift += 2;
+    break;
+  case 9:
+    result.horizontal = s->wide ? stones_mirror_h_w9 : stones_mirror_h;
+    if (s->wide) {
       result.core_shift += 2;
-      break;
-    case 9:
-      result.horizontal = s->wide ? stones_mirror_h_w9 : stones_mirror_h;
-      if (s->wide) {
-        result.core_shift += 2;
-      } else {
-        result.core_shift += (h & 1) ? 2 : 3;
-      }
-      break;
-    default:
-      assert(false && "Unsupported width");
-      break;
+    } else {
+      result.core_shift += (h & 1) ? 2 : 3;
+    }
+    break;
+  default:
+    assert(false && "Unsupported width");
+    break;
   }
   switch (h) {
-    case 2:
-      result.vertical = s->wide ? stones_mirror_v_w2 : stones_mirror_v_2;
-      break;
-    case 3:
-      result.vertical = stones_mirror_v_3;
-      break;
-    case 4:
-      result.vertical = s->wide ? stones_mirror_v_16 : stones_mirror_v_4;
-      if (s->wide && !(w & 1)) {
-        result.core_shift += V_SHIFT_16;
-      }
-      break;
-    case 5:
-      result.vertical = stones_mirror_v_5;
-      result.core_shift += V_SHIFT;
-      break;
-    case 6:
-      result.vertical = stones_mirror_v_6;
-      result.core_shift += V_SHIFT;
-      break;
-    case 7:
-      result.vertical = stones_mirror_v;
-      result.core_shift += 2 * V_SHIFT;
-      break;
-    default:
-      assert(false && "Unsupported height");
-      break;
+  case 2:
+    result.vertical = s->wide ? stones_mirror_v_w2 : stones_mirror_v_2;
+    break;
+  case 3:
+    result.vertical = stones_mirror_v_3;
+    break;
+  case 4:
+    result.vertical = s->wide ? stones_mirror_v_16 : stones_mirror_v_4;
+    if (s->wide && !(w & 1)) {
+      result.core_shift += V_SHIFT_16;
+    }
+    break;
+  case 5:
+    result.vertical = stones_mirror_v_5;
+    result.core_shift += V_SHIFT;
+    break;
+  case 6:
+    result.vertical = stones_mirror_v_6;
+    result.core_shift += V_SHIFT;
+    break;
+  case 7:
+    result.vertical = stones_mirror_v;
+    result.core_shift += 2 * V_SHIFT;
+    break;
+  default:
+    assert(false && "Unsupported height");
+    break;
   }
 
   if (w == h) {
     switch (w) {
-      case 3:
-        result.diagonal = stones_mirror_d_3;
-        break;
-      case 4:
-        result.diagonal = stones_mirror_d_4;
-        break;
-      case 5:
-        result.diagonal = stones_mirror_d_5;
-        result.core_shift = H_SHIFT + V_SHIFT;
-        break;
-      case 6:
-        result.diagonal = stones_mirror_d_6;
-        break;
-      case 7:
-        result.diagonal = stones_mirror_d;
-        break;
-      default:
-        assert(false && "Unsupported square size");
-        break;
+    case 3:
+      result.diagonal = stones_mirror_d_3;
+      break;
+    case 4:
+      result.diagonal = stones_mirror_d_4;
+      break;
+    case 5:
+      result.diagonal = stones_mirror_d_5;
+      result.core_shift = H_SHIFT + V_SHIFT;
+      break;
+    case 6:
+      result.diagonal = stones_mirror_d_6;
+      break;
+    case 7:
+      result.diagonal = stones_mirror_d;
+      break;
+    default:
+      assert(false && "Unsupported square size");
+      break;
     }
     if (w & 1) {
       prepare_odd_square_symmetry(&result, s->visual_area);
@@ -839,8 +745,8 @@ symmetry compute_symmetry(const state *s) {
   }
 
   result.num_blocks = ceil_div(result.pulp_count, TRIT_BLOCK_SIZE);
-  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
-  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
+  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t *));
+  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t *));
 
   size_t m = 1;
   int i;
@@ -851,12 +757,12 @@ symmetry compute_symmetry(const state *s) {
       size_t key = m * j;
       for (int k = result.pulp_count - 1; k >= 0; --k) {
         switch (key % 3) {
-          case 1:
-            result.black_blocks[i][j] |= result.pulp_dots[k];
-            break;
-          case 2:
-            result.white_blocks[i][j] |= result.pulp_dots[k];
-            break;
+        case 1:
+          result.black_blocks[i][j] |= result.pulp_dots[k];
+          break;
+        case 2:
+          result.white_blocks[i][j] |= result.pulp_dots[k];
+          break;
         }
         key /= 3;
       }
@@ -875,12 +781,12 @@ symmetry compute_symmetry(const state *s) {
       size_t key = m * j;
       for (int k = result.pulp_count - 1; k >= 0; --k) {
         switch (key % 3) {
-          case 1:
-            result.black_blocks[i][j] |= result.pulp_dots[k];
-            break;
-          case 2:
-            result.white_blocks[i][j] |= result.pulp_dots[k];
-            break;
+        case 1:
+          result.black_blocks[i][j] |= result.pulp_dots[k];
+          break;
+        case 2:
+          result.white_blocks[i][j] |= result.pulp_dots[k];
+          break;
         }
         key /= 3;
       }

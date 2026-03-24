@@ -1,16 +1,15 @@
+#include "tinytsumego2/state.h"
+#include "tinytsumego2/bitmatrix.h"
+#include "tinytsumego2/util.h"
 #include <stdint.h>
 #include <stdio.h>
-#include "tinytsumego2/bitmatrix.h"
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/util.h"
 
 void print_state(const state *s) {
   stones_t black, white;
   if (s->white_to_play) {
     white = s->player;
     black = s->opponent;
-  }
-  else {
+  } else {
     black = s->player;
     white = s->opponent;
   }
@@ -21,7 +20,7 @@ void print_state(const state *s) {
   // Column headers
   printf(" ");
   for (int i = 0; i < width; i++) {
-      printf(" %c", 'A' + i);
+    printf(" %c", 'A' + i);
   }
   printf("\n");
 
@@ -36,61 +35,53 @@ void print_state(const state *s) {
     // Visual / logical playing area indicators
     if (p & s->visual_area) {
       if (p & s->logical_area) {
-        printf("\x1b[0;30;43m");  // Yellow BG
+        printf("\x1b[0;30;43m"); // Yellow BG
       } else {
-        printf("\x1b[0;30;46m");  // Cyan BG
+        printf("\x1b[0;30;46m"); // Cyan BG
       }
-    }
-    else {
+    } else {
       if (p & s->logical_area) {
-        printf("\x1b[0;30;101m");  // Bright Red BG (error)
+        printf("\x1b[0;30;101m"); // Bright Red BG (error)
       } else {
-        printf("\x1b[0m");  // No BG (outside)
+        printf("\x1b[0m"); // No BG (outside)
       }
     }
 
     // Stones
     if (p & black) {
-      printf("\x1b[30m");  // Black
+      printf("\x1b[30m"); // Black
       if (p & s->target) {
         if (p & s->immortal) {
-          printf("\x1b[1m");  // Bold
+          printf("\x1b[1m"); // Bold
         }
         printf(" b");
-      }
-      else if (p & s->immortal) {
+      } else if (p & s->immortal) {
         printf(" B");
       } else if (p & s->external) {
         printf(" +");
-      }
-      else if (p & white) {
+      } else if (p & white) {
         printf(" #");
       } else {
         printf(" @");
       }
-    }
-    else if (p & white) {
-      printf("\x1b[97m");  // Bright White
+    } else if (p & white) {
+      printf("\x1b[97m"); // Bright White
       if (p & s->target) {
         if (p & s->immortal) {
-          printf("\x1b[1m");  // Bold
+          printf("\x1b[1m"); // Bold
         }
         printf(" w");
-      }
-      else if (p & s->immortal) {
+      } else if (p & s->immortal) {
         printf(" W");
       } else if (p & s->external) {
         printf(" -");
-      }
-      else {
+      } else {
         printf(" 0");
       }
-    }
-    else if (p & s->ko) {
+    } else if (p & s->ko) {
       printf("\x1b[35m");
       printf(" *");
-    }
-    else if (p & s->visual_area) {
+    } else if (p & s->visual_area) {
       if (p & s->target) {
         printf("\x1b[34m");
         printf(" !");
@@ -102,44 +93,28 @@ void print_state(const state *s) {
           printf(" ,");
         }
       }
-    }
-    else if (p & s->logical_area) {
+    } else if (p & s->logical_area) {
       printf("\x1b[35m");
       printf(" ?");
-    }
-    else {
+    } else {
       printf("  ");
     }
-    if (i % width == width - 1){
+    if (i % width == width - 1) {
       printf("\x1b[0m\n");
     }
   }
   printf("passes = %d ko_threats = %d button = %d\n", s->passes, s->ko_threats, s->button);
   if (s->white_to_play) {
     printf("White to play\n");
-  }
-  else {
+  } else {
     printf("Black to play\n");
   }
 }
 
 void repr_state(const state *s) {
-    printf(
-        "(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s, %s}\n",
-        s->visual_area,
-        s->logical_area,
-        s->player,
-        s->opponent,
-        s->ko,
-        s->target,
-        s->immortal,
-        s->external,
-        s->passes,
-        s->ko_threats,
-        s->button,
-        s->white_to_play ? "true" : "false",
-        s->wide ? "true" : "false"
-    );
+  printf("(state) {%lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %lluULL, %d, %d, %d, %s, %s}\n", s->visual_area,
+         s->logical_area, s->player, s->opponent, s->ko, s->target, s->immortal, s->external, s->passes, s->ko_threats, s->button,
+         s->white_to_play ? "true" : "false", s->wide ? "true" : "false");
 }
 
 state parse_state(const char *visuals) {
@@ -160,74 +135,74 @@ state parse_state(const char *visuals) {
   stones_t p = 1ULL;
   while (*visuals) {
     switch (*visuals) {
-      case 'x':
-        p <<= 1;
-        break;
-      case '.':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        p <<= 1;
-        break;
-      case ',':
-        s.visual_area |= p;
-        p <<= 1;
-        break;
-      case '*':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        s.ko |= p;
-        p <<= 1;
-        break;
-      case '@':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        s.player |= p;
-        p <<= 1;
-        break;
-      case 'b':
-        s.visual_area |= p;
-        s.player |= p;
-        s.target |= p;
-        p <<= 1;
-        break;
-      case 'B':
-        s.visual_area |= p;
-        s.player |= p;
-        s.immortal |= p;
-        p <<= 1;
-        break;
-      case '+':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        s.player |= p;
-        s.external |= p;
-        p <<= 1;
-        break;
-      case '0':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        s.opponent |= p;
-        p <<= 1;
-        break;
-      case 'w':
-        s.visual_area |= p;
-        s.opponent |= p;
-        s.target |= p;
-        p <<= 1;
-        break;
-      case 'W':
-        s.visual_area |= p;
-        s.opponent |= p;
-        s.immortal |= p;
-        p <<= 1;
-        break;
-      case '-':
-        s.visual_area |= p;
-        s.logical_area |= p;
-        s.opponent |= p;
-        s.external |= p;
-        p <<= 1;
-        break;
+    case 'x':
+      p <<= 1;
+      break;
+    case '.':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      p <<= 1;
+      break;
+    case ',':
+      s.visual_area |= p;
+      p <<= 1;
+      break;
+    case '*':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      s.ko |= p;
+      p <<= 1;
+      break;
+    case '@':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      s.player |= p;
+      p <<= 1;
+      break;
+    case 'b':
+      s.visual_area |= p;
+      s.player |= p;
+      s.target |= p;
+      p <<= 1;
+      break;
+    case 'B':
+      s.visual_area |= p;
+      s.player |= p;
+      s.immortal |= p;
+      p <<= 1;
+      break;
+    case '+':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      s.player |= p;
+      s.external |= p;
+      p <<= 1;
+      break;
+    case '0':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      s.opponent |= p;
+      p <<= 1;
+      break;
+    case 'w':
+      s.visual_area |= p;
+      s.opponent |= p;
+      s.target |= p;
+      p <<= 1;
+      break;
+    case 'W':
+      s.visual_area |= p;
+      s.opponent |= p;
+      s.immortal |= p;
+      p <<= 1;
+      break;
+    case '-':
+      s.visual_area |= p;
+      s.logical_area |= p;
+      s.opponent |= p;
+      s.external |= p;
+      p <<= 1;
+      break;
     }
     visuals++;
   }
@@ -255,7 +230,7 @@ move_result make_move(state *s, stones_t move) {
       result = TAKE_BUTTON;
     }
     // Clear ko w/o incrementing passes
-    if (s->ko){
+    if (s->ko) {
       s->ko = 0;
       result = CLEAR_KO;
     }
@@ -316,8 +291,10 @@ move_result make_move(state *s, stones_t move) {
   stones_t libs;
 
   if (s->wide) {
-    // Lol, macro abuse
-    #define KILL_CHAIN_16 if (!liberties_16(chain, empty) && !(chain & s->immortal)) kill |= chain;
+// Lol, macro abuse
+#define KILL_CHAIN_16                                                                                                                      \
+  if (!liberties_16(chain, empty) && !(chain & s->immortal))                                                                               \
+    kill |= chain;
     chain = flood_16(move >> V_SHIFT_16, s->opponent);
     KILL_CHAIN_16
     chain = flood_16(move << V_SHIFT_16, s->opponent);
@@ -333,8 +310,10 @@ move_result make_move(state *s, stones_t move) {
     chain = flood_16(move, s->player & ~s->external);
     libs = liberties_16(chain, s->visual_area & ~(s->opponent ^ s->external));
   } else {
-    // Lol, macro abuse
-    #define KILL_CHAIN if (!liberties(chain, empty) && !(chain & s->immortal)) kill |= chain;
+// Lol, macro abuse
+#define KILL_CHAIN                                                                                                                         \
+  if (!liberties(chain, empty) && !(chain & s->immortal))                                                                                  \
+    kill |= chain;
     chain = flood(move >> V_SHIFT, s->opponent);
     KILL_CHAIN
     chain = flood(move << V_SHIFT, s->opponent);
@@ -365,11 +344,7 @@ move_result make_move(state *s, stones_t move) {
   } else {
     libs = liberties(chain, s->logical_area & ~s->opponent);
   }
-  if (
-    (kill & (kill - 1ULL)) == 0ULL &&
-    (chain & (chain - 1ULL)) == 0ULL &&
-    libs == kill
-   ) {
+  if ((kill & (kill - 1ULL)) == 0ULL && (chain & (chain - 1ULL)) == 0ULL && libs == kill) {
     s->ko = kill;
   }
 
@@ -486,12 +461,12 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
   for (stones_t p = 1ULL; p; p <<= 1) {
     if (p & effective_area) {
       switch (key % 3) {
-        case 1:
-          black |= p;
-          break;
-        case 2:
-          white |= p;
-          break;
+      case 1:
+        black |= p;
+        break;
+      case 2:
+        white |= p;
+        break;
       }
       key /= 3;
     }
@@ -534,12 +509,11 @@ state from_tight_key(const state *root, size_t key, const bool symmetric_threats
 
 size_t tight_keyspace_size(const state *root, const bool symmetric_threats) {
   const size_t num_moves = popcount(root->logical_area & ~(root->target | root->immortal | root->external));
-  size_t result = (
-    2 * // Player to play
-    2 * // Button availability
-    (1 << popcount(root->external)) // External liberties
-    // Passes ignored
-    // Ko ignored
+  size_t result = (2 *                             // Player to play
+                   2 *                             // Button availability
+                   (1 << popcount(root->external)) // External liberties
+                   // Passes ignored
+                   // Ko ignored
   );
 
   // Number of the remaining "external" ko threats
@@ -559,8 +533,8 @@ size_t tight_keyspace_size(const state *root, const bool symmetric_threats) {
 }
 
 int compare_keys(const void *a_, const void *b_) {
-  size_t a = *((size_t*) a_);
-  size_t b = *((size_t*) b_);
+  size_t a = *((size_t *)a_);
+  size_t b = *((size_t *)b_);
   if (a < b) {
     return -1;
   }
@@ -691,95 +665,95 @@ bool equals(const state *a, const state *b) {
 }
 
 int compare(const void *a_, const void *b_) {
-    state *a = (state*) a_;
-    state *b = (state*) b_;
-    if (a->player < b->player) {
-        return -1;
-    }
-    if (a->player > b->player) {
-        return 1;
-    }
+  state *a = (state *)a_;
+  state *b = (state *)b_;
+  if (a->player < b->player) {
+    return -1;
+  }
+  if (a->player > b->player) {
+    return 1;
+  }
 
-    if (a->opponent < b->opponent) {
-        return -1;
-    }
-    if (a->opponent > b->opponent) {
-        return 1;
-    }
+  if (a->opponent < b->opponent) {
+    return -1;
+  }
+  if (a->opponent > b->opponent) {
+    return 1;
+  }
 
-    if (a->ko < b->ko) {
-        return -1;
-    }
-    if (a->ko > b->ko) {
-        return 1;
-    }
+  if (a->ko < b->ko) {
+    return -1;
+  }
+  if (a->ko > b->ko) {
+    return 1;
+  }
 
-    if (a->external < b->external) {
-        return -1;
-    }
-    if (a->external > b->external) {
-        return 1;
-    }
+  if (a->external < b->external) {
+    return -1;
+  }
+  if (a->external > b->external) {
+    return 1;
+  }
 
-    if (a->passes < b->passes) {
-        return -1;
-    }
-    if (a->passes > b->passes) {
-        return 1;
-    }
+  if (a->passes < b->passes) {
+    return -1;
+  }
+  if (a->passes > b->passes) {
+    return 1;
+  }
 
-    if (a->ko_threats < b->ko_threats) {
-        return -1;
-    }
-    if (a->ko_threats > b->ko_threats) {
-        return 1;
-    }
+  if (a->ko_threats < b->ko_threats) {
+    return -1;
+  }
+  if (a->ko_threats > b->ko_threats) {
+    return 1;
+  }
 
-    if (a->button < b->button) {
-        return -1;
-    }
-    if (a->button > b->button) {
-        return 1;
-    }
+  if (a->button < b->button) {
+    return -1;
+  }
+  if (a->button > b->button) {
+    return 1;
+  }
 
-    if (a->white_to_play < b->white_to_play) {
-        return -1;
-    }
-    if (a->white_to_play > b->white_to_play) {
-        return 1;
-    }
+  if (a->white_to_play < b->white_to_play) {
+    return -1;
+  }
+  if (a->white_to_play > b->white_to_play) {
+    return 1;
+  }
 
-    return 0;
+  return 0;
 }
 
 int compare_simple(const void *a_, const void *b_) {
-    state *a = (state*) a_;
-    state *b = (state*) b_;
-    if (a->player < b->player) {
-        return -1;
-    }
-    if (a->player > b->player) {
-        return 1;
-    }
+  state *a = (state *)a_;
+  state *b = (state *)b_;
+  if (a->player < b->player) {
+    return -1;
+  }
+  if (a->player > b->player) {
+    return 1;
+  }
 
-    if (a->opponent < b->opponent) {
-        return -1;
-    }
-    if (a->opponent > b->opponent) {
-        return 1;
-    }
+  if (a->opponent < b->opponent) {
+    return -1;
+  }
+  if (a->opponent > b->opponent) {
+    return 1;
+  }
 
-    if (a->external < b->external) {
-        return -1;
-    }
-    if (a->external > b->external) {
-        return 1;
-    }
+  if (a->external < b->external) {
+    return -1;
+  }
+  if (a->external > b->external) {
+    return 1;
+  }
 
-    int a_mush = (!!a->white_to_play) + 2 * a->button + 4 * a->ko_threats;
-    int b_mush = (!!b->white_to_play) + 2 * b->button + 4 * b->ko_threats;
+  int a_mush = (!!a->white_to_play) + 2 * a->button + 4 * a->ko_threats;
+  int b_mush = (!!b->white_to_play) + 2 * b->button + 4 * b->ko_threats;
 
-    return b_mush - a_mush;
+  return b_mush - a_mush;
 }
 
 stones_t hash_a(const state *s) {
@@ -852,10 +826,10 @@ stones_t benson(stones_t visual_area, stones_t black, stones_t white, stones_t i
     stones_t libs = wide ? cross_16(black_chains[i]) : cross(black_chains[i]);
     for (int j = 0; j < num_regions; ++j) {
       if (!(regions[j] & ~white_mortal & ~libs)) {
-        bitmatrix_set(&vital_adjacent, j, i);  // set vital
-        bitmatrix_set(&vital_adjacent, j, i + num_chains);  // set adjacent
+        bitmatrix_set(&vital_adjacent, j, i);              // set vital
+        bitmatrix_set(&vital_adjacent, j, i + num_chains); // set adjacent
       } else if ((wide ? cross_16(regions[j]) : cross(regions[j])) & black_chains[i]) {
-        bitmatrix_set(&vital_adjacent, j, i + num_chains);  // set adjacent
+        bitmatrix_set(&vital_adjacent, j, i + num_chains); // set adjacent
       }
     }
   }
@@ -972,10 +946,10 @@ move_result normalize_immortal_regions(state *root, state *s) {
   }
   free(regions);
 
-  // Normalize immortalized target stones
-  #ifdef NORMALIZE_AESTHETICS
-    s->target |= s->wide ? flood_16(s->target & s->opponent, s->opponent) : flood(s->target & s->opponent, s->opponent);
-  #endif
+// Normalize immortalized target stones
+#ifdef NORMALIZE_AESTHETICS
+  s->target |= s->wide ? flood_16(s->target & s->opponent, s->opponent) : flood(s->target & s->opponent, s->opponent);
+#endif
 
   return result;
 }
@@ -1031,10 +1005,7 @@ bool is_legal(const state *s) {
     }
 
     // Bit magic to check that a single stone has ko as its liberty
-    if (
-      (libs == s->ko) &&
-      ((cs[i] & (cs[i] - 1ULL)) == 0ULL)
-     ) {
+    if ((libs == s->ko) && ((cs[i] & (cs[i] - 1ULL)) == 0ULL)) {
       ko_found = true;
     }
   }
@@ -1106,9 +1077,7 @@ void mirror_d(state *s) {
   s->external = stones_mirror_d(s->external);
 }
 
-bool can_mirror_d(const state *s) {
-  return !(s->visual_area & EAST_STRIP) && !s->wide;
-}
+bool can_mirror_d(const state *s) { return !(s->visual_area & EAST_STRIP) && !s->wide; }
 
 void snap(state *s) {
   if (!s->visual_area) {
@@ -1213,7 +1182,7 @@ move_result struggle(const state *s) {
   return NORMAL;
 }
 
-stones_t* moves_of(const state *root, int *num_moves) {
+stones_t *moves_of(const state *root, int *num_moves) {
   *num_moves = popcount(root->logical_area) + 1;
   stones_t *result = xmalloc(*num_moves * sizeof(stones_t));
 

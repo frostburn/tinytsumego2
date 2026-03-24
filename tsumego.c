@@ -1,8 +1,8 @@
 // A collection of go problems to test the solvers
-#include <string.h>
 #include "tinytsumego2/scoring.h"
-#include "tinytsumego2/state.h"
 #include "tinytsumego2/shape.h"
+#include "tinytsumego2/state.h"
+#include <string.h>
 
 typedef struct tsumego {
   state state;
@@ -12,103 +12,85 @@ typedef struct tsumego {
   float high_delay;
 } tsumego;
 
-static const char* TSUMEGO_NAMES[] = {
-  "Straight Three",
-  "Straight Three Defense",
-  "Straight Two",
-  "2x1 Goban",
-  "2x1 Goban (lost button)",
-  "3x1 Goban",
-  "4x1 Goban",
-  "5x1 Goban",
-  "5x1 Goban",
-  "2x2 Goban",
-  "3x2 Goban",
-  "4x2 Goban",
-  "Straight Four",
-  "Hat Four",
-  "Hat Four Defense",
-  "Bent Four in the Corner",
-  "Bent Four in the Corner (1 ko threat)",
-  "Bent Four in the Corner (1 liberty)",
-  "Bent Four in the Corner (2 liberties)",
-  "Bent Four Debug",
-  "Bent Four in the Corner is Dead",
-  "Bent Four in the Corner is Dead (defender has threats)",
-  "Bent Four in the Corner is Dead (attacker tenuki)",
-  "Bulky Five",
-  "Rectangle Six in the Corner",
-  "Rectangle Six in the Corner (1 physical liberty)",
-  "Rectangle Six in the Corner (1 liberty)",
-  "Rectangle Six in the Corner (2 liberties)",
-  "Walkie Talkie Seven",
-  "Walkie Talkie Seven (1 ko threat)",
-  "Walkie Talkie Seven (3 liberties)",
-  "Problem A",
-  "Rectangle Eight in the Corner",
-  "Rectangle Eight in the Corner (defender has threats)",
-  "Square Nine in the Corner",
-  "Notcher 133SS Attack",
-  "Notcher 133SS Defense",
-  "L Group",
-  "First L+1 Group Defense",
-  "First L+1 Group Attack",
-  "Second L+1 Group Defense",
-  "Second L+1 Group Attack",
-  "L+2 Group with Descent Defense",
-  "L+2 Group with Descent Attack",
-  "Basic J Group Defense",
-  "Basic J Group Attack",
-  "Straight J Group Attack",
-  "Straight J Group Defense",
-  "J+1 Group with Descent Defense",
-  "J+1 Group with Descent Attack",
-  "Long L Group Defense",
-  "Long L Group Attack",
-  "Long L Group Attack (with threats)",
-  "Escape A",
-  "Six is Dead",
-  "Seven on the Second Line Defense",
-  "Seven on the Second Line Attack",
-  "Eight is Alive",
-  "Rabbity Six Defense",
-  "Rabbity Six Attack",
-  "Double Ko Seki",
-  "Endgame Pushing",
-  "Carpenter's Square",
-  "Carpenter's Square (defender has threats)",
-  "Carpenter's Square (1 liberty)"
-};
+static const char *TSUMEGO_NAMES[] = {"Straight Three",
+                                      "Straight Three Defense",
+                                      "Straight Two",
+                                      "2x1 Goban",
+                                      "2x1 Goban (lost button)",
+                                      "3x1 Goban",
+                                      "4x1 Goban",
+                                      "5x1 Goban",
+                                      "5x1 Goban",
+                                      "2x2 Goban",
+                                      "3x2 Goban",
+                                      "4x2 Goban",
+                                      "Straight Four",
+                                      "Hat Four",
+                                      "Hat Four Defense",
+                                      "Bent Four in the Corner",
+                                      "Bent Four in the Corner (1 ko threat)",
+                                      "Bent Four in the Corner (1 liberty)",
+                                      "Bent Four in the Corner (2 liberties)",
+                                      "Bent Four Debug",
+                                      "Bent Four in the Corner is Dead",
+                                      "Bent Four in the Corner is Dead (defender has threats)",
+                                      "Bent Four in the Corner is Dead (attacker tenuki)",
+                                      "Bulky Five",
+                                      "Rectangle Six in the Corner",
+                                      "Rectangle Six in the Corner (1 physical liberty)",
+                                      "Rectangle Six in the Corner (1 liberty)",
+                                      "Rectangle Six in the Corner (2 liberties)",
+                                      "Walkie Talkie Seven",
+                                      "Walkie Talkie Seven (1 ko threat)",
+                                      "Walkie Talkie Seven (3 liberties)",
+                                      "Problem A",
+                                      "Rectangle Eight in the Corner",
+                                      "Rectangle Eight in the Corner (defender has threats)",
+                                      "Square Nine in the Corner",
+                                      "Notcher 133SS Attack",
+                                      "Notcher 133SS Defense",
+                                      "L Group",
+                                      "First L+1 Group Defense",
+                                      "First L+1 Group Attack",
+                                      "Second L+1 Group Defense",
+                                      "Second L+1 Group Attack",
+                                      "L+2 Group with Descent Defense",
+                                      "L+2 Group with Descent Attack",
+                                      "Basic J Group Defense",
+                                      "Basic J Group Attack",
+                                      "Straight J Group Attack",
+                                      "Straight J Group Defense",
+                                      "J+1 Group with Descent Defense",
+                                      "J+1 Group with Descent Attack",
+                                      "Long L Group Defense",
+                                      "Long L Group Attack",
+                                      "Long L Group Attack (with threats)",
+                                      "Escape A",
+                                      "Six is Dead",
+                                      "Seven on the Second Line Defense",
+                                      "Seven on the Second Line Attack",
+                                      "Eight is Alive",
+                                      "Rabbity Six Defense",
+                                      "Rabbity Six Attack",
+                                      "Double Ko Seki",
+                                      "Endgame Pushing",
+                                      "Carpenter's Square",
+                                      "Carpenter's Square (defender has threats)",
+                                      "Carpenter's Square (1 liberty)"};
 
-const size_t NUM_TSUMEGO = sizeof(TSUMEGO_NAMES) / sizeof(char*);
+const size_t NUM_TSUMEGO = sizeof(TSUMEGO_NAMES) / sizeof(char *);
 
-tsumego single_valued(state s, float score) {
-  return (tsumego) {s, score, score, score, score};
-}
+tsumego single_valued(state s, float score) { return (tsumego){s, score, score, score, score}; }
 
 tsumego delay_valued(state s, float score, int delay) {
-  return (tsumego) {
-    s,
-    score,
-    score,
-    score - delay * DELAY_BONUS,
-    score - delay * DELAY_BONUS
-  };
+  return (tsumego){s, score, score, score - delay * DELAY_BONUS, score - delay * DELAY_BONUS};
 }
 
-tsumego dual_valued(state s, float low, float high) {
-  return (tsumego) {s, low, high, low, high};
-}
+tsumego dual_valued(state s, float low, float high) { return (tsumego){s, low, high, low, high}; }
 
 // There's often tension between wasting ko-threats and delaying target capture
 tsumego tension_valued(state s, float no_delay, float delay_base, int delay) {
-  return (tsumego) {
-    s,
-    no_delay,
-    no_delay,
-    delay_base - delay * DELAY_BONUS,
-    delay_base - delay * DELAY_BONUS
-  };
+  return (tsumego){s, no_delay, no_delay, delay_base - delay * DELAY_BONUS, delay_base - delay * DELAY_BONUS};
 }
 
 tsumego get_tsumego(const char *name) {
@@ -214,7 +196,6 @@ tsumego get_tsumego(const char *name) {
     return single_valued(s, 8 - BUTTON_BONUS);
   }
 
-
   // . . . . @
   // @ @ @ @ @
   s.visual_area = rectangle(5, 2);
@@ -313,18 +294,14 @@ tsumego get_tsumego(const char *name) {
   if (strcmp(name, "Bent Four in the Corner is Dead (defender has threats)") == 0) {
     s.ko_threats = -1;
     // The high value indicates that target loss can be delayed indefinitely
-    return (tsumego) {
-        s,
-        -8 + BUTTON_BONUS - KO_THREAT_BONUS,
-        TARGET_CAPTURED_SCORE + BUTTON_BONUS - KO_THREAT_BONUS,
-        -8 + BUTTON_BONUS - KO_THREAT_BONUS,
-        72.71875
-    };
+    return (tsumego){s, -8 + BUTTON_BONUS - KO_THREAT_BONUS, TARGET_CAPTURED_SCORE + BUTTON_BONUS - KO_THREAT_BONUS,
+                     -8 + BUTTON_BONUS - KO_THREAT_BONUS, 72.71875};
   }
 
   if (strcmp(name, "Bent Four in the Corner is Dead (attacker tenuki)") == 0) {
     make_move(&s, pass());
-    return delay_valued(s, -TARGET_CAPTURED_SCORE - BUTTON_BONUS, -8);;
+    return delay_valued(s, -TARGET_CAPTURED_SCORE - BUTTON_BONUS, -8);
+    ;
   }
 
   // @ @ @ @ @
@@ -753,7 +730,7 @@ tsumego get_tsumego(const char *name) {
   ");
 
   if (strcmp(name, "Double Ko Seki") == 0) {
-    return (tsumego) {s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS, TARGET_CAPTURED_SCORE + BUTTON_BONUS, -72.25, 72.75};
+    return (tsumego){s, -TARGET_CAPTURED_SCORE + BUTTON_BONUS, TARGET_CAPTURED_SCORE + BUTTON_BONUS, -72.25, 72.75};
   }
 
   s = notcher("133SS");

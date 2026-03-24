@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdbool.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
 #include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
+#include <stdbool.h>
 
 /**
  * @file collection.h
@@ -55,4 +55,4 @@ typedef struct collection {
  * @param num_collections Output parameter receiving the collection count.
  * @return Pointer to a static array of collections.
  */
-collection* get_collections(size_t *num_collections);
+collection *get_collections(size_t *num_collections);

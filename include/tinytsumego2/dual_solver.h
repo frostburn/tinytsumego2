@@ -1,8 +1,8 @@
 #pragma once
-#include <stdbool.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
 #include "tinytsumego2/keyspace.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
+#include <stdbool.h>
 
 /**
  * @file dual_solver.h
@@ -17,11 +17,7 @@
 /**
  * @brief Choice of keyspace implementation backing a dual graph.
  */
-typedef enum {
-  COMPRESSED_KEYSPACE,
-  SYMMETRIC_KEYSPACE,
-  MOCK_KEYSPACE
-} keyspace_type;
+typedef enum { COMPRESSED_KEYSPACE, SYMMETRIC_KEYSPACE, MOCK_KEYSPACE } keyspace_type;
 
 /**
  * @brief Implicit game graph storing both plain and forcing values.
@@ -81,7 +77,7 @@ void print_dual_graph(dual_graph *dg);
 dual_graph create_dual_graph(const state *root, keyspace_type type);
 
 /** @brief Allocate a dual graph for use from Python ctypes bindings. */
-dual_graph* allocate_dual_graph(const state *root, keyspace_type type);
+dual_graph *allocate_dual_graph(const state *root, keyspace_type type);
 
 /** @brief Look up the solved value range of a state using the selected tactics. */
 value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts);

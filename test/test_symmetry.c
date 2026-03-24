@@ -1,7 +1,7 @@
+#include "jkiss/jkiss.h"
+#include "tinytsumego2/symmetry.h"
 #include <assert.h>
 #include <stdio.h>
-#include "tinytsumego2/symmetry.h"
-#include "jkiss/jkiss.h"
 
 void test_3x4() {
   state root = {0};
@@ -185,7 +185,8 @@ void test_5x5() {
     state s7 = s5;
     mirror_h(&s7);
     snap(&s7);
-    assert(equals(&s, &s0) || equals(&s, &s1) || equals(&s, &s2) || equals(&s, &s3) || equals(&s, &s4) || equals(&s, &s5) || equals(&s, &s6) || equals(&s, &s7));
+    assert(equals(&s, &s0) || equals(&s, &s1) || equals(&s, &s2) || equals(&s, &s3) || equals(&s, &s4) || equals(&s, &s5) ||
+           equals(&s, &s6) || equals(&s, &s7));
   }
 
   for (int i = 0; i < 10; ++i) {
@@ -387,7 +388,8 @@ void test_4x4() {
     state s7 = s5;
     mirror_h(&s7);
     snap(&s7);
-    assert(equals(&s, &s0) || equals(&s, &s1) || equals(&s, &s2) || equals(&s, &s3) || equals(&s, &s4) || equals(&s, &s5) || equals(&s, &s6) || equals(&s, &s7));
+    assert(equals(&s, &s0) || equals(&s, &s1) || equals(&s, &s2) || equals(&s, &s3) || equals(&s, &s4) || equals(&s, &s5) ||
+           equals(&s, &s6) || equals(&s, &s7));
   }
 
   for (int i = 0; i < 10; ++i) {

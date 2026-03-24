@@ -1,9 +1,9 @@
+#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/dual_solver.h"
 
 state bulky_five() {
   state s = {0};
@@ -77,12 +77,7 @@ void test_bulky_five() {
       state child = s;
       move_result r = make_move(&child, dg.moves[i]);
       if (r > TAKE_TARGET) {
-        value v = apply_tactics(
-          FORCING,
-          r,
-          &child,
-          get_dual_graph_value(&dg, &child, FORCING)
-        );
+        value v = apply_tactics(FORCING, r, &child, get_dual_graph_value(&dg, &child, FORCING));
         if (j & 1) {
           if (v.high > best) {
             best = v.high;
@@ -197,7 +192,8 @@ void test_dead_three() {
   print_state(&root);
 
   dual_graph dg = create_dual_graph(&root, COMPRESSED_KEYSPACE);
-  while (iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, true))
+    ;
   print_state(&s);
   state child = s;
   const move_result r = make_move(&child, pass());
@@ -209,7 +205,8 @@ void test_dead_three() {
   printf("%f, %f\n", v.low, v.high);
   assert(v.low > -BIG_SCORE);
 
-  while (area_iterate_dual_graph(&dg, true));
+  while (area_iterate_dual_graph(&dg, true))
+    ;
 
   v = get_dual_graph_area_value(&dg, &s);
   printf("%f, %f\n", v.low, v.high);
@@ -220,7 +217,8 @@ void test_no_moves_terminals() {
   state s = no_moves();
   print_state(&s);
   dual_graph dg = create_dual_graph(&s, COMPRESSED_KEYSPACE);
-  while (iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, true))
+    ;
 
   state terminal = dual_graph_low_terminal(&dg, &s, NONE);
   print_state(&terminal);
@@ -238,7 +236,8 @@ void test_no_moves_terminals() {
   print_state(&terminal);
   assert(terminal.passes == 2);
 
-  while (area_iterate_dual_graph(&dg, true));
+  while (area_iterate_dual_graph(&dg, true))
+    ;
 
   terminal = dual_graph_low_terminal(&dg, &s, NONE);
   print_state(&terminal);
@@ -267,7 +266,8 @@ void test_seki() {
   print_state(&s);
 
   dual_graph dg = create_dual_graph(&s, COMPRESSED_KEYSPACE);
-  while (iterate_dual_graph(&dg, true));
+  while (iterate_dual_graph(&dg, true))
+    ;
 
   make_move(&s, single(1, 2));
   print_state(&s);

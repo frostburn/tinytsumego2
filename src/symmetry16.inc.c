@@ -4,71 +4,30 @@ stones_t stones_mirror_v_w2(const stones_t stones) {
   return ((stones & NORTH_WALL_16) << V_SHIFT_16) | ((stones >> V_SHIFT_16) & NORTH_WALL_16);
 }
 
-stones_t stones_mirror_h_w3(const stones_t stones) {
-  return (
-    ((stones & VV0) << 2) |
-    (stones & VV1) |
-    ((stones & VV2) >> 2)
-  );
-}
+stones_t stones_mirror_h_w3(const stones_t stones) { return (((stones & VV0) << 2) | (stones & VV1) | ((stones & VV2) >> 2)); }
 
 stones_t stones_mirror_h_w4(const stones_t stones) {
-    return (
-      ((stones & VV0) << 3) |
-      ((stones & VV1) << 1) |
-      ((stones & VV2) >> 1) |
-      ((stones & VV3) >> 3)
-  );
+  return (((stones & VV0) << 3) | ((stones & VV1) << 1) | ((stones & VV2) >> 1) | ((stones & VV3) >> 3));
 }
 
 stones_t stones_mirror_h_w5(const stones_t stones) {
-  return (
-    ((stones & VV0) << 4) |
-    ((stones & VV1) << 2) |
-    (stones & VV2) |
-    ((stones & VV3) >> 2) |
-    ((stones & VV4) >> 4)
-  );
+  return (((stones & VV0) << 4) | ((stones & VV1) << 2) | (stones & VV2) | ((stones & VV3) >> 2) | ((stones & VV4) >> 4));
 }
 
 stones_t stones_mirror_h_w6(stones_t stones) {
-  stones = (
-    ((stones & (VV0 | VV1 | VV2)) << 3) |
-    ((stones & (VV3 | VV4 | VV5)) >> 3)
-  );
-  return (
-    ((stones & (VV0 | VV3)) << 2) |
-    (stones & (VV1 | VV4)) |
-    ((stones & (VV2 | VV5)) >> 2)
-  );
+  stones = (((stones & (VV0 | VV1 | VV2)) << 3) | ((stones & (VV3 | VV4 | VV5)) >> 3));
+  return (((stones & (VV0 | VV3)) << 2) | (stones & (VV1 | VV4)) | ((stones & (VV2 | VV5)) >> 2));
 }
 
 stones_t stones_mirror_h_w7(stones_t stones) {
-  stones = (
-    ((stones >> 4) & (VV0 | VV1 | VV2)) |
-    (stones & VV3) |
-    ((stones & (VV0 | VV1 | VV2)) << 4)
-  );
-  return (
-    ((stones >> 2) & (VV0 | VV4)) |
-    (stones & (VV1 | VV3 | VV5)) |
-    ((stones & (VV0 | VV4)) << 2)
-  );
+  stones = (((stones >> 4) & (VV0 | VV1 | VV2)) | (stones & VV3) | ((stones & (VV0 | VV1 | VV2)) << 4));
+  return (((stones >> 2) & (VV0 | VV4)) | (stones & (VV1 | VV3 | VV5)) | ((stones & (VV0 | VV4)) << 2));
 }
 
 stones_t stones_mirror_h_w8(stones_t stones) {
-  stones = (
-    ((stones & (VV0 | VV1 | VV2 | VV3)) << 4) |
-    ((stones & (VV4 | VV5 | VV6 | VV7)) >> 4)
-  );
-  stones = (
-    ((stones & (VV0 | VV1 | VV4 | VV5)) << 2) |
-    ((stones & (VV2 | VV3 | VV6 | VV7)) >> 2)
-  );
-  return (
-    ((stones & (VV0 | VV2 | VV4 | VV6)) << 1) |
-    ((stones & (VV1 | VV3 | VV5 | VV7)) >> 1)
-  );
+  stones = (((stones & (VV0 | VV1 | VV2 | VV3)) << 4) | ((stones & (VV4 | VV5 | VV6 | VV7)) >> 4));
+  stones = (((stones & (VV0 | VV1 | VV4 | VV5)) << 2) | ((stones & (VV2 | VV3 | VV6 | VV7)) >> 2));
+  return (((stones & (VV0 | VV2 | VV4 | VV6)) << 1) | ((stones & (VV1 | VV3 | VV5 | VV7)) >> 1));
 }
 
 #define VVB3 (VV0 | VV1 | VV2)
@@ -127,9 +86,9 @@ void prepare_even_even_symmetry(symmetry *sym, stones_t visual_area) {
       continue;
     }
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_2(stones_mirror_v_w2, stones_mirror_h_w4, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -144,8 +103,8 @@ void prepare_even_even_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < EVEN_EVEN_CORE_SIZE; ++i) {
@@ -225,9 +184,9 @@ void prepare_odd_two_symmetry(symmetry *sym, stones_t visual_area) {
     }
     free(cs);
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_2(stones_mirror_v_w2, stones_mirror_h_w5, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -242,8 +201,8 @@ void prepare_odd_two_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < ODD_TWO_CORE_SIZE; ++i) {
@@ -341,9 +300,9 @@ void prepare_odd_four_symmetry(symmetry *sym, stones_t visual_area) {
     }
     free(cs);
 
-    #ifdef CHECK_SYM_SANITY
-      assert(sym->core_idx(black, white) == idx);
-    #endif
+#ifdef CHECK_SYM_SANITY
+    assert(sym->core_idx(black, white) == idx);
+#endif
 
     sym->pulp_ops[idx] = least_of_2(stones_mirror_v_16, stones_mirror_h_w3, &black, &white);
     for (size_t i = 0; i < sym->core_m; ++i) {
@@ -358,8 +317,8 @@ void prepare_odd_four_symmetry(symmetry *sym, stones_t visual_area) {
     sym->white_core[sym->core_m] = white;
     sym->core_m++;
 
-    // Label to break out of inner loops
-    next_idx:
+  // Label to break out of inner loops
+  next_idx:
   }
 
   for (size_t i = 0; i < ODD_FOUR_CORE_SIZE; ++i) {

@@ -1,6 +1,6 @@
+#include "tinytsumego2/complete_reader.h"
 #include <ctype.h>
 #include <stdio.h>
-#include "tinytsumego2/complete_reader.h"
 
 static const char CHECKMARK[] = " \xE2\x9C\x93";
 
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
       stones_t move = cgr.moves[j];
       const move_result r = make_move(&child, move);
       if (r == TAKE_TARGET) {
-        printf("%c%c: take target",  colof(move), rowof(move));
+        printf("%c%c: take target", colof(move), rowof(move));
         if (v.high == -target_lost_score(&child)) {
           printf(CHECKMARK);
         } else if (v.low == -target_lost_score(&child)) {
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         printf("\n");
       } else if (r == SECOND_PASS) {
         float child_score = score(&child);
-        printf("%c%c: %f (game over)",  colof(move), rowof(move), sign * child_score);
+        printf("%c%c: %f (game over)", colof(move), rowof(move), sign * child_score);
         if (v.high == -child_score) {
           printf(CHECKMARK);
         } else if (v.low == -child_score) {
@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
           child_value.high = -temp;
         }
         if (child_value.low == child_value.high) {
-          printf("%c%c: %f",  colof(move), rowof(move), child_value.low);
+          printf("%c%c: %f", colof(move), rowof(move), child_value.low);
           if (low_good) {
             printf(CHECKMARK);
           }
           printf("\n");
         } else {
-          printf("%c%c: (%f, %f)",  colof(move), rowof(move), child_value.low, child_value.high);
+          printf("%c%c: (%f, %f)", colof(move), rowof(move), child_value.low, child_value.high);
           if (low_good) {
             printf(" \u2193");
           }
@@ -95,7 +95,8 @@ int main(int argc, char *argv[]) {
       if (row != '\n' && row != EOF) {
         // Flush stdin
         int c;
-        while ((c = getchar()) != '\n' && c != EOF) { }
+        while ((c = getchar()) != '\n' && c != EOF) {
+        }
       }
 
       if (!num_assigned) {
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
     sign = -sign;
   }
 
-  cleanup:
+cleanup:
   unload_complete_graph_reader(&cgr);
 
   return EXIT_SUCCESS;

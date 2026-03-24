@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdlib.h>
-#include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/stones.h"
+#include <stdlib.h>
 
 /**
  * @file symmetry.h

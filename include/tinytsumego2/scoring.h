@@ -1,7 +1,7 @@
 #pragma once
-#include <limits.h>
-#include "tinytsumego2/stones.h"
 #include "tinytsumego2/state.h"
+#include "tinytsumego2/stones.h"
+#include <limits.h>
 
 /**
  * @file scoring.h
@@ -25,11 +25,11 @@
 /** @brief Q7 bonus for taking the button. */
 #define BUTTON_Q7 (FLOAT_TO_SCORE_Q7 / 4)
 /** @brief Floating-point bonus for taking the button. */
-#define BUTTON_BONUS (BUTTON_Q7 / (float) FLOAT_TO_SCORE_Q7)
+#define BUTTON_BONUS (BUTTON_Q7 / (float)FLOAT_TO_SCORE_Q7)
 /** @brief Q7 bonus for saving an external ko threat. */
 #define KO_THREAT_Q7 (FLOAT_TO_SCORE_Q7 / 32)
 /** @brief Floating-point bonus for saving an external ko threat. */
-#define KO_THREAT_BONUS (KO_THREAT_Q7 / (float) FLOAT_TO_SCORE_Q7)
+#define KO_THREAT_BONUS (KO_THREAT_Q7 / (float)FLOAT_TO_SCORE_Q7)
 /** @brief Q7 bonus for playing forcing moves. */
 #define FORCE_Q7 ((FLOAT_TO_SCORE_Q7 / 64) * 31)
 /** @brief Floating-point bonus for playing forcing moves. */
@@ -120,6 +120,6 @@ value apply_tactics(const tactics ts, const move_result r, const state *child, c
 value table_value_to_value(table_value v);
 
 /** @brief Full representable Q7 range. */
-static const table_value MAX_RANGE_Q7 = (table_value) {SCORE_Q7_MIN, SCORE_Q7_MAX};
+static const table_value MAX_RANGE_Q7 = (table_value){SCORE_Q7_MIN, SCORE_Q7_MAX};
 /** @brief Undefined Q7 range. */
-static const table_value NAN_RANGE_Q7 = (table_value) {SCORE_Q7_NAN, SCORE_Q7_NAN};
+static const table_value NAN_RANGE_Q7 = (table_value){SCORE_Q7_NAN, SCORE_Q7_NAN};

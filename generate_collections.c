@@ -1,12 +1,12 @@
+#include "tinytsumego2/collection.h"
+#include "tinytsumego2/dual_reader.h"
+#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/util.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tinytsumego2/collection.h"
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/dual_reader.h"
-#include "tinytsumego2/util.h"
 
 int main(int argc, char *argv[]) {
   if (argc <= 2) {
@@ -46,14 +46,16 @@ int main(int argc, char *argv[]) {
     printf("%s\n", collections[i].title);
     print_state(&(collections[i].root));
     dual_graph dg = create_dual_graph(&(collections[i].root), collections[i].type);
-    for (int j = 0;;j++) {
+    for (int j = 0;; j++) {
       bool verbose = (j < 8) || (j % (j >> 2) == 0);
-      if (!iterate_dual_graph(&dg, verbose)) break;
+      if (!iterate_dual_graph(&dg, verbose))
+        break;
     }
     printf("Iterating area score\n");
-    for (int j = 0;;j++) {
+    for (int j = 0;; j++) {
       bool verbose = (j < 8) || (j % (j >> 2) == 0);
-      if (!area_iterate_dual_graph(&dg, verbose)) break;
+      if (!area_iterate_dual_graph(&dg, verbose))
+        break;
     }
     printf("%zu tsumegos in collection\n", collections[i].num_tsumegos);
     for (size_t j = 0; j < collections[i].num_tsumegos; ++j) {

@@ -1,9 +1,9 @@
+#include "tinytsumego2/keyspace.h"
+#include "tinytsumego2/state.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/keyspace.h"
 
 state rectangle_six() {
   state s;
@@ -246,7 +246,7 @@ void test_rectangle_six_external_liberties_tight_keyspace() {
 }
 
 void test_parse() {
-    char *visuals = "\
+  char *visuals = "\
       , , , , , , . . . \
       , , W W W W W b . \
       , B B B B B W b . \
@@ -256,32 +256,30 @@ void test_parse() {
       , , , . W W W , , \
     ";
 
-    const state expected = (state) {
-      9223372036854775807ULL,
-      146107400938717632ULL,
-      3324354560000ULL,
-      2020018406396327936ULL,
-      0ULL,
-      33319616512ULL,
-      2020018364536649728ULL,
-      0ULL,
-      0,
-      0,
-      0,
-      false,
-      false
-    };
+  const state expected = (state){9223372036854775807ULL,
+                                 146107400938717632ULL,
+                                 3324354560000ULL,
+                                 2020018406396327936ULL,
+                                 0ULL,
+                                 33319616512ULL,
+                                 2020018364536649728ULL,
+                                 0ULL,
+                                 0,
+                                 0,
+                                 0,
+                                 false,
+                                 false};
 
-    state s = parse_state(visuals);
-    print_state(&s);
-    repr_state(&s);
-    assert(equals(&s, &expected));
-    print_stones(s.visual_area);
-    print_stones(s.logical_area);
-    print_stones(s.player);
-    print_stones(s.opponent);
-    print_stones(s.target);
-    print_stones(s.immortal);
+  state s = parse_state(visuals);
+  print_state(&s);
+  repr_state(&s);
+  assert(equals(&s, &expected));
+  print_stones(s.visual_area);
+  print_stones(s.logical_area);
+  print_stones(s.player);
+  print_stones(s.opponent);
+  print_stones(s.target);
+  print_stones(s.immortal);
 }
 
 void test_external_liberties() {
@@ -308,11 +306,11 @@ void test_external_liberties() {
 
   r = make_move(&alt, single(1, 1));
   assert(r == FILL_EXTERNAL);
-  #ifdef NORMALIZE_EXTERNAL_LIBERTIES
-    assert(equals(&s, &alt));  // Make sure target liberties are filled in standard order
-  #else
-    assert(!equals(&s, &alt));  // Make sure we don't care right now
-  #endif
+#ifdef NORMALIZE_EXTERNAL_LIBERTIES
+  assert(equals(&s, &alt)); // Make sure target liberties are filled in standard order
+#else
+  assert(!equals(&s, &alt)); // Make sure we don't care right now
+#endif
 
   r = make_move(&s, pass());
   print_state(&s);
@@ -665,7 +663,7 @@ void test_legality() {
   s.ko_threats = 1;
   s.button = 1;
 
-  state expected = (state) {16547391ULL, 8388612ULL, 8405024ULL, 8142363ULL, 0ULL, 8142363ULL, 16416ULL, 8388608ULL, 1, 1, 1, true, false};
+  state expected = (state){16547391ULL, 8388612ULL, 8405024ULL, 8142363ULL, 0ULL, 8142363ULL, 16416ULL, 8388608ULL, 1, 1, 1, true, false};
 
   print_state(&s);
   assert(is_legal(&s));
@@ -677,7 +675,7 @@ void test_legality() {
   print_state(&s);
   assert(is_legal(&s));
 
-  state root = (state) {16547391ULL, 8408623ULL, 8138768ULL, 8405024ULL, 0ULL, 8138768ULL, 0ULL, 8405024ULL, 0, -1, -1, false, false};
+  state root = (state){16547391ULL, 8408623ULL, 8138768ULL, 8405024ULL, 0ULL, 8138768ULL, 0ULL, 8405024ULL, 0, -1, -1, false, false};
   tight_keyspace tks = create_tight_keyspace(&root, false);
 
   s.button = abs(s.button);
@@ -695,14 +693,9 @@ void test_compressed_keyspace() {
   const state root = rectangle_six();
   print_state(&root);
   compressed_keyspace cks = create_compressed_keyspace(&root);
-  printf(
-    "size = %zu, factor = %g %% requiring %g + %g bytes of aux space, compare with %zu\n",
-    cks.size,
-    cks.compressor.factor * 100,
-    cks.compressor.size * cks.compressor.factor,
-    floor(cks.compressor.size * cks.compressor.factor / 256) * sizeof(size_t),
-    cks.keyspace.size
-  );
+  printf("size = %zu, factor = %g %% requiring %g + %g bytes of aux space, compare with %zu\n", cks.size, cks.compressor.factor * 100,
+         cks.compressor.size * cks.compressor.factor, floor(cks.compressor.size * cks.compressor.factor / 256) * sizeof(size_t),
+         cks.keyspace.size);
 
   for (size_t key = 0; key < cks.size; ++key) {
     const state s = from_compressed_key(&cks, key);

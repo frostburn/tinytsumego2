@@ -1,50 +1,30 @@
+#include "tinytsumego2/dual_solver.h"
+#include "jkiss/jkiss.h"
+#include "tinytsumego2/util.h"
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include "jkiss/jkiss.h"
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/util.h"
 
-size_t _to_compressed_key(dual_graph *dg, const state *s) {
-  return to_compressed_key(&(dg->keyspace.compressed), s);
-}
+size_t _to_compressed_key(dual_graph *dg, const state *s) { return to_compressed_key(&(dg->keyspace.compressed), s); }
 
-state _from_compressed_key(dual_graph *dg, size_t key) {
-  return from_compressed_key(&(dg->keyspace.compressed), key);
-}
+state _from_compressed_key(dual_graph *dg, size_t key) { return from_compressed_key(&(dg->keyspace.compressed), key); }
 
-bool _was_compressed_legal(dual_graph *dg, size_t key) {
-  return was_compressed_legal(&(dg->keyspace.compressed), key);
-}
+bool _was_compressed_legal(dual_graph *dg, size_t key) { return was_compressed_legal(&(dg->keyspace.compressed), key); }
 
-size_t _remap_tight_key(dual_graph *dg, size_t key) {
-  return remap_tight_key(&(dg->keyspace.compressed), key);
-}
+size_t _remap_tight_key(dual_graph *dg, size_t key) { return remap_tight_key(&(dg->keyspace.compressed), key); }
 
-state _from_tight_key(dual_graph *dg, size_t key) {
-  return from_tight_key_fast(&(dg->keyspace.compressed.keyspace), key);
-}
+state _from_tight_key(dual_graph *dg, size_t key) { return from_tight_key_fast(&(dg->keyspace.compressed.keyspace), key); }
 
-size_t _to_symmetric_key(dual_graph *dg, const state *s) {
-  return to_symmetric_key(&(dg->keyspace.symmetric), s);
-}
+size_t _to_symmetric_key(dual_graph *dg, const state *s) { return to_symmetric_key(&(dg->keyspace.symmetric), s); }
 
-state _from_symmetric_key(dual_graph *dg, size_t key) {
-  return from_symmetric_key(&(dg->keyspace.symmetric), key);
-}
+state _from_symmetric_key(dual_graph *dg, size_t key) { return from_symmetric_key(&(dg->keyspace.symmetric), key); }
 
-bool _was_symmetric_legal(dual_graph *dg, size_t key) {
-  return was_symmetric_legal(&(dg->keyspace.symmetric), key);
-}
+bool _was_symmetric_legal(dual_graph *dg, size_t key) { return was_symmetric_legal(&(dg->keyspace.symmetric), key); }
 
-size_t _remap_fast_key(dual_graph *dg, size_t key) {
-  return remap_fast_key(&(dg->keyspace.symmetric), key);
-}
+size_t _remap_fast_key(dual_graph *dg, size_t key) { return remap_fast_key(&(dg->keyspace.symmetric), key); }
 
-state _from_fast_key(dual_graph *dg, size_t key) {
-  return from_fast_key(&(dg->keyspace.symmetric), key);
-}
+state _from_fast_key(dual_graph *dg, size_t key) { return from_fast_key(&(dg->keyspace.symmetric), key); }
 
 bool in_atari_single(const state *s) {
   stones_t target = s->target & s->player;
@@ -76,22 +56,13 @@ bool can_take_single(const state *s) {
   return popcount(liberties(target, empty)) < 2;
 }
 
-bool there_is_no_target(const state*) {
-  return false;
-}
+bool there_is_no_target(const state *) { return false; }
 
 void print_dual_graph(dual_graph *dg) {
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     value pv = table_value_to_value(dg->plain_values[i]);
     value fv = table_value_to_value(dg->forcing_values[i]);
-    printf(
-      "#%zu: (%f, %f) / (%f, %f)\n",
-      i,
-      pv.low,
-      pv.high,
-      fv.low,
-      fv.high
-    );
+    printf("#%zu: (%f, %f) / (%f, %f)\n", i, pv.low, pv.high, fv.low, fv.high);
   }
 }
 
@@ -156,7 +127,7 @@ dual_graph create_dual_graph(const state *root, keyspace_type type) {
   return dg;
 }
 
-dual_graph* allocate_dual_graph(const state *root, keyspace_type type) {
+dual_graph *allocate_dual_graph(const state *root, keyspace_type type) {
   dual_graph *result = xmalloc(sizeof(dual_graph));
   *result = create_dual_graph(root, type);
   return result;
@@ -182,10 +153,14 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
       get_dual_graph_values(dg, &child, depth - 1, &child_plain, &child_forcing);
       child_plain = apply_tactics_q7(NONE, r, &child, child_plain);
       child_forcing = apply_tactics_q7(FORCING, r, &child, child_forcing);
-      if (child_plain.high > plain_value->low) plain_value->low = child_plain.high;
-      if (child_plain.low > plain_value->high) plain_value->high = child_plain.low;
-      if (child_forcing.high > forcing_value->low) forcing_value->low = child_forcing.high;
-      if (child_forcing.low > forcing_value->high) forcing_value->high = child_forcing.low;
+      if (child_plain.high > plain_value->low)
+        plain_value->low = child_plain.high;
+      if (child_plain.low > plain_value->high)
+        plain_value->high = child_plain.low;
+      if (child_forcing.high > forcing_value->low)
+        forcing_value->low = child_forcing.high;
+      if (child_forcing.low > forcing_value->high)
+        forcing_value->high = child_forcing.low;
     }
     return;
   }
@@ -210,10 +185,14 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
         child_plain = apply_tactics_q7(NONE, r, &child, child_plain);
         child_forcing = apply_tactics_q7(FORCING, r, &child, child_forcing);
       }
-      if (child_plain.high > plain_value->low) plain_value->low = child_plain.high;
-      if (child_plain.low > plain_value->high) plain_value->high = child_plain.low;
-      if (child_forcing.high > forcing_value->low) forcing_value->low = child_forcing.high;
-      if (child_forcing.low > forcing_value->high) forcing_value->high = child_forcing.low;
+      if (child_plain.high > plain_value->low)
+        plain_value->low = child_plain.high;
+      if (child_plain.low > plain_value->high)
+        plain_value->high = child_plain.low;
+      if (child_forcing.high > forcing_value->low)
+        forcing_value->low = child_forcing.high;
+      if (child_forcing.low > forcing_value->high)
+        forcing_value->high = child_forcing.low;
     }
     return;
   }
@@ -249,20 +228,20 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
   table_value forcing_value;
   get_dual_graph_values(dg, s, MAX_COMPENSATION_DEPTH, &plain_value, &forcing_value);
   switch (ts) {
-    case NONE:
-      return table_value_to_value(plain_value);
-    case FORCING:
-      return table_value_to_value(forcing_value);
-    case DELAY:
-      break;
+  case NONE:
+    return table_value_to_value(plain_value);
+  case FORCING:
+    return table_value_to_value(forcing_value);
+  case DELAY:
+    break;
   }
   fprintf(stderr, "Unsupported tactic");
   exit(EXIT_FAILURE);
-  return (value) {NAN, NAN};
+  return (value){NAN, NAN};
 }
 
 size_t update_dual_graph_batch(dual_graph *dg) {
-  #pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1)
   for (size_t k = 0; k < BATCH_SIZE; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
     size_t i = dg->batch_keys[k];
@@ -286,22 +265,24 @@ size_t update_dual_graph_batch(dual_graph *dg) {
         child_plain = apply_tactics_q7(NONE, r, &child, child_plain);
         child_forcing = apply_tactics_q7(FORCING, r, &child, child_forcing);
       }
-      if (child_plain.high > plain_low) plain_low = child_plain.high;
-      if (child_plain.low > plain_high) plain_high = child_plain.low;
-      if (child_forcing.high > forcing_low) forcing_low = child_forcing.high;
-      if (child_forcing.low > forcing_high) forcing_high = child_forcing.low;
+      if (child_plain.high > plain_low)
+        plain_low = child_plain.high;
+      if (child_plain.low > plain_high)
+        plain_high = child_plain.low;
+      if (child_forcing.high > forcing_low)
+        forcing_low = child_forcing.high;
+      if (child_forcing.low > forcing_high)
+        forcing_high = child_forcing.low;
     }
-    dg->batch_plain[k] = (table_value) {plain_low, plain_high};
-    dg->batch_forcing[k] = (table_value) {forcing_low, forcing_high};
+    dg->batch_plain[k] = (table_value){plain_low, plain_high};
+    dg->batch_forcing[k] = (table_value){forcing_low, forcing_high};
   }
 
   size_t num_updated = 0;
   for (size_t k = 0; k < BATCH_SIZE; ++k) {
     size_t i = dg->batch_keys[k];
-    if (
-      dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high ||
-      dg->forcing_values[i].low != dg->batch_forcing[k].low || dg->forcing_values[i].high != dg->batch_forcing[k].high
-    ) {
+    if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high ||
+        dg->forcing_values[i].low != dg->batch_forcing[k].low || dg->forcing_values[i].high != dg->batch_forcing[k].high) {
       dg->plain_values[i] = dg->batch_plain[k];
       dg->forcing_values[i] = dg->batch_forcing[k];
       num_updated++;
@@ -359,10 +340,12 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
       const move_result r = make_move(&child, pass());
       table_value child_value = get_dual_graph_area_value_(dg, &child, depth - 1);
       child_value = apply_tactics_q7(NONE, r, &child, child_value);
-      if (child_value.high > low) low = child_value.high;
-      if (child_value.low > high) high = child_value.low;
+      if (child_value.high > low)
+        low = child_value.high;
+      if (child_value.low > high)
+        high = child_value.low;
     }
-    return (table_value) {low, high};
+    return (table_value){low, high};
   }
   if (s->passes || s->ko || dg->in_atari(s)) {
     // Compensate for keyspace tightness using negamax
@@ -391,10 +374,12 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
         child_value = get_dual_graph_area_value_(dg, &child, depth - 1);
         child_value = apply_tactics_q7(NONE, r, &child, child_value);
       }
-      if (child_value.high > low) low = child_value.high;
-      if (child_value.low > high) high = child_value.low;
+      if (child_value.high > low)
+        low = child_value.high;
+      if (child_value.low > high)
+        high = child_value.low;
     }
-    return (table_value) {low, high};
+    return (table_value){low, high};
   }
 
   size_t key;
@@ -422,7 +407,7 @@ value get_dual_graph_area_value(dual_graph *dg, const state *s) {
 }
 
 size_t update_dual_graph_area_batch(dual_graph *dg) {
-  #pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1)
   for (size_t k = 0; k < BATCH_SIZE; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
 
@@ -441,18 +426,18 @@ size_t update_dual_graph_area_batch(dual_graph *dg) {
         child_value = get_dual_graph_area_value_(dg, &child, MAX_COMPENSATION_DEPTH);
         child_value = apply_tactics_q7(NONE, r, &child, child_value);
       }
-      if (child_value.high > low) low = child_value.high;
-      if (child_value.low > high) high = child_value.low;
+      if (child_value.high > low)
+        low = child_value.high;
+      if (child_value.low > high)
+        high = child_value.low;
     }
-    dg->batch_plain[k] = (table_value) {low, high};
+    dg->batch_plain[k] = (table_value){low, high};
   }
 
   size_t num_updated = 0;
   for (size_t k = 0; k < BATCH_SIZE; ++k) {
     size_t i = dg->batch_keys[k];
-    if (
-      dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high
-    ) {
+    if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high) {
       dg->plain_values[i] = dg->batch_plain[k];
       num_updated++;
     }
