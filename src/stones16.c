@@ -179,13 +179,11 @@ int offset_v_16(stones_t stones) {
 }
 
 stones_t move_west_16(stones_t stones, int amount) {
-  while (amount < 0) {
+  for (; amount < 0; amount++) {
     stones = (stones & WEST_BLOCK_16) << H_SHIFT_16;
-    amount++;
   }
-  while (amount > 0) {
+  for (; amount > 0; amount--) {
     stones = (stones >> H_SHIFT_16) & WEST_BLOCK_16;
-    amount--;
   }
   return stones;
 }
