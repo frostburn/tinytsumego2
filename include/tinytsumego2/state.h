@@ -37,7 +37,7 @@ typedef struct state
   stones_t immortal;
 
   /**
-   * @brief External liberties treated as permanently empty, color-exclusive space.
+   * @brief External liberties treated as initially empty, color-exclusive space.
    *
    * These are mainly used to model first-line crawlspace and liberties outside
    * of the main eyespace adjacent to a target group.
