@@ -1,8 +1,8 @@
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/state.h"
 
 void test_external() {
   state s = parse_state(" \

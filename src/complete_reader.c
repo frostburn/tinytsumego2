@@ -1,14 +1,14 @@
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include "tinytsumego2/complete_reader.h"
 #include "tinytsumego2/scoring.h"
 #include "tinytsumego2/util.h"
+#include <assert.h>
+#include <fcntl.h>
+#include <math.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream) {
   size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream) * sizeof(state);
@@ -35,7 +35,7 @@ size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict st
         exit(EXIT_FAILURE);
       }
     }
-    value_id_t vid = (value_id_t) id;
+    value_id_t vid = (value_id_t)id;
     total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
   }
 
@@ -61,15 +61,15 @@ complete_graph_reader load_complete_graph_reader(const char *filename) {
   map += sizeof(bool);
   result.keyspace = create_tight_keyspace(&root, symmetric_threats);
 
-  result.tactics = ((tactics*) map)[0];
+  result.tactics = ((tactics *)map)[0];
   map += sizeof(tactics);
 
-  result.num_moves = ((int*) map)[0];
+  result.num_moves = ((int *)map)[0];
   map += sizeof(int);
 
   result.moves = xmalloc(result.num_moves * sizeof(stones_t));
   for (int i = 0; i < result.num_moves; ++i) {
-    result.moves[i] = ((stones_t *) map)[i];
+    result.moves[i] = ((stones_t *)map)[i];
   }
   map += result.num_moves * sizeof(stones_t);
 
@@ -120,12 +120,7 @@ value get_complete_graph_reader_value_(const complete_graph_reader *cgr, const s
       if (r <= TAKE_TARGET) {
         child_value = score_terminal(r, &child);
       } else {
-        child_value = apply_tactics(
-          cgr->tactics,
-          r,
-          &child,
-          get_complete_graph_reader_value_(cgr, &child, depth - 1)
-        );
+        child_value = apply_tactics(cgr->tactics, r, &child, get_complete_graph_reader_value_(cgr, &child, depth - 1));
       }
       low = fmax(low, child_value.high);
       high = fmax(high, child_value.low);
@@ -148,10 +143,7 @@ value get_complete_graph_reader_value_(const complete_graph_reader *cgr, const s
   }
 
   value v = cgr->value_map[id];
-  return (value){
-    v.low + delta,
-    v.high + delta
-  };
+  return (value){v.low + delta, v.high + delta};
 }
 
 value get_complete_graph_reader_value(const complete_graph_reader *cgr, const state *s) {

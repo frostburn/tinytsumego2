@@ -1,8 +1,8 @@
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/stones16.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 void test_rectangles() {
   for (int i = 0; i <= 9; ++i) {

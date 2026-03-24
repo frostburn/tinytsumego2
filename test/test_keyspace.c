@@ -1,8 +1,8 @@
+#include "jkiss/jkiss.h"
+#include "tinytsumego2/keyspace.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "jkiss/jkiss.h"
-#include "tinytsumego2/keyspace.h"
 
 void test_empty() {
   bool indicator(size_t key) {
@@ -21,9 +21,7 @@ void test_empty() {
 }
 
 void test_full() {
-  bool indicator(size_t key) {
-    return key < 1000;
-  }
+  bool indicator(size_t key) { return key < 1000; }
   monotonic_compressor mc = create_monotonic_compressor(10, indicator);
   for (size_t i = 0; i < 10; ++i) {
     assert(i == decompress_key(&mc, i));
@@ -34,9 +32,7 @@ void test_full() {
 }
 
 void test_false_start() {
-  bool indicator(size_t key) {
-    return key > 0;
-  }
+  bool indicator(size_t key) { return key > 0; }
   monotonic_compressor mc = create_monotonic_compressor(10, indicator);
   printf("cp = %zu\n", mc.checkpoints[0]);
   for (size_t i = 0; i < 10; ++i) {
@@ -63,9 +59,7 @@ void test_monotonic() {
   for (size_t i = 0; i < size; ++i) {
     flags[i] = jrand() & 1;
   }
-  bool indicator(size_t key) {
-    return flags[key];
-  }
+  bool indicator(size_t key) { return flags[key]; }
 
   monotonic_compressor mc = create_monotonic_compressor(size, indicator);
   printf("factor = %g %%\n", mc.factor * 100);

@@ -1,8 +1,8 @@
+#include "tinytsumego2/shape.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include "tinytsumego2/shape.h"
 
 state notcher(const char *code) {
   if (strlen(code) != 5) {
@@ -23,10 +23,8 @@ state notcher(const char *code) {
 
   stones_t black = 0ULL;
   stones_t white = 0ULL;
-  stones_t logical_area = (
-    (rectangle_16(width, 1) << (3 * V_SHIFT_16)) |
-    (rectangle_16(width - 4, 1) << (2 * H_SHIFT_16 + 2 * V_SHIFT_16))
-  );
+  stones_t logical_area =
+      ((rectangle_16(width, 1) << (3 * V_SHIFT_16)) | (rectangle_16(width - 4, 1) << (2 * H_SHIFT_16 + 2 * V_SHIFT_16)));
   stones_t external = 0ULL;
 
   // First line "crawlspace"
@@ -53,19 +51,19 @@ state notcher(const char *code) {
   }
   stones_t hip = single_16(1 + a, 1);
   switch (x) {
-    case 'S':
-      black |= hip;
-      logical_area |= hip;
-      break;
-    case 'N':
-      logical_area |= hip;
-      break;
-    case 'W':
-      white |= hip;
-      break;
-    default:
-      fprintf(stderr, "Invalid left hip code\n");
-      exit(EXIT_FAILURE);
+  case 'S':
+    black |= hip;
+    logical_area |= hip;
+    break;
+  case 'N':
+    logical_area |= hip;
+    break;
+  case 'W':
+    white |= hip;
+    break;
+  default:
+    fprintf(stderr, "Invalid left hip code\n");
+    exit(EXIT_FAILURE);
   }
   for (int i = 0; i < n; ++i) {
     black |= single_16(2 + a + i, 1);
@@ -73,19 +71,19 @@ state notcher(const char *code) {
   }
   hip = single_16(2 + a + n, 1);
   switch (y) {
-    case 'S':
-      black |= hip;
-      logical_area |= hip;
-      break;
-    case 'N':
-      logical_area |= hip;
-      break;
-    case 'W':
-      white |= hip;
-      break;
-    default:
-      fprintf(stderr, "Invalid right hip code\n");
-      exit(EXIT_FAILURE);
+  case 'S':
+    black |= hip;
+    logical_area |= hip;
+    break;
+  case 'N':
+    logical_area |= hip;
+    break;
+  case 'W':
+    white |= hip;
+    break;
+  default:
+    fprintf(stderr, "Invalid right hip code\n");
+    exit(EXIT_FAILURE);
   }
   for (int i = 0; i < b; ++i) {
     white |= single_16(3 + a + n + i, 1);

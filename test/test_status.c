@@ -1,8 +1,8 @@
+#include "tinytsumego2/status.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tinytsumego2/status.h"
 
 void test_straight_two_wide() {
   state s = parse_state("  \

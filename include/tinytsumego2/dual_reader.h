@@ -1,10 +1,10 @@
 #pragma once
-#include <stdio.h>
-#include <sys/stat.h>
-#include "tinytsumego2/stones.h"
 #include "tinytsumego2/dual_solver.h"
 #include "tinytsumego2/scoring.h"
+#include "tinytsumego2/stones.h"
 #include "tinytsumego2/util.h"
+#include <stdio.h>
+#include <sys/stat.h>
 
 /**
  * @file dual_reader.h
@@ -135,7 +135,7 @@ dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state
  * @param num_move_infos Output parameter receiving the number of entries.
  * @return Newly allocated move-info array.
  */
-move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos);
+move_info *dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos);
 
 /**
  * @brief Release resources associated with a dual graph reader.
@@ -150,7 +150,7 @@ void unload_dual_graph_reader(dual_graph_reader *dgr);
  * @param filename Path to a serialized dual-graph file.
  * @return Heap-allocated reader pointer.
  */
-dual_graph_reader* allocate_dual_graph_reader(const char *filename);
+dual_graph_reader *allocate_dual_graph_reader(const char *filename);
 
 /**
  * @brief Return raw move data for legacy Python integration helpers.
@@ -160,7 +160,7 @@ dual_graph_reader* allocate_dual_graph_reader(const char *filename);
  * @param num_moves Output parameter receiving the move count.
  * @return Pointer to the reader's root move list.
  */
-stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves);
+stones_t *dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves);
 
 /**
  * @brief Follow optimal play to a terminal state when repetitions are disallowed.

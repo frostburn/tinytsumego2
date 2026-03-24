@@ -1,8 +1,8 @@
-#include <limits.h>
-#include <stdio.h>
-#include <stdint.h>
 #include "tinytsumego2/keyspace.h"
 #include "tinytsumego2/util.h"
+#include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #define TRIT_BLOCK_SIZE (8)
 #define TRIT_BLOCK_M (6561)
@@ -38,7 +38,7 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
     if (run_length >= 8 || (run_length && !(p & effective_area))) {
       result.num_tritters++;
       result.tritters = xrealloc(result.tritters, result.num_tritters * sizeof(tritter));
-      result.tritters[result.num_tritters - 1] = (tritter) {m, shift, (1 << run_length) - 1};
+      result.tritters[result.num_tritters - 1] = (tritter){m, shift, (1 << run_length) - 1};
 
       run_length = 0;
       m = 1;
@@ -86,7 +86,7 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
       }
       break;
 
-      increase_prime:
+    increase_prime:
       result.external_prime += 2;
     }
   }
@@ -101,8 +101,8 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
 
   int effective_size = popcount(effective_area);
   result.num_blocks = ceil_div(effective_size, TRIT_BLOCK_SIZE);
-  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
-  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t*));
+  result.black_blocks = xmalloc(result.num_blocks * sizeof(stones_t *));
+  result.white_blocks = xmalloc(result.num_blocks * sizeof(stones_t *));
   m = result.prefix_m;
   int i;
   for (i = 0; i < effective_size / TRIT_BLOCK_SIZE; i++) {
@@ -134,21 +134,18 @@ tight_keyspace create_tight_keyspace(const state *root, const bool symmetric_thr
 
 // Magic array that converts bits to trits
 static const size_t TRITS8_TABLE[] = {
-  0, 1, 3, 4, 9, 10, 12, 13, 27, 28, 30, 31, 36, 37, 39, 40, 81, 82, 84, 85, 90, 91, 93, 94, 108, 109, 111,
-  112, 117, 118, 120, 121, 243, 244, 246, 247, 252, 253, 255, 256, 270, 271, 273, 274, 279, 280, 282, 283,
-  324, 325, 327, 328, 333, 334, 336, 337, 351, 352, 354, 355, 360, 361, 363, 364, 729, 730, 732, 733, 738,
-  739, 741, 742, 756, 757, 759, 760, 765, 766, 768, 769, 810, 811, 813, 814, 819, 820, 822, 823, 837, 838,
-  840, 841, 846, 847, 849, 850, 972, 973, 975, 976, 981, 982, 984, 985, 999, 1000, 1002, 1003, 1008, 1009,
-  1011, 1012, 1053, 1054, 1056, 1057, 1062, 1063, 1065, 1066, 1080, 1081, 1083, 1084, 1089, 1090, 1092, 1093,
-  2187, 2188, 2190, 2191, 2196, 2197, 2199, 2200, 2214, 2215, 2217, 2218, 2223, 2224, 2226, 2227, 2268, 2269,
-  2271, 2272, 2277, 2278, 2280, 2281, 2295, 2296, 2298, 2299, 2304, 2305, 2307, 2308, 2430, 2431, 2433, 2434,
-  2439, 2440, 2442, 2443, 2457, 2458, 2460, 2461, 2466, 2467, 2469, 2470, 2511, 2512, 2514, 2515, 2520, 2521,
-  2523, 2524, 2538, 2539, 2541, 2542, 2547, 2548, 2550, 2551, 2916, 2917, 2919, 2920, 2925, 2926, 2928, 2929,
-  2943, 2944, 2946, 2947, 2952, 2953, 2955, 2956, 2997, 2998, 3000, 3001, 3006, 3007, 3009, 3010, 3024, 3025,
-  3027, 3028, 3033, 3034, 3036, 3037, 3159, 3160, 3162, 3163, 3168, 3169, 3171, 3172, 3186, 3187, 3189, 3190,
-  3195, 3196, 3198, 3199, 3240, 3241, 3243, 3244, 3249, 3250, 3252, 3253, 3267, 3268, 3270, 3271, 3276, 3277,
-  3279, 3280
-};
+    0,    1,    3,    4,    9,    10,   12,   13,   27,   28,   30,   31,   36,   37,   39,   40,   81,   82,   84,   85,   90,   91,
+    93,   94,   108,  109,  111,  112,  117,  118,  120,  121,  243,  244,  246,  247,  252,  253,  255,  256,  270,  271,  273,  274,
+    279,  280,  282,  283,  324,  325,  327,  328,  333,  334,  336,  337,  351,  352,  354,  355,  360,  361,  363,  364,  729,  730,
+    732,  733,  738,  739,  741,  742,  756,  757,  759,  760,  765,  766,  768,  769,  810,  811,  813,  814,  819,  820,  822,  823,
+    837,  838,  840,  841,  846,  847,  849,  850,  972,  973,  975,  976,  981,  982,  984,  985,  999,  1000, 1002, 1003, 1008, 1009,
+    1011, 1012, 1053, 1054, 1056, 1057, 1062, 1063, 1065, 1066, 1080, 1081, 1083, 1084, 1089, 1090, 1092, 1093, 2187, 2188, 2190, 2191,
+    2196, 2197, 2199, 2200, 2214, 2215, 2217, 2218, 2223, 2224, 2226, 2227, 2268, 2269, 2271, 2272, 2277, 2278, 2280, 2281, 2295, 2296,
+    2298, 2299, 2304, 2305, 2307, 2308, 2430, 2431, 2433, 2434, 2439, 2440, 2442, 2443, 2457, 2458, 2460, 2461, 2466, 2467, 2469, 2470,
+    2511, 2512, 2514, 2515, 2520, 2521, 2523, 2524, 2538, 2539, 2541, 2542, 2547, 2548, 2550, 2551, 2916, 2917, 2919, 2920, 2925, 2926,
+    2928, 2929, 2943, 2944, 2946, 2947, 2952, 2953, 2955, 2956, 2997, 2998, 3000, 3001, 3006, 3007, 3009, 3010, 3024, 3025, 3027, 3028,
+    3033, 3034, 3036, 3037, 3159, 3160, 3162, 3163, 3168, 3169, 3171, 3172, 3186, 3187, 3189, 3190, 3195, 3196, 3198, 3199, 3240, 3241,
+    3243, 3244, 3249, 3250, 3252, 3253, 3267, 3268, 3270, 3271, 3276, 3277, 3279, 3280};
 
 size_t to_tight_key_fast(const tight_keyspace *tks, const state *s) {
   size_t key = 0;
@@ -253,9 +250,7 @@ monotonic_compressor create_monotonic_compressor(size_t num_keys, indicator_f in
   return result;
 }
 
-size_t compress_key(const monotonic_compressor *mc, const size_t key) {
-  return mc->checkpoints[key >> CHAR_BIT] + (size_t)mc->deltas[key];
-}
+size_t compress_key(const monotonic_compressor *mc, const size_t key) { return mc->checkpoints[key >> CHAR_BIT] + (size_t)mc->deltas[key]; }
 
 size_t decompress_key(const monotonic_compressor *mc, const size_t compressed_key) {
   if (!mc->size) {
@@ -281,7 +276,7 @@ bool has_key(const monotonic_compressor *mc, const size_t key) {
   return mc->deltas[key] != mc->deltas[key + 1];
 }
 
-void free_monotonic_compressor (monotonic_compressor *mc) {
+void free_monotonic_compressor(monotonic_compressor *mc) {
   free(mc->checkpoints);
   mc->checkpoints = NULL;
   free(mc->deltas);
@@ -320,9 +315,7 @@ size_t remap_tight_key(const compressed_keyspace *cks, size_t key) {
   return (key % cks->prefix_m) + cks->prefix_m * compress_key(&(cks->compressor), key / cks->prefix_m);
 }
 
-bool was_compressed_legal(const compressed_keyspace *cks, size_t key) {
-  return has_key(&(cks->compressor), key / cks->prefix_m);
-}
+bool was_compressed_legal(const compressed_keyspace *cks, size_t key) { return has_key(&(cks->compressor), key / cks->prefix_m); }
 
 void free_compressed_keyspace(compressed_keyspace *cks) {
   free_tight_keyspace(&(cks->keyspace));
@@ -356,11 +349,7 @@ symmetric_keyspace create_symmetric_keyspace(const state *root) {
 
 size_t to_symmetric_key(const symmetric_keyspace *sks, const state *s) {
   const size_t key = to_symmetric_bw_key(&(sks->symmetry), s->player, s->opponent);
-  return (
-    s->button +
-    2 * (s->ko_threats + abs(sks->root.ko_threats)) +
-    sks->prefix_m * compress_key(&(sks->compressor), key)
-  );
+  return (s->button + 2 * (s->ko_threats + abs(sks->root.ko_threats)) + sks->prefix_m * compress_key(&(sks->compressor), key));
 }
 
 state from_symmetric_key(const symmetric_keyspace *sks, size_t key) {
@@ -380,9 +369,7 @@ void free_symmetric_keyspace(symmetric_keyspace *sks) {
   free_monotonic_compressor(&(sks->compressor));
 }
 
-bool was_symmetric_legal(const symmetric_keyspace *sks, size_t key) {
-  return has_key(&(sks->compressor), key / sks->prefix_m);
-}
+bool was_symmetric_legal(const symmetric_keyspace *sks, size_t key) { return has_key(&(sks->compressor), key / sks->prefix_m); }
 
 size_t remap_fast_key(const symmetric_keyspace *sks, size_t key) {
   return (key % sks->prefix_m) + sks->prefix_m * compress_key(&(sks->compressor), key / sks->prefix_m);
@@ -401,9 +388,5 @@ state from_fast_key(const symmetric_keyspace *sks, size_t key) {
 
 size_t to_fast_key(const symmetric_keyspace *sks, const state *s) {
   const size_t key = to_symmetric_bw_key(&(sks->symmetry), s->player, s->opponent);
-  return (
-    s->button +
-    2 * (s->ko_threats + abs(sks->root.ko_threats)) +
-    sks->prefix_m * key
-  );
+  return (s->button + 2 * (s->ko_threats + abs(sks->root.ko_threats)) + sks->prefix_m * key);
 }

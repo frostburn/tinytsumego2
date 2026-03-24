@@ -1,5 +1,5 @@
-#include <assert.h>
 #include "tinytsumego2/util.h"
+#include <assert.h>
 
 int main() {
   assert(xmalloc(0) == NULL);

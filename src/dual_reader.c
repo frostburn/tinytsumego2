@@ -1,28 +1,24 @@
 #define _GNU_SOURCE // Expose declaration of tdestroy()
+#include "tinytsumego2/dual_reader.h"
+#include "jkiss/jkiss.h"
+#include "tinytsumego2/keyspace.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/util.h"
 #include <assert.h>
+#include <fcntl.h>
 #include <math.h>
 #include <search.h>
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include "jkiss/jkiss.h"
-#include "tinytsumego2/dual_reader.h"
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/util.h"
-#include "tinytsumego2/keyspace.h"
+#include <sys/types.h>
+#include <unistd.h>
 
 #define DUAL_READER_VERSION (4)
 
-size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) {
-  return to_compressed_key(&(dgr->keyspace.compressed), s);
-}
+size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) { return to_compressed_key(&(dgr->keyspace.compressed), s); }
 
-size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) {
-  return to_symmetric_key(&(dgr->keyspace.symmetric), s);
-}
+size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) { return to_symmetric_key(&(dgr->keyspace.symmetric), s); }
 
 size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *restrict fht, FILE *restrict stream) {
   int version = DUAL_READER_VERSION;
@@ -48,12 +44,12 @@ size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *
   total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream) * sizeof(stones_t);
 
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
-    dual_table_value v = (dual_table_value) {
-      dg->plain_values[i],
-      dg->forcing_values[i],
+    dual_table_value v = (dual_table_value){
+        dg->plain_values[i],
+        dg->forcing_values[i],
     };
     dual_table_value *tv = bsearch(&v, fht->bulk_map, fht->bulk_map_size, sizeof(dual_table_value), compare_dual_table_values);
-    value_id_t vid = tv ? (value_id_t) (tv - fht->bulk_map) : VALUE_ID_SENTINEL;
+    value_id_t vid = tv ? (value_id_t)(tv - fht->bulk_map) : VALUE_ID_SENTINEL;
     total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
   }
 
@@ -91,23 +87,23 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
 
   monotonic_compressor *comp = &(dgr->keyspace._.compressor);
 
-  comp->num_checkpoints = ((size_t*) map)[0];
+  comp->num_checkpoints = ((size_t *)map)[0];
   map += sizeof(size_t);
 
   // Memory map aux data to save RAM
   comp->checkpoints = (size_t *)map;
   map += sizeof(size_t) * comp->num_checkpoints;
 
-  comp->uncompressed_size = ((size_t*) map)[0];
+  comp->uncompressed_size = ((size_t *)map)[0];
   map += sizeof(size_t);
 
   comp->deltas = (unsigned char *)map;
   map += sizeof(unsigned char) * comp->uncompressed_size;
 
-  comp->size = ((size_t*) map)[0];
+  comp->size = ((size_t *)map)[0];
   map += sizeof(size_t);
 
-  comp->factor = ((double*) map)[0];
+  comp->factor = ((double *)map)[0];
   map += sizeof(double);
 
   if (dgr->type == COMPRESSED_KEYSPACE) {
@@ -121,19 +117,19 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
     dgr->to_key = NULL;
   }
 
-  dgr->num_moves = ((int*) map)[0];
+  dgr->num_moves = ((int *)map)[0];
   map += sizeof(int);
 
   dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
   for (int i = 0; i < dgr->num_moves; ++i) {
-    dgr->moves[i] = ((stones_t *) map)[i];
+    dgr->moves[i] = ((stones_t *)map)[i];
   }
   map += dgr->num_moves * sizeof(stones_t);
 
   dgr->value_table.bulk_ids = (value_id_t *)map;
   map += sizeof(value_id_t) * dgr->keyspace._.size;
 
-  dgr->value_table.bulk_map_size = ((size_t*) map)[0];
+  dgr->value_table.bulk_map_size = ((size_t *)map)[0];
   map += sizeof(size_t);
 
   dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
@@ -142,12 +138,12 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   }
   map += sizeof(dual_table_value) * dgr->value_table.bulk_map_size;
 
-  dgr->value_table.tail_size = ((size_t*) map)[0];
+  dgr->value_table.tail_size = ((size_t *)map)[0];
   map += sizeof(size_t);
 
-  dgr->value_table.tail_values = (dual_table_value*)map;
+  dgr->value_table.tail_values = (dual_table_value *)map;
   map += dgr->value_table.tail_size * sizeof(dual_table_value);
-  dgr->value_table.tail_keys = (size_t*)map;
+  dgr->value_table.tail_keys = (size_t *)map;
   map += dgr->value_table.tail_size * sizeof(size_t);
 }
 
@@ -165,7 +161,7 @@ dual_graph_reader load_dual_graph_reader(const char *filename) {
 void unload_dual_graph_reader(dual_graph_reader *dgr) {
   if (dgr->type == COMPRESSED_KEYSPACE) {
     free_tight_keyspace(&(dgr->keyspace.compressed.keyspace));
-  } else if (dgr->type == SYMMETRIC_KEYSPACE){
+  } else if (dgr->type == SYMMETRIC_KEYSPACE) {
     free_symmetry(&(dgr->keyspace.symmetric.symmetry));
   } else {
     printf("Unloading mock keyspace\n");
@@ -263,14 +259,14 @@ dual_value get_dual_graph_reader_value_(const dual_graph_reader *dgr, const stat
 
   dual_table_value tv = get_frozen_hash_value(&(dgr->value_table), key);
   return (dual_value){
-    {
-      score_q7_to_float(tv.plain.low) + delta,
-      score_q7_to_float(tv.plain.high) + delta,
-    },
-    {
-      score_q7_to_float(tv.forcing.low) + delta,
-      score_q7_to_float(tv.forcing.high) + delta,
-    },
+      {
+          score_q7_to_float(tv.plain.low) + delta,
+          score_q7_to_float(tv.plain.high) + delta,
+      },
+      {
+          score_q7_to_float(tv.forcing.low) + delta,
+          score_q7_to_float(tv.forcing.high) + delta,
+      },
   };
 }
 
@@ -278,13 +274,13 @@ dual_value get_dual_graph_reader_value(const dual_graph_reader *dgr, const state
   return get_dual_graph_reader_value_(dgr, s, MAX_COMPENSATION_DEPTH);
 }
 
-dual_graph_reader* allocate_dual_graph_reader(const char *filename) {
+dual_graph_reader *allocate_dual_graph_reader(const char *filename) {
   dual_graph_reader *result = xmalloc(sizeof(dual_graph_reader));
   *result = load_dual_graph_reader(filename);
   return result;
 }
 
-stones_t* dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves) {
+stones_t *dual_graph_reader_python_stuff(dual_graph_reader *dgr, state *root, int *num_moves) {
   *root = dgr->keyspace._.root;
   *num_moves = dgr->num_moves;
   return dgr->moves;
@@ -311,7 +307,7 @@ state strip_aesthetics(const dual_graph_reader *dgr, const state *s) {
   return ss;
 }
 
-move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos) {
+move_info *dual_graph_reader_move_infos(const dual_graph_reader *dgr, const state *s, int *num_move_infos) {
   move_info *result = xmalloc(dgr->num_moves * sizeof(move_info));
   *num_move_infos = 0;
 
@@ -357,13 +353,13 @@ move_info* dual_graph_reader_move_infos(const dual_graph_reader *dgr, const stat
     if (isnan(child_values[i].plain.low)) {
       continue;
     }
-    result[(*num_move_infos)++] = (move_info) {
-      s->wide ? coords_of_16(dgr->moves[i]) : coords_of(dgr->moves[i]),
-      child_values[i].plain.high - v.plain.low,
-      child_values[i].plain.low - v.plain.high,
-      v.plain.low == child_values[i].plain.high && lows_high == child_values[i].plain.low,
-      v.plain.high == child_values[i].plain.low && highs_low == child_values[i].plain.high,
-      v.forcing.high == child_values[i].forcing.low,
+    result[(*num_move_infos)++] = (move_info){
+        s->wide ? coords_of_16(dgr->moves[i]) : coords_of(dgr->moves[i]),
+        child_values[i].plain.high - v.plain.low,
+        child_values[i].plain.low - v.plain.high,
+        v.plain.low == child_values[i].plain.high && lows_high == child_values[i].plain.low,
+        v.plain.high == child_values[i].plain.low && highs_low == child_values[i].plain.high,
+        v.forcing.high == child_values[i].forcing.low,
     };
   }
 
@@ -472,8 +468,8 @@ state dual_graph_reader_high_terminal(dual_graph_reader *dgr, const state *origi
 }
 
 int compare_dual_table_values(const void *a_, const void *b_) {
-  dual_table_value *a = (dual_table_value*) a_;
-  dual_table_value *b = (dual_table_value*) b_;
+  dual_table_value *a = (dual_table_value *)a_;
+  dual_table_value *b = (dual_table_value *)b_;
 
   if (a->plain.low < b->plain.low) {
     return -1;
@@ -531,12 +527,12 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
     }
     if (*tv == v) {
       (*num_unique)++;
-      ((tree_value *) v)->count = 1;
+      ((tree_value *)v)->count = 1;
     } else {
       free(v);
 
       v = *tv;
-      ((tree_value *) v)->count++;
+      ((tree_value *)v)->count++;
     }
   }
 
@@ -545,7 +541,7 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
   size_t i = 0;
   void action(const void *nodep, VISIT which, int) {
     if (which == postorder || which == leaf) {
-      value_map[i++] = (*(tree_value **) nodep)->value;
+      value_map[i++] = (*(tree_value **)nodep)->value;
     }
   }
   twalk(root, action);
@@ -553,7 +549,7 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
   if ((*num_unique) <= VALUE_MAP_SIZE - 1) {
     tdestroy(root, free);
 
-    return (frozen_hash_table) {*num_unique, value_map, NULL, 0, NULL, NULL};
+    return (frozen_hash_table){*num_unique, value_map, NULL, 0, NULL, NULL};
   }
 
   int cmp(const void *a_, const void *b_) {
@@ -601,13 +597,13 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
   assert(j == tail_size);
   free(v);
 
-  return (frozen_hash_table) {n, value_map, NULL, tail_size, tail_values, tail_keys};
+  return (frozen_hash_table){n, value_map, NULL, tail_size, tail_values, tail_keys};
 }
 
 dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key) {
   value_id_t vid = fht->bulk_ids[key];
   if (vid == VALUE_ID_SENTINEL) {
-    size_t i = ((size_t*)bsearch(&key, fht->tail_keys, fht->tail_size, sizeof(size_t), compare_keys)) - fht->tail_keys;
+    size_t i = ((size_t *)bsearch(&key, fht->tail_keys, fht->tail_size, sizeof(size_t), compare_keys)) - fht->tail_keys;
     return fht->tail_values[i];
   }
   return fht->bulk_map[vid];

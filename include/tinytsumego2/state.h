@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdlib.h>
 #include "tinytsumego2/stones.h"
 #include "tinytsumego2/stones16.h"
+#include <stdbool.h>
+#include <stdlib.h>
 
 /**
  * @file state.h
@@ -13,8 +13,7 @@
 /**
  * @brief Complete mutable game state for a tinytsumego position.
  */
-typedef struct state
-{
+typedef struct state {
   /** @brief Visible playing area; zero bits mark board edges for rendering. */
   stones_t visual_area;
 
@@ -70,8 +69,7 @@ typedef struct state
  *
  * The values are ordered to simplify game-graph expansion.
  */
-typedef enum move_result
-{
+typedef enum move_result {
   /** @brief Move was illegal. */
   ILLEGAL,
 
@@ -220,7 +218,7 @@ move_result struggle(const state *s);
  *
  * The returned list includes `pass()`. The caller must free the returned array.
  */
-stones_t* moves_of(const state *root, int *num_moves);
+stones_t *moves_of(const state *root, int *num_moves);
 
 /** @brief Swap player/opponent roles without incrementing the pass count. */
 void swap_players(state *s);

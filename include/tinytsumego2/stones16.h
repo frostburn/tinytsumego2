@@ -102,12 +102,9 @@ inline stones_t flood_16(register stones_t source, register const stones_t targe
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK_16) << H_SHIFT_16) |
-      ((source >> H_SHIFT_16) & WEST_BLOCK_16) |
-      (source << V_SHIFT_16) |
-      (source >> V_SHIFT_16)
-    ) & target;
+    source |= (((source & WEST_BLOCK_16) << H_SHIFT_16) | ((source >> H_SHIFT_16) & WEST_BLOCK_16) | (source << V_SHIFT_16) |
+               (source >> V_SHIFT_16)) &
+              target;
   } while (temp != source);
   return source;
 }
@@ -127,12 +124,9 @@ inline stones_t bleed_16(register stones_t source, register const stones_t targe
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK_16) << H_SHIFT_16) |
-      ((source >> H_SHIFT_16) & WEST_BLOCK_16) |
-      (source << V_SHIFT_16) |
-      (source >> V_SHIFT_16)
-    ) & target;
+    source |= (((source & WEST_BLOCK_16) << H_SHIFT_16) | ((source >> H_SHIFT_16) & WEST_BLOCK_16) | (source << V_SHIFT_16) |
+               (source >> V_SHIFT_16)) &
+              target;
   } while (temp != source);
   return source;
 }

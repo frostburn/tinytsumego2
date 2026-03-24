@@ -1,12 +1,12 @@
+#include "tinytsumego2/complete_reader.h"
+#include "tinytsumego2/complete_solver.h"
+#include "tinytsumego2/scoring.h"
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/complete_solver.h"
-#include "tinytsumego2/complete_reader.h"
 
 #include "tsumego.c"
 
@@ -52,26 +52,14 @@ complete_graph solve(tsumego t, tactics ts, bool root_only, bool play_high, bool
       state child = s;
       const move_result r = make_move(&child, cg.moves[j]);
       if (r == TAKE_TARGET) {
-        printf("%c%c: takes target (%f)\n",  colof(cg.moves[j]), rowof(cg.moves[j]), target_lost_score(&child));
+        printf("%c%c: takes target (%f)\n", colof(cg.moves[j]), rowof(cg.moves[j]), target_lost_score(&child));
       } else if (r == SECOND_PASS) {
-        printf("%c%c: game over (%f)\n",  colof(cg.moves[j]), rowof(cg.moves[j]), score(&child));
+        printf("%c%c: game over (%f)\n", colof(cg.moves[j]), rowof(cg.moves[j]), score(&child));
       } else if (r != ILLEGAL) {
         const value next_value = get_complete_graph_value(&cg, &child);
-        const value child_value = apply_tactics(
-          cg.tactics,
-          r,
-          &child,
-          next_value
-        );
-        printf(
-          "%c%c: (%f, %f) -> (%f, %f)\n",
-           colof(cg.moves[j]),
-           rowof(cg.moves[j]),
-           next_value.low,
-           next_value.high,
-           child_value.low,
-           child_value.high
-        );
+        const value child_value = apply_tactics(cg.tactics, r, &child, next_value);
+        printf("%c%c: (%f, %f) -> (%f, %f)\n", colof(cg.moves[j]), rowof(cg.moves[j]), next_value.low, next_value.high, child_value.low,
+               child_value.high);
       }
     }
 
@@ -93,12 +81,7 @@ complete_graph solve(tsumego t, tactics ts, bool root_only, bool play_high, bool
         }
       } else if (r != ILLEGAL) {
         const value next_value = get_complete_graph_value(&cg, &child);
-        const value child_value = apply_tactics(
-          cg.tactics,
-          r,
-          &child,
-          next_value
-        );
+        const value child_value = apply_tactics(cg.tactics, r, &child, next_value);
 
         bool good = (low_to_play ? low == child_value.high : high == child_value.low);
 
@@ -123,7 +106,7 @@ complete_graph solve(tsumego t, tactics ts, bool root_only, bool play_high, bool
     }
   }
 
-  cleanup:
+cleanup:
 
   if (ts == DELAY) {
     if (root_value.low != t.low_delay || root_value.high != t.high_delay) {
@@ -154,24 +137,24 @@ int main(int argc, char *argv[]) {
   int c;
   while ((c = getopt(argc, argv, "dfhr")) != -1) {
     switch (c) {
-      case 'd':
-        ts = DELAY;
-        arg_count--;
-        break;
-      case 'f':
-        ts = FORCING;
-        arg_count--;
-        break;
-      case 'h':
-        play_high = true;
-        arg_count--;
-        break;
-      case 'r':
-        root_only = true;
-        arg_count--;
-        break;
-      default:
-        abort();
+    case 'd':
+      ts = DELAY;
+      arg_count--;
+      break;
+    case 'f':
+      ts = FORCING;
+      arg_count--;
+      break;
+    case 'h':
+      play_high = true;
+      arg_count--;
+      break;
+    case 'r':
+      root_only = true;
+      arg_count--;
+      break;
+    default:
+      abort();
     }
   }
 

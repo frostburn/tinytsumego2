@@ -1,7 +1,7 @@
+#include "tinytsumego2/shape.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/shape.h"
 
 void test_notchers_n_1() {
   state s;

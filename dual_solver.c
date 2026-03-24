@@ -1,12 +1,12 @@
+#include "tinytsumego2/dual_solver.h"
+#include "tinytsumego2/dual_reader.h"
+#include "tinytsumego2/scoring.h"
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/dual_solver.h"
-#include "tinytsumego2/dual_reader.h"
 
 #include "tsumego.c"
 
@@ -20,7 +20,8 @@ dual_graph solve(tsumego t, bool verbose) {
     printf("Solution space size = %zu\n", dg.keyspace._.size);
   }
 
-  while(iterate_dual_graph(&dg, verbose));
+  while (iterate_dual_graph(&dg, verbose))
+    ;
 
   value root_value = get_dual_graph_value(&dg, &root, NONE);
 
@@ -40,7 +41,8 @@ dual_graph solve(tsumego t, bool verbose) {
 
   if (verbose) {
     printf("Iterating area score\n");
-    while(area_iterate_dual_graph(&dg, true));
+    while (area_iterate_dual_graph(&dg, true))
+      ;
   }
 
   return dg;

@@ -1,9 +1,9 @@
+#include "tinytsumego2/complete_solver.h"
+#include "tinytsumego2/scoring.h"
+#include "tinytsumego2/state.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include "tinytsumego2/state.h"
-#include "tinytsumego2/scoring.h"
-#include "tinytsumego2/complete_solver.h"
 
 state straight_two() {
   state s = {0};
@@ -155,12 +155,7 @@ void test_bulky_five_forcing() {
     state child = s;
     const move_result r = make_move(&child, cg.moves[i]);
     if (r != ILLEGAL) {
-      v = apply_tactics(
-        FORCING,
-        r,
-        &child,
-        get_complete_graph_value(&cg, &child)
-      );
+      v = apply_tactics(FORCING, r, &child, get_complete_graph_value(&cg, &child));
       if (cg.moves[i] == single(1, 1) || cg.moves[i] == single(2, 2)) {
         assert(v.low == best);
       } else {
@@ -192,12 +187,7 @@ void test_bulky_five_forcing() {
     state child = s;
     const move_result r = make_move(&child, cg.moves[i]);
     if (r != ILLEGAL) {
-      v = apply_tactics(
-        FORCING,
-        r,
-        &child,
-        get_complete_graph_value(&cg, &child)
-      );
+      v = apply_tactics(FORCING, r, &child, get_complete_graph_value(&cg, &child));
       if (cg.moves[i]) {
         assert(v.low != best);
       } else {

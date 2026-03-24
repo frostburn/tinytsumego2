@@ -1,12 +1,12 @@
+#include "tinytsumego2/stones16.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "tinytsumego2/stones16.h"
 
 void print_stones_16(const stones_t stones) {
   // Column headers
   printf(" ");
   for (int i = 0; i < WIDTH_16; i++) {
-      printf(" %c", 'A' + i);
+    printf(" %c", 'A' + i);
   }
   printf("\n");
 
@@ -19,12 +19,11 @@ void print_stones_16(const stones_t stones) {
     // Stone indicators
     if ((1ULL << i) & stones) {
       printf(" @");
-    }
-    else {
+    } else {
       printf(" .");
     }
 
-    if (i % WIDTH_16 == WIDTH_16 - 1){
+    if (i % WIDTH_16 == WIDTH_16 - 1) {
       printf("\n");
     }
   }
@@ -42,27 +41,17 @@ stones_t rectangle_16(const int width, const int height) {
   return r;
 }
 
-stones_t single_16(const int x, const int y) {
-  return 1ULL << (x * H_SHIFT_16 + y * V_SHIFT_16);
-}
+stones_t single_16(const int x, const int y) { return 1ULL << (x * H_SHIFT_16 + y * V_SHIFT_16); }
 
 stones_t liberties_16(const stones_t stones, const stones_t empty) {
-  return (
-    ((stones & WEST_BLOCK_16) << H_SHIFT_16) |
-    ((stones >> H_SHIFT_16) & WEST_BLOCK_16) |
-    (stones << V_SHIFT_16) |
-    (stones >> V_SHIFT_16)
-  ) & ~stones & empty;
+  return (((stones & WEST_BLOCK_16) << H_SHIFT_16) | ((stones >> H_SHIFT_16) & WEST_BLOCK_16) | (stones << V_SHIFT_16) |
+          (stones >> V_SHIFT_16)) &
+         ~stones & empty;
 }
 
 stones_t cross_16(const stones_t stones) {
-  return (
-    ((stones & WEST_BLOCK_16) << H_SHIFT_16) |
-    ((stones >> H_SHIFT_16) & WEST_BLOCK_16) |
-    (stones << V_SHIFT_16) |
-    (stones >> V_SHIFT_16) |
-    stones
-  );
+  return (((stones & WEST_BLOCK_16) << H_SHIFT_16) | ((stones >> H_SHIFT_16) & WEST_BLOCK_16) | (stones << V_SHIFT_16) |
+          (stones >> V_SHIFT_16) | stones);
 }
 
 stones_t blob_16(stones_t stones) {
@@ -108,12 +97,8 @@ stones_t *chains_16(stones_t stones, int *num_chains) {
 }
 
 stones_t stones_mirror_v_16(stones_t stones) {
-  return (
-    ((stones & HH0) << (3 * V_SHIFT_16)) |
-    ((stones & HH1) << V_SHIFT_16) |
-    ((stones & HH2) >> V_SHIFT_16) |
-    ((stones & HH3) >> (3 * V_SHIFT_16))
-  );
+  return (((stones & HH0) << (3 * V_SHIFT_16)) | ((stones & HH1) << V_SHIFT_16) | ((stones & HH2) >> V_SHIFT_16) |
+          ((stones & HH3) >> (3 * V_SHIFT_16)));
 }
 
 #define VVA (0xff00ff00ff00ffULL)
@@ -141,9 +126,7 @@ stones_t stones_snap_16(stones_t stones) {
   return stones;
 }
 
-bool is_contiguous_16(const stones_t stones) {
-  return flood_16(1ULL << ctz(stones), stones) == stones;
-}
+bool is_contiguous_16(const stones_t stones) { return flood_16(1ULL << ctz(stones), stones) == stones; }
 
 int width_of_16(const stones_t stones) {
   stones_t w = EAST_WALL_16;
@@ -185,7 +168,7 @@ int offset_v_16(stones_t stones) {
   if (!stones) {
     return 0;
   }
-  for(int result = 0;; result++) {
+  for (int result = 0;; result++) {
     if (stones & NORTH_WALL_16) {
       return result;
     }
@@ -209,10 +192,10 @@ stones_t move_west_16(stones_t stones, int amount) {
 
 coordinates coords_of_16(const stones_t stone) {
   if (!stone) {
-    return (coordinates) {-1, -1};
+    return (coordinates){-1, -1};
   }
   int i = ctz(stone);
-  return (coordinates) {i % WIDTH_16, i / WIDTH_16};
+  return (coordinates){i % WIDTH_16, i / WIDTH_16};
 }
 
 #ifndef NDEBUG
@@ -221,12 +204,9 @@ stones_t flood_16(register stones_t source, register const stones_t target) {
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK_16) << H_SHIFT_16) |
-      ((source >> H_SHIFT_16) & WEST_BLOCK_16) |
-      (source << V_SHIFT_16) |
-      (source >> V_SHIFT_16)
-    ) & target;
+    source |= (((source & WEST_BLOCK_16) << H_SHIFT_16) | ((source >> H_SHIFT_16) & WEST_BLOCK_16) | (source << V_SHIFT_16) |
+               (source >> V_SHIFT_16)) &
+              target;
   } while (temp != source);
   return source;
 }
@@ -235,12 +215,9 @@ stones_t bleed_16(register stones_t source, register const stones_t target) {
   register stones_t temp;
   do {
     temp = source;
-    source |= (
-      ((source & WEST_BLOCK_16) << H_SHIFT_16) |
-      ((source >> H_SHIFT_16) & WEST_BLOCK_16) |
-      (source << V_SHIFT_16) |
-      (source >> V_SHIFT_16)
-    ) & target;
+    source |= (((source & WEST_BLOCK_16) << H_SHIFT_16) | ((source >> H_SHIFT_16) & WEST_BLOCK_16) | (source << V_SHIFT_16) |
+               (source >> V_SHIFT_16)) &
+              target;
   } while (temp != source);
   return source;
 }
