@@ -34,6 +34,41 @@ LINK_DIRECTORIES(${LIBRARY_OUTPUT_PATH})
 ADD_SUBDIRECTORY(jkiss/src)
 ADD_SUBDIRECTORY(src)
 
+
+find_program(CLANG_FORMAT_EXE NAMES clang-format)
+
+if(CLANG_FORMAT_EXE)
+    file(GLOB_RECURSE LINT_C_FILES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/*.c"
+        "${CMAKE_SOURCE_DIR}/*.h"
+    )
+    list(FILTER LINT_C_FILES EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/jkiss/")
+    list(FILTER LINT_C_FILES EXCLUDE REGEX "^${CMAKE_BINARY_DIR}/")
+
+    add_custom_target(lint
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror ${LINT_C_FILES}
+        COMMENT "Running clang-format lint check"
+        VERBATIM
+    )
+
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXE} -i ${LINT_C_FILES}
+        COMMENT "Formatting C and header files with clang-format"
+        VERBATIM
+    )
+else()
+    add_custom_target(lint
+        COMMAND ${CMAKE_COMMAND} -E echo "clang-format not found; install clang-format to use 'make lint'."
+        COMMAND ${CMAKE_COMMAND} -E false
+        COMMENT "clang-format is required for lint target"
+    )
+    add_custom_target(format
+        COMMAND ${CMAKE_COMMAND} -E echo "clang-format not found; install clang-format to use 'make format'."
+        COMMAND ${CMAKE_COMMAND} -E false
+        COMMENT "clang-format is required for format target"
+    )
+endif()
+
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(test)
 
