@@ -240,9 +240,9 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
   return (value){NAN, NAN};
 }
 
-size_t update_dual_graph_batch(dual_graph *dg) {
-#pragma omp parallel for schedule(dynamic, 1)
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+size_t update_dual_graph_batch(dual_graph *dg, size_t batch_size) {
+#pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < batch_size; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
     size_t i = dg->batch_keys[k];
 
@@ -279,7 +279,7 @@ size_t update_dual_graph_batch(dual_graph *dg) {
   }
 
   size_t num_updated = 0;
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     size_t i = dg->batch_keys[k];
     if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high ||
         dg->forcing_values[i].low != dg->batch_forcing[k].low || dg->forcing_values[i].high != dg->batch_forcing[k].high) {
@@ -309,17 +309,12 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
 
     batch_size++;
     if (batch_size >= BATCH_SIZE) {
-      num_updated += update_dual_graph_batch(dg);
+      num_updated += update_dual_graph_batch(dg, batch_size);
       batch_size = 0;
     }
   }
   if (batch_size) {
-    // Pad incomplete batch
-    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
-      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
-      dg->batch_keys[i] = dg->batch_keys[0];
-    }
-    num_updated += update_dual_graph_batch(dg);
+    num_updated += update_dual_graph_batch(dg, batch_size);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
@@ -406,9 +401,9 @@ value get_dual_graph_area_value(dual_graph *dg, const state *s) {
   return table_value_to_value(get_dual_graph_area_value_(dg, s, MAX_COMPENSATION_DEPTH));
 }
 
-size_t update_dual_graph_area_batch(dual_graph *dg) {
-#pragma omp parallel for schedule(dynamic, 1)
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+size_t update_dual_graph_area_batch(dual_graph *dg, size_t batch_size) {
+#pragma omp parallel for schedule(static)
+  for (size_t k = 0; k < batch_size; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
 
     // Perform negamax
@@ -435,7 +430,7 @@ size_t update_dual_graph_area_batch(dual_graph *dg) {
   }
 
   size_t num_updated = 0;
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     size_t i = dg->batch_keys[k];
     if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high) {
       dg->plain_values[i] = dg->batch_plain[k];
@@ -458,17 +453,12 @@ bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
 
     batch_size++;
     if (batch_size >= BATCH_SIZE) {
-      num_updated += update_dual_graph_area_batch(dg);
+      num_updated += update_dual_graph_area_batch(dg, batch_size);
       batch_size = 0;
     }
   }
   if (batch_size) {
-    // Pad incomplete batch
-    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
-      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
-      dg->batch_keys[i] = dg->batch_keys[0];
-    }
-    num_updated += update_dual_graph_area_batch(dg);
+    num_updated += update_dual_graph_area_batch(dg, batch_size);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
