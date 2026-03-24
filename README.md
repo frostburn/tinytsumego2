@@ -33,7 +33,7 @@ make test
 
 ## Linting and formatting
 
-This project uses `clang-format` for C source and header formatting.
+This project uses `clang-format` for C source and header formatting. The `jkiss` submodule is third-party code and is intentionally excluded from linting commands.
 
 Install it (Ubuntu/Debian):
 ```bash
@@ -42,12 +42,12 @@ sudo apt install clang-format
 
 Run it across the repository:
 ```bash
-clang-format -i $(find . -type f \( -name "*.c" -o -name "*.h" \))
+clang-format -i $(find . -path ./jkiss -prune -o -type f \( -name "*.c" -o -name "*.h" \) -print)
 ```
 
 Check formatting without modifying files:
 ```bash
-clang-format --dry-run --Werror $(find . -type f \( -name "*.c" -o -name "*.h" \))
+clang-format --dry-run --Werror $(find . -path ./jkiss -prune -o -type f \( -name "*.c" -o -name "*.h" \) -print)
 ```
 
 ## Running the server
