@@ -176,8 +176,9 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
       const move_result r = make_move(&child, dg->moves[j]);
       table_value child_plain;
       table_value child_forcing;
-      if (r <= TAKE_TARGET) {
-        assert(r != TAKE_TARGET);
+      if (r == ILLEGAL) {
+        continue;
+      } else if (r <= TAKE_TARGET) {
         child_plain = score_terminal_q7(r, &child);
         child_forcing = child_plain;
       } else {
@@ -240,9 +241,11 @@ value get_dual_graph_value(dual_graph *dg, const state *s, tactics ts) {
   return (value){NAN, NAN};
 }
 
-size_t update_dual_graph_batch(dual_graph *dg) {
+size_t update_dual_graph_batch(dual_graph *dg, size_t batch_size) {
+  const stones_t *moves = dg->moves;
+  const int num_moves = dg->num_moves;
 #pragma omp parallel for schedule(dynamic, 1)
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
     size_t i = dg->batch_keys[k];
 
@@ -252,9 +255,9 @@ size_t update_dual_graph_batch(dual_graph *dg) {
     score_q7_t forcing_low = dg->forcing_values[i].low;
     score_q7_t forcing_high = SCORE_Q7_MIN;
 
-    for (int j = 0; j < dg->num_moves; ++j) {
+    for (int j = 0; j < num_moves; ++j) {
       state child = parent;
-      const move_result r = make_move(&child, dg->moves[j]);
+      const move_result r = make_move(&child, moves[j]);
       table_value child_plain;
       table_value child_forcing;
       if (r <= TAKE_TARGET) {
@@ -279,7 +282,7 @@ size_t update_dual_graph_batch(dual_graph *dg) {
   }
 
   size_t num_updated = 0;
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     size_t i = dg->batch_keys[k];
     if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high ||
         dg->forcing_values[i].low != dg->batch_forcing[k].low || dg->forcing_values[i].high != dg->batch_forcing[k].high) {
@@ -294,7 +297,8 @@ size_t update_dual_graph_batch(dual_graph *dg) {
 bool iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
   size_t batch_size = 0;
-  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+  const size_t fast_size = dg->keyspace._.fast_size;
+  for (size_t k = 0; k < fast_size; ++k) {
     if (!dg->was_legal(dg, k)) {
       continue;
     }
@@ -309,17 +313,12 @@ bool iterate_dual_graph(dual_graph *dg, bool verbose) {
 
     batch_size++;
     if (batch_size >= BATCH_SIZE) {
-      num_updated += update_dual_graph_batch(dg);
+      num_updated += update_dual_graph_batch(dg, batch_size);
       batch_size = 0;
     }
   }
   if (batch_size) {
-    // Pad incomplete batch
-    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
-      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
-      dg->batch_keys[i] = dg->batch_keys[0];
-    }
-    num_updated += update_dual_graph_batch(dg);
+    num_updated += update_dual_graph_batch(dg, batch_size);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
@@ -368,6 +367,8 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
         child_value.low += delta;
         child_value.high += delta;
         child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      } else if (r == ILLEGAL) {
+        continue;
       } else if (r <= TAKE_TARGET) {
         child_value = score_terminal_q7(r, &child);
       } else {
@@ -406,18 +407,20 @@ value get_dual_graph_area_value(dual_graph *dg, const state *s) {
   return table_value_to_value(get_dual_graph_area_value_(dg, s, MAX_COMPENSATION_DEPTH));
 }
 
-size_t update_dual_graph_area_batch(dual_graph *dg) {
+size_t update_dual_graph_area_batch(dual_graph *dg, size_t batch_size) {
+  const stones_t *moves = dg->moves;
+  const int num_moves = dg->num_moves;
 #pragma omp parallel for schedule(dynamic, 1)
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     state parent = dg->from_fast_key(dg, dg->batch_fast_keys[k]);
 
     // Perform negamax
     score_q7_t low = SCORE_Q7_MIN;
     score_q7_t high = SCORE_Q7_MIN;
 
-    for (int j = 0; j < dg->num_moves; ++j) {
+    for (int j = 0; j < num_moves; ++j) {
       state child = parent;
-      const move_result r = make_move(&child, dg->moves[j]);
+      const move_result r = make_move(&child, moves[j]);
       table_value child_value;
       if (r <= TAKE_TARGET) {
         assert(r == ILLEGAL);
@@ -435,7 +438,7 @@ size_t update_dual_graph_area_batch(dual_graph *dg) {
   }
 
   size_t num_updated = 0;
-  for (size_t k = 0; k < BATCH_SIZE; ++k) {
+  for (size_t k = 0; k < batch_size; ++k) {
     size_t i = dg->batch_keys[k];
     if (dg->plain_values[i].low != dg->batch_plain[k].low || dg->plain_values[i].high != dg->batch_plain[k].high) {
       dg->plain_values[i] = dg->batch_plain[k];
@@ -448,7 +451,8 @@ size_t update_dual_graph_area_batch(dual_graph *dg) {
 bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
   size_t num_updated = 0;
   size_t batch_size = 0;
-  for (size_t k = 0; k < dg->keyspace._.fast_size; ++k) {
+  const size_t fast_size = dg->keyspace._.fast_size;
+  for (size_t k = 0; k < fast_size; ++k) {
     if (!dg->was_legal(dg, k)) {
       continue;
     }
@@ -458,17 +462,12 @@ bool area_iterate_dual_graph(dual_graph *dg, bool verbose) {
 
     batch_size++;
     if (batch_size >= BATCH_SIZE) {
-      num_updated += update_dual_graph_area_batch(dg);
+      num_updated += update_dual_graph_area_batch(dg, batch_size);
       batch_size = 0;
     }
   }
   if (batch_size) {
-    // Pad incomplete batch
-    for (size_t i = batch_size; i < BATCH_SIZE; ++i) {
-      dg->batch_fast_keys[i] = dg->batch_fast_keys[0];
-      dg->batch_keys[i] = dg->batch_keys[0];
-    }
-    num_updated += update_dual_graph_area_batch(dg);
+    num_updated += update_dual_graph_area_batch(dg, batch_size);
   }
   if (verbose) {
     value v = get_dual_graph_value(dg, &(dg->keyspace._.root), NONE);
@@ -493,7 +492,9 @@ state dual_graph_low_terminal(dual_graph *dg, const state *origin, tactics ts) {
     const move_result r = make_move(&child, dg->moves[j]);
     table_value child_plain;
     table_value child_forcing;
-    if (r <= TAKE_TARGET) {
+    if (r == ILLEGAL) {
+      continue;
+    } else if (r <= TAKE_TARGET) {
       if (ts == NONE) {
         child_plain = score_terminal_q7(r, &child);
         if (plain_value.low == child_plain.high) {
@@ -538,7 +539,9 @@ state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts) 
     const move_result r = make_move(&child, dg->moves[i]);
     table_value child_plain;
     table_value child_forcing;
-    if (r <= TAKE_TARGET) {
+    if (r == ILLEGAL) {
+      continue;
+    } else if (r <= TAKE_TARGET) {
       if (ts == NONE) {
         child_plain = score_terminal_q7(r, &child);
         if (plain_value.high == child_plain.low) {

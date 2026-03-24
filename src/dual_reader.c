@@ -9,6 +9,7 @@
 #include <math.h>
 #include <search.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -121,9 +122,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   map += sizeof(int);
 
   dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
-  for (int i = 0; i < dgr->num_moves; ++i) {
-    dgr->moves[i] = ((stones_t *)map)[i];
-  }
+  memcpy(dgr->moves, map, dgr->num_moves * sizeof(stones_t));
   map += dgr->num_moves * sizeof(stones_t);
 
   dgr->value_table.bulk_ids = (value_id_t *)map;
@@ -133,9 +132,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   map += sizeof(size_t);
 
   dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
-  for (size_t i = 0; i < dgr->value_table.bulk_map_size; ++i) {
-    dgr->value_table.bulk_map[i] = ((dual_table_value *)map)[i];
-  }
+  memcpy(dgr->value_table.bulk_map, map, dgr->value_table.bulk_map_size * sizeof(dual_table_value));
   map += sizeof(dual_table_value) * dgr->value_table.bulk_map_size;
 
   dgr->value_table.tail_size = ((size_t *)map)[0];
@@ -603,7 +600,19 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
 dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key) {
   value_id_t vid = fht->bulk_ids[key];
   if (vid == VALUE_ID_SENTINEL) {
-    size_t i = ((size_t *)bsearch(&key, fht->tail_keys, fht->tail_size, sizeof(size_t), compare_keys)) - fht->tail_keys;
+    size_t lo = 0;
+    size_t hi = fht->tail_size;
+    while (lo < hi) {
+      size_t mid = lo + (hi - lo) / 2;
+      size_t mid_key = fht->tail_keys[mid];
+      if (mid_key < key) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    assert(lo < fht->tail_size && fht->tail_keys[lo] == key);
+    size_t i = lo;
     return fht->tail_values[i];
   }
   return fht->bulk_map[vid];
