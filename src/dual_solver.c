@@ -176,8 +176,9 @@ void get_dual_graph_values(dual_graph *dg, const state *s, int depth, table_valu
       const move_result r = make_move(&child, dg->moves[j]);
       table_value child_plain;
       table_value child_forcing;
-      if (r <= TAKE_TARGET) {
-        assert(r != TAKE_TARGET);
+      if (r == ILLEGAL) {
+        continue;
+      } else if (r <= TAKE_TARGET) {
         child_plain = score_terminal_q7(r, &child);
         child_forcing = child_plain;
       } else {
@@ -366,6 +367,8 @@ table_value get_dual_graph_area_value_(dual_graph *dg, const state *s, int depth
         child_value.low += delta;
         child_value.high += delta;
         child_value = apply_tactics_q7(NONE, r, &child, child_value);
+      } else if (r == ILLEGAL) {
+        continue;
       } else if (r <= TAKE_TARGET) {
         child_value = score_terminal_q7(r, &child);
       } else {
@@ -489,7 +492,9 @@ state dual_graph_low_terminal(dual_graph *dg, const state *origin, tactics ts) {
     const move_result r = make_move(&child, dg->moves[j]);
     table_value child_plain;
     table_value child_forcing;
-    if (r <= TAKE_TARGET) {
+    if (r == ILLEGAL) {
+      continue;
+    } else if (r <= TAKE_TARGET) {
       if (ts == NONE) {
         child_plain = score_terminal_q7(r, &child);
         if (plain_value.low == child_plain.high) {
@@ -534,7 +539,9 @@ state dual_graph_high_terminal(dual_graph *dg, const state *origin, tactics ts) 
     const move_result r = make_move(&child, dg->moves[i]);
     table_value child_plain;
     table_value child_forcing;
-    if (r <= TAKE_TARGET) {
+    if (r == ILLEGAL) {
+      continue;
+    } else if (r <= TAKE_TARGET) {
       if (ts == NONE) {
         child_plain = score_terminal_q7(r, &child);
         if (plain_value.high == child_plain.low) {
