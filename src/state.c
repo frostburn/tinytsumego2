@@ -133,7 +133,7 @@ state parse_state(const char *visuals) {
   s.white_to_play = false;
 
   stones_t p = 1ULL;
-  while (*visuals) {
+  for (; *visuals; visuals++) {
     switch (*visuals) {
     case 'x':
       p <<= 1;
@@ -204,7 +204,6 @@ state parse_state(const char *visuals) {
       p <<= 1;
       break;
     }
-    visuals++;
   }
   return s;
 }
