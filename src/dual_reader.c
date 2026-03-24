@@ -26,26 +26,26 @@ size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) {
 
 size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *restrict fht, FILE *restrict stream) {
   int version = DUAL_READER_VERSION;
-  size_t total = fwrite(&version, sizeof(int), 1, stream);
+  size_t total = fwrite(&version, sizeof(int), 1, stream) * sizeof(int);
 
-  total += fwrite(&(dg->type), sizeof(keyspace_type), 1, stream);
-  total += fwrite(&(dg->keyspace._.size), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace._.fast_size), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace._.prefix_m), sizeof(size_t), 1, stream);
-  total += fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream);
+  total += fwrite(&(dg->type), sizeof(keyspace_type), 1, stream) * sizeof(keyspace_type);
+  total += fwrite(&(dg->keyspace._.size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(&(dg->keyspace._.fast_size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(&(dg->keyspace._.prefix_m), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream) * sizeof(state);
 
   const monotonic_compressor *comp = &(dg->keyspace._.compressor);
-  total += fwrite(&(comp->num_checkpoints), sizeof(size_t), 1, stream);
-  total += fwrite(comp->checkpoints, sizeof(size_t), comp->num_checkpoints, stream);
-  total += fwrite(&(comp->uncompressed_size), sizeof(size_t), 1, stream);
-  total += fwrite(comp->deltas, sizeof(unsigned char), comp->uncompressed_size, stream);
-  total += fwrite(&(comp->size), sizeof(size_t), 1, stream);
-  total += fwrite(&(comp->factor), sizeof(double), 1, stream);
+  total += fwrite(&(comp->num_checkpoints), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(comp->checkpoints, sizeof(size_t), comp->num_checkpoints, stream) * sizeof(size_t);
+  total += fwrite(&(comp->uncompressed_size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(comp->deltas, sizeof(unsigned char), comp->uncompressed_size, stream) * sizeof(unsigned char);
+  total += fwrite(&(comp->size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(&(comp->factor), sizeof(double), 1, stream) * sizeof(double);
 
   // Note: Specific keyspaces re-constructed on load
 
-  total += fwrite(&(dg->num_moves), sizeof(int), 1, stream);
-  total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream);
+  total += fwrite(&(dg->num_moves), sizeof(int), 1, stream) * sizeof(int);
+  total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream) * sizeof(stones_t);
 
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     dual_table_value v = (dual_table_value) {
@@ -54,15 +54,15 @@ size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *
     };
     dual_table_value *tv = bsearch(&v, fht->bulk_map, fht->bulk_map_size, sizeof(dual_table_value), compare_dual_table_values);
     value_id_t vid = tv ? (value_id_t) (tv - fht->bulk_map) : VALUE_ID_SENTINEL;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream);
+    total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
   }
 
-  total += fwrite(&(fht->bulk_map_size), sizeof(size_t), 1, stream);
-  total += fwrite(fht->bulk_map, sizeof(dual_table_value), fht->bulk_map_size, stream);
+  total += fwrite(&(fht->bulk_map_size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(fht->bulk_map, sizeof(dual_table_value), fht->bulk_map_size, stream) * sizeof(dual_table_value);
 
-  total += fwrite(&(fht->tail_size), sizeof(size_t), 1, stream);
-  total += fwrite(fht->tail_values, sizeof(dual_table_value), fht->tail_size, stream);
-  total += fwrite(fht->tail_keys, sizeof(size_t), fht->tail_size, stream);
+  total += fwrite(&(fht->tail_size), sizeof(size_t), 1, stream) * sizeof(size_t);
+  total += fwrite(fht->tail_values, sizeof(dual_table_value), fht->tail_size, stream) * sizeof(dual_table_value);
+  total += fwrite(fht->tail_keys, sizeof(size_t), fht->tail_size, stream) * sizeof(size_t);
 
   return total;
 }

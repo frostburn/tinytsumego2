@@ -4,37 +4,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Rectangular matrix of zeros and ones
+/**
+ * @file bitmatrix.h
+ * @brief Dense rectangular matrix of bits used by helper algorithms.
+ */
+
+/**
+ * @brief Heap-allocated rectangular matrix of zero/one values.
+ */
 typedef struct bitmatrix {
+  /** @brief Number of logical columns. */
   int width;
+  /** @brief Number of logical rows. */
   int height;
+  /** @brief Number of storage cells per row. */
   size_t n_row_cells;
+  /** @brief Packed matrix storage in row-major order. */
   unsigned int *data;
 } bitmatrix;
 
-// Number of bits in a bitmatrix cell
+/** @brief Number of bits stored in one backing cell. */
 #define UINT_BITS (sizeof(unsigned int) * CHAR_BIT)
 
-// Create a `width` x `height` bitmatrix
+/** @brief Create a zero-initialized `width` by `height` bitmatrix. */
 bitmatrix create_bitmatrix(int width, int height);
 
-// Print the contents of the bitmatrix
+/** @brief Print the contents of a bitmatrix. */
 void print_bitmatrix(bitmatrix *bm);
 
-// Set a bit in the bitmatrix
+/** @brief Set the bit at `(x, y)` to one. */
 void bitmatrix_set(bitmatrix *bm, int x, int y);
 
-// Get a bit from the bitmatrix
+/** @brief Read the bit at `(x, y)`. */
 bool bitmatrix_get(bitmatrix *bm, int x, int y);
 
-// Calculate the number of non-zero bits in the given row
+/** @brief Count the number of set bits in row `y`. */
 int bitmatrix_row_popcount(bitmatrix *bm, int y);
 
-// Clear all columns where bits are set on the given row
+/** @brief Clear all columns whose bit is set in row `y`. */
 void bitmatrix_nuke_columns(bitmatrix *bm, int y);
 
-// Returns `true` if the given column has bits set. Otherwise returns `false`
+/** @brief Return true when column `x` contains at least one set bit. */
 bool bitmatrix_has_column(bitmatrix *bm, int x);
 
-// Release resources associated with the bitmatrix
+/** @brief Release memory owned by a bitmatrix. */
 void free_bitmatrix(bitmatrix *bm);
