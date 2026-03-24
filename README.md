@@ -30,6 +30,26 @@ make
 make test
 ```
 
+
+## Linting and formatting
+
+This project uses `clang-format` for C source and header formatting.
+
+Install it (Ubuntu/Debian):
+```bash
+sudo apt install clang-format
+```
+
+Run it across the repository:
+```bash
+clang-format -i $(find . -type f \( -name "*.c" -o -name "*.h" \))
+```
+
+Check formatting without modifying files:
+```bash
+clang-format --dry-run --Werror $(find . -type f \( -name "*.c" -o -name "*.h" \))
+```
+
 ## Running the server
 To interface with [vue-tsumego](https://github.com/frostburn/vue-tsumego) the Python HTTP bridge needs some pre-solved tsumego to serve.
 
