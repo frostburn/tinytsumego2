@@ -9,7 +9,7 @@
  * @brief Symmetry-reduction helpers for small-board key spaces.
  *
  * These routines make 9x2, 10x2, 11x2, 12x2, 6x3, 7x3, 8x3, 5x4, 6x4, and 5x5
- * problem spaces tractable by reducing out spatial and color symmetries.
+ * problem spaces tractable by reducing out spatial symmetries.
  */
 
 /** @brief No mirror operation. */
@@ -87,18 +87,18 @@ stones_t stones_mirror_v_6(stones_t stones);
 
 /** @brief Mirror specialized 2x7-style bitboards horizontally. */
 stones_t stones_mirror_h_2(const stones_t stones);
-/** @brief Mirror specialized 3x6-style bitboards horizontally. */
+/** @brief Mirror specialized 3x7-style bitboards horizontally. */
 stones_t stones_mirror_h_3(const stones_t stones);
-/** @brief Mirror specialized 4x5-style bitboards horizontally. */
+/** @brief Mirror specialized 4x7-style bitboards horizontally. */
 stones_t stones_mirror_h_4(const stones_t stones);
-/** @brief Mirror specialized 5x5-style bitboards horizontally. */
+/** @brief Mirror specialized 5x7-style bitboards horizontally. */
 stones_t stones_mirror_h_5(const stones_t stones);
-/** @brief Mirror specialized 6x4-style bitboards horizontally. */
+/** @brief Mirror specialized 6x7-style bitboards horizontally. */
 stones_t stones_mirror_h_6(stones_t stones);
-/** @brief Mirror specialized 7x3-style bitboards horizontally. */
+/** @brief Mirror specialized 7x7-style bitboards horizontally. */
 stones_t stones_mirror_h_7(stones_t stones);
-/** @brief Mirror specialized 8x3-style bitboards horizontally. */
-stones_t stones_mirror_h_8(const stones_t stones);
+/** @brief Mirror specialized 8x7-style bitboards horizontally. */
+stones_t stones_mirror_h_8(stones_t stones);
 
 /** @brief Mirror specialized 3x3-capable bitboards diagonally. */
 stones_t stones_mirror_d_3(const stones_t stones);
@@ -109,7 +109,7 @@ stones_t stones_mirror_d_5(const stones_t stones);
 /** @brief Mirror specialized 6x6-capable bitboards diagonally. */
 stones_t stones_mirror_d_6(const stones_t stones);
 
-/** @brief Vertical mirror helper for alternate-width symmetric boards. */
+/** @brief Vertical mirror helper for alternate-width symmetric boards with height 2. */
 stones_t stones_mirror_v_w2(const stones_t stones);
 /** @brief Horizontal mirror helper for alternate-width bitboards with width 3. */
 stones_t stones_mirror_h_w3(const stones_t stones);
@@ -122,7 +122,7 @@ stones_t stones_mirror_h_w6(stones_t stones);
 /** @brief Horizontal mirror helper for alternate-width bitboards with width 7. */
 stones_t stones_mirror_h_w7(const stones_t stones);
 /** @brief Horizontal mirror helper for alternate-width bitboards with width 8. */
-stones_t stones_mirror_h_w8(const stones_t stones);
+stones_t stones_mirror_h_w8(stones_t stones);
 /** @brief Horizontal mirror helper for alternate-width bitboards with width 9. */
 stones_t stones_mirror_h_w9(stones_t stones);
 
