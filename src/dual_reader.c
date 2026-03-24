@@ -533,26 +533,30 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
     }
   }
 
-  dual_table_value *value_map = xmalloc((*num_unique) * sizeof(dual_table_value));
+  tree_value *values = xmalloc((*num_unique) * sizeof(tree_value));
 
   size_t i = 0;
   void action(const void *nodep, VISIT which, int) {
     if (which == postorder || which == leaf) {
-      value_map[i++] = (*(tree_value **)nodep)->value;
+      values[i++] = **(tree_value **)nodep;
     }
   }
   twalk(root, action);
 
   if ((*num_unique) <= VALUE_MAP_SIZE - 1) {
+    dual_table_value *value_map = xmalloc((*num_unique) * sizeof(dual_table_value));
+    for (size_t j = 0; j < *num_unique; ++j) {
+      value_map[j] = values[j].value;
+    }
+    free(values);
     tdestroy(root, free);
 
     return (frozen_hash_table){*num_unique, value_map, NULL, 0, NULL, NULL};
   }
 
-  int cmp(const void *a_, const void *b_) {
-    tree_value *a = *(tree_value **)tfind(a_, &root, compare_dual_table_values);
-    tree_value *b = *(tree_value **)tfind(b_, &root, compare_dual_table_values);
-
+  int cmp_tree_values_by_count(const void *a_, const void *b_) {
+    const tree_value *a = (const tree_value *)a_;
+    const tree_value *b = (const tree_value *)b_;
     // Sort most common to front
     if (a->count > b->count) {
       return -1;
@@ -562,18 +566,22 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique) 
     }
     return 0;
   }
-  qsort(value_map, *num_unique, sizeof(dual_table_value), cmp);
+  qsort(values, *num_unique, sizeof(tree_value), cmp_tree_values_by_count);
 
   const size_t n = VALUE_MAP_SIZE - 1;
 
   size_t tail_size = 0;
   for (size_t i = n; i < *num_unique; ++i) {
-    tail_size += (*(tree_value **)tfind(value_map + i, &root, compare_dual_table_values))->count;
+    tail_size += values[i].count;
   }
 
+  dual_table_value *value_map = xmalloc(n * sizeof(dual_table_value));
+  for (size_t j = 0; j < n; ++j) {
+    value_map[j] = values[j].value;
+  }
+  free(values);
   tdestroy(root, free);
 
-  value_map = xrealloc(value_map, n * sizeof(dual_table_value));
   qsort(value_map, n, sizeof(dual_table_value), compare_dual_table_values);
 
   size_t *tail_keys = xmalloc(tail_size * sizeof(size_t));
