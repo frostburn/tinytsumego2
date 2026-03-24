@@ -9,6 +9,7 @@
 #include <math.h>
 #include <search.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -121,9 +122,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   map += sizeof(int);
 
   dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
-  for (int i = 0; i < dgr->num_moves; ++i) {
-    dgr->moves[i] = ((stones_t *)map)[i];
-  }
+  memcpy(dgr->moves, map, dgr->num_moves * sizeof(stones_t));
   map += dgr->num_moves * sizeof(stones_t);
 
   dgr->value_table.bulk_ids = (value_id_t *)map;
@@ -133,9 +132,7 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   map += sizeof(size_t);
 
   dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
-  for (size_t i = 0; i < dgr->value_table.bulk_map_size; ++i) {
-    dgr->value_table.bulk_map[i] = ((dual_table_value *)map)[i];
-  }
+  memcpy(dgr->value_table.bulk_map, map, dgr->value_table.bulk_map_size * sizeof(dual_table_value));
   map += sizeof(dual_table_value) * dgr->value_table.bulk_map_size;
 
   dgr->value_table.tail_size = ((size_t *)map)[0];
