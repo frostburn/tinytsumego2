@@ -2,10 +2,10 @@ import ctypes
 from lib_types import *
 
 try:
-  lib = ctypes.CDLL("../build/lib/libtinytsumego.so")
+    lib = ctypes.CDLL("../build/lib/libtinytsumego.so")
 except OSError as e:
-  sys.stderr.write("Library not found. Did you remember to compile it?\n")
-  raise(e)
+    sys.stderr.write("Library not found. Did you remember to compile it?\n")
+    raise (e)
 
 # stones.h
 lib.rectangle.restype = stones_t
