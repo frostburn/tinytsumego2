@@ -11,11 +11,12 @@
 #include <unistd.h>
 
 size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict stream) {
-  size_t total = fwrite(&(cg->keyspace.root), sizeof(state), 1, stream) * sizeof(state);
-  total += fwrite(&(cg->keyspace.symmetric_threats), sizeof(bool), 1, stream) * sizeof(bool);
-  total += fwrite(&(cg->tactics), sizeof(tactics), 1, stream) * sizeof(tactics);
-  total += fwrite(&(cg->num_moves), sizeof(int), 1, stream) * sizeof(int);
-  total += fwrite(cg->moves, sizeof(stones_t), cg->num_moves, stream) * sizeof(stones_t);
+  size_t total = 0;
+  WRITE_FIELD(total, stream, cg->keyspace.root);
+  WRITE_FIELD(total, stream, cg->keyspace.symmetric_threats);
+  WRITE_FIELD(total, stream, cg->tactics);
+  WRITE_FIELD(total, stream, cg->num_moves);
+  WRITE_ARRAY(total, stream, cg->moves, cg->num_moves);
 
   // The actual reader uses float values but we can write using a temporary fixed-point array
   size_t num_unique = 0;
@@ -36,12 +37,12 @@ size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict st
       }
     }
     value_id_t vid = (value_id_t)id;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
+    WRITE_FIELD(total, stream, vid);
   }
 
   for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
     value v = table_value_to_value(value_map[i]);
-    total += fwrite(&v, sizeof(value), 1, stream) * sizeof(value);
+    WRITE_FIELD(total, stream, v);
   }
 
   free(value_map);
@@ -49,39 +50,32 @@ size_t write_complete_graph(const complete_graph *restrict cg, FILE *restrict st
   return total;
 }
 
+static void unbuffer_complete_graph_reader(complete_graph_reader *cgr) {
+  char *map = cgr->buffer;
+  state root;
+  bool symmetric_threats;
+
+  READ_FIELD(map, root);
+  READ_FIELD(map, symmetric_threats);
+  cgr->keyspace = create_tight_keyspace(&root, symmetric_threats);
+
+  READ_FIELD(map, cgr->tactics);
+  READ_FIELD(map, cgr->num_moves);
+
+  cgr->moves = xmalloc(cgr->num_moves * sizeof(stones_t));
+  memcpy(cgr->moves, map, cgr->num_moves * sizeof(stones_t));
+  map += cgr->num_moves * sizeof(stones_t);
+
+  MAP_ARRAY_FIELD(map, cgr->value_ids, cgr->keyspace.size);
+
+  cgr->value_map = xmalloc(VALUE_MAP_SIZE * sizeof(value));
+  memcpy(cgr->value_map, map, VALUE_MAP_SIZE * sizeof(value));
+}
+
 complete_graph_reader load_complete_graph_reader(const char *filename) {
   complete_graph_reader result;
-  char *map = file_to_mmap(filename, &(result.sb), &(result.fd));
-
-  result.buffer = map;
-
-  state root = ((state *)map)[0];
-  map += sizeof(state);
-  bool symmetric_threats = ((bool *)map)[0];
-  map += sizeof(bool);
-  result.keyspace = create_tight_keyspace(&root, symmetric_threats);
-
-  result.tactics = ((tactics *)map)[0];
-  map += sizeof(tactics);
-
-  result.num_moves = ((int *)map)[0];
-  map += sizeof(int);
-
-  result.moves = xmalloc(result.num_moves * sizeof(stones_t));
-  for (int i = 0; i < result.num_moves; ++i) {
-    result.moves[i] = ((stones_t *)map)[i];
-  }
-  map += result.num_moves * sizeof(stones_t);
-
-  result.value_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * result.keyspace.size;
-
-  result.value_map = xmalloc(VALUE_MAP_SIZE * sizeof(value));
-  for (size_t i = 0; i < VALUE_MAP_SIZE; ++i) {
-    result.value_map[i] = ((value *)map)[i];
-  }
-  map += sizeof(value) * VALUE_MAP_SIZE;
-
+  result.buffer = file_to_mmap(filename, &(result.sb), &(result.fd));
+  unbuffer_complete_graph_reader(&result);
   return result;
 }
 

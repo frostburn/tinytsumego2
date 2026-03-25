@@ -17,22 +17,6 @@
 
 #define DUAL_READER_VERSION (5)
 
-#define WRITE_FIELD(total, stream, field) (total += fwrite(&(field), sizeof(field), 1, (stream)) * sizeof(field))
-#define WRITE_ARRAY(total, stream, ptr, count) (total += fwrite((ptr), sizeof(*(ptr)), (count), (stream)) * sizeof(*(ptr)))
-
-#define READ_FIELD(map, field)             \
-  do {                                     \
-    memcpy(&(field), (map), sizeof(field)); \
-    (map) += sizeof(field);                \
-  } while (0)
-
-#define MAP_ARRAY_FIELD(map, field, count)                         \
-  do {                                                             \
-    const size_t __count = (count);                               \
-    (field) = (__typeof__(field))(map);                           \
-    (map) += sizeof(*(field)) * __count;                          \
-  } while (0)
-
 static inline size_t frozen_tail_keys_size(size_t tail_size) { return tail_size / 2; }
 
 size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) { return to_compressed_key(&(dgr->keyspace.compressed), s); }
