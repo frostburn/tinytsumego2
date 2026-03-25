@@ -17,6 +17,22 @@
 
 #define DUAL_READER_VERSION (5)
 
+#define WRITE_FIELD(total, stream, field) (total += fwrite(&(field), sizeof(field), 1, (stream)) * sizeof(field))
+#define WRITE_ARRAY(total, stream, ptr, count) (total += fwrite((ptr), sizeof(*(ptr)), (count), (stream)) * sizeof(*(ptr)))
+
+#define READ_FIELD(map, field)             \
+  do {                                     \
+    memcpy(&(field), (map), sizeof(field)); \
+    (map) += sizeof(field);                \
+  } while (0)
+
+#define MAP_ARRAY_FIELD(map, field, count)                         \
+  do {                                                             \
+    const size_t __count = (count);                               \
+    (field) = (__typeof__(field))(map);                           \
+    (map) += sizeof(*(field)) * __count;                          \
+  } while (0)
+
 static inline size_t frozen_tail_keys_size(size_t tail_size) { return tail_size / 2; }
 
 size_t __to_compressed_key(const dual_graph_reader *dgr, const state *s) { return to_compressed_key(&(dgr->keyspace.compressed), s); }
@@ -25,26 +41,27 @@ size_t __to_symmetric_key(const dual_graph_reader *dgr, const state *s) { return
 
 size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *restrict fht, FILE *restrict stream) {
   int version = DUAL_READER_VERSION;
-  size_t total = fwrite(&version, sizeof(int), 1, stream) * sizeof(int);
+  size_t total = 0;
+  WRITE_FIELD(total, stream, version);
 
-  total += fwrite(&(dg->type), sizeof(keyspace_type), 1, stream) * sizeof(keyspace_type);
-  total += fwrite(&(dg->keyspace._.size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(&(dg->keyspace._.fast_size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(&(dg->keyspace._.prefix_m), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(&(dg->keyspace._.root), sizeof(state), 1, stream) * sizeof(state);
+  WRITE_FIELD(total, stream, dg->type);
+  WRITE_FIELD(total, stream, dg->keyspace._.size);
+  WRITE_FIELD(total, stream, dg->keyspace._.fast_size);
+  WRITE_FIELD(total, stream, dg->keyspace._.prefix_m);
+  WRITE_FIELD(total, stream, dg->keyspace._.root);
 
   const monotonic_compressor *comp = &(dg->keyspace._.compressor);
-  total += fwrite(&(comp->num_checkpoints), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(comp->checkpoints, sizeof(size_t), comp->num_checkpoints, stream) * sizeof(size_t);
-  total += fwrite(&(comp->uncompressed_size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(comp->deltas, sizeof(unsigned char), comp->uncompressed_size, stream) * sizeof(unsigned char);
-  total += fwrite(&(comp->size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(&(comp->factor), sizeof(double), 1, stream) * sizeof(double);
+  WRITE_FIELD(total, stream, comp->num_checkpoints);
+  WRITE_ARRAY(total, stream, comp->checkpoints, comp->num_checkpoints);
+  WRITE_FIELD(total, stream, comp->uncompressed_size);
+  WRITE_ARRAY(total, stream, comp->deltas, comp->uncompressed_size);
+  WRITE_FIELD(total, stream, comp->size);
+  WRITE_FIELD(total, stream, comp->factor);
 
   // Note: Specific keyspaces re-constructed on load
 
-  total += fwrite(&(dg->num_moves), sizeof(int), 1, stream) * sizeof(int);
-  total += fwrite(dg->moves, sizeof(stones_t), dg->num_moves, stream) * sizeof(stones_t);
+  WRITE_FIELD(total, stream, dg->num_moves);
+  WRITE_ARRAY(total, stream, dg->moves, dg->num_moves);
 
   for (size_t i = 0; i < dg->keyspace._.size; ++i) {
     dual_table_value v = (dual_table_value){
@@ -53,15 +70,15 @@ size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *
     };
     dual_table_value *tv = bsearch(&v, fht->bulk_map, fht->bulk_map_size, sizeof(dual_table_value), compare_dual_table_values);
     value_id_t vid = tv ? (value_id_t)(tv - fht->bulk_map) : VALUE_ID_SENTINEL;
-    total += fwrite(&(vid), sizeof(value_id_t), 1, stream) * sizeof(value_id_t);
+    WRITE_FIELD(total, stream, vid);
   }
 
-  total += fwrite(&(fht->bulk_map_size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(fht->bulk_map, sizeof(dual_table_value), fht->bulk_map_size, stream) * sizeof(dual_table_value);
+  WRITE_FIELD(total, stream, fht->bulk_map_size);
+  WRITE_ARRAY(total, stream, fht->bulk_map, fht->bulk_map_size);
 
-  total += fwrite(&(fht->tail_size), sizeof(size_t), 1, stream) * sizeof(size_t);
-  total += fwrite(fht->tail_values, sizeof(dual_table_value), fht->tail_size, stream) * sizeof(dual_table_value);
-  total += fwrite(fht->tail_keys, sizeof(size_t), frozen_tail_keys_size(fht->tail_size), stream) * sizeof(size_t);
+  WRITE_FIELD(total, stream, fht->tail_size);
+  WRITE_ARRAY(total, stream, fht->tail_values, fht->tail_size);
+  WRITE_ARRAY(total, stream, fht->tail_keys, frozen_tail_keys_size(fht->tail_size));
 
   return total;
 }
@@ -69,45 +86,34 @@ size_t write_dual_graph(const dual_graph *restrict dg, const frozen_hash_table *
 void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   char *map = dgr->buffer;
 
-  int version = ((int *)map)[0];
-  map += sizeof(int);
+  int version = 0;
+  READ_FIELD(map, version);
 
   if (version != DUAL_READER_VERSION) {
     fprintf(stderr, "Unknown dual graph version %d\n", version);
     exit(EXIT_FAILURE);
   }
 
-  dgr->type = ((keyspace_type *)map)[0];
-  map += sizeof(keyspace_type);
-
-  dgr->keyspace._.size = ((size_t *)map)[0];
-  dgr->keyspace._.fast_size = ((size_t *)map)[1];
-  dgr->keyspace._.prefix_m = ((size_t *)map)[2];
-  map += 3 * sizeof(size_t);
-
-  dgr->keyspace._.root = ((state *)map)[0];
-  map += sizeof(state);
+  READ_FIELD(map, dgr->type);
+  READ_FIELD(map, dgr->keyspace._.size);
+  READ_FIELD(map, dgr->keyspace._.fast_size);
+  READ_FIELD(map, dgr->keyspace._.prefix_m);
+  READ_FIELD(map, dgr->keyspace._.root);
 
   monotonic_compressor *comp = &(dgr->keyspace._.compressor);
 
-  comp->num_checkpoints = ((size_t *)map)[0];
-  map += sizeof(size_t);
+  READ_FIELD(map, comp->num_checkpoints);
 
   // Memory map aux data to save RAM
-  comp->checkpoints = (size_t *)map;
-  map += sizeof(size_t) * comp->num_checkpoints;
+  MAP_ARRAY_FIELD(map, comp->checkpoints, comp->num_checkpoints);
 
-  comp->uncompressed_size = ((size_t *)map)[0];
-  map += sizeof(size_t);
+  READ_FIELD(map, comp->uncompressed_size);
 
-  comp->deltas = (unsigned char *)map;
-  map += sizeof(unsigned char) * comp->uncompressed_size;
+  MAP_ARRAY_FIELD(map, comp->deltas, comp->uncompressed_size);
 
-  comp->size = ((size_t *)map)[0];
-  map += sizeof(size_t);
+  READ_FIELD(map, comp->size);
 
-  comp->factor = ((double *)map)[0];
-  map += sizeof(double);
+  READ_FIELD(map, comp->factor);
 
   if (dgr->type == COMPRESSED_KEYSPACE) {
     dgr->keyspace.compressed.keyspace = create_tight_keyspace(&(dgr->keyspace._.root), true);
@@ -120,30 +126,24 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
     dgr->to_key = NULL;
   }
 
-  dgr->num_moves = ((int *)map)[0];
-  map += sizeof(int);
+  READ_FIELD(map, dgr->num_moves);
 
   dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
   memcpy(dgr->moves, map, dgr->num_moves * sizeof(stones_t));
   map += dgr->num_moves * sizeof(stones_t);
 
-  dgr->value_table.bulk_ids = (value_id_t *)map;
-  map += sizeof(value_id_t) * dgr->keyspace._.size;
+  MAP_ARRAY_FIELD(map, dgr->value_table.bulk_ids, dgr->keyspace._.size);
 
-  dgr->value_table.bulk_map_size = ((size_t *)map)[0];
-  map += sizeof(size_t);
+  READ_FIELD(map, dgr->value_table.bulk_map_size);
 
   dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
   memcpy(dgr->value_table.bulk_map, map, dgr->value_table.bulk_map_size * sizeof(dual_table_value));
   map += sizeof(dual_table_value) * dgr->value_table.bulk_map_size;
 
-  dgr->value_table.tail_size = ((size_t *)map)[0];
-  map += sizeof(size_t);
+  READ_FIELD(map, dgr->value_table.tail_size);
 
-  dgr->value_table.tail_values = (dual_table_value *)map;
-  map += dgr->value_table.tail_size * sizeof(dual_table_value);
-  dgr->value_table.tail_keys = (size_t *)map;
-  map += frozen_tail_keys_size(dgr->value_table.tail_size) * sizeof(size_t);
+  MAP_ARRAY_FIELD(map, dgr->value_table.tail_values, dgr->value_table.tail_size);
+  MAP_ARRAY_FIELD(map, dgr->value_table.tail_keys, frozen_tail_keys_size(dgr->value_table.tail_size));
 }
 
 dual_graph_reader load_dual_graph_reader(const char *filename) {
