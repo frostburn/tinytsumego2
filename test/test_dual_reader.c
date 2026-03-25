@@ -290,7 +290,7 @@ void test_frozen_hash_table() {
   fht.bulk_ids = NULL;
 
   const size_t mem_file_size = (MEM_FILE_SIZE + dg.keyspace._.size * sizeof(value_id_t) + fht.bulk_map_size * sizeof(dual_table_value) +
-                                fht.tail_size * (sizeof(size_t) + sizeof(dual_table_value)));
+                                fht.tail_size * sizeof(dual_table_value) + (fht.tail_size / 2) * sizeof(size_t));
 
   char *buffer = malloc(mem_file_size);
   for (size_t i = 0; i < mem_file_size; ++i) {
@@ -331,9 +331,60 @@ void test_frozen_hash_table() {
   free(buffer);
 }
 
+void test_frozen_hash_table_compact_tail_sizes() {
+  for (size_t tail_size = 1; tail_size <= 8; ++tail_size) {
+    const size_t max_key = 3 * (tail_size - 1) + 1;
+
+    value_id_t *bulk_ids = malloc((max_key + 1) * sizeof(value_id_t));
+    for (size_t i = 0; i <= max_key; ++i) {
+      bulk_ids[i] = VALUE_ID_SENTINEL;
+    }
+
+    dual_table_value *tail_values = malloc(tail_size * sizeof(dual_table_value));
+    size_t *full_tail_keys = malloc(tail_size * sizeof(size_t));
+    for (size_t i = 0; i < tail_size; ++i) {
+      full_tail_keys[i] = 3 * i + 1;
+      tail_values[i].plain.low = (score_q7_t)(10 + i);
+      tail_values[i].plain.high = (score_q7_t)(20 + i);
+      tail_values[i].forcing.low = (score_q7_t)(30 + i);
+      tail_values[i].forcing.high = (score_q7_t)(40 + i);
+    }
+
+    const size_t compact_tail_keys_size = tail_size / 2;
+    size_t *compact_tail_keys = compact_tail_keys_size ? malloc(compact_tail_keys_size * sizeof(size_t)) : NULL;
+    for (size_t i = 0; i < compact_tail_keys_size; ++i) {
+      compact_tail_keys[i] = full_tail_keys[2 * i + 1];
+    }
+
+    frozen_hash_table fht = {
+        .bulk_map_size = 0,
+        .bulk_map = NULL,
+        .bulk_ids = bulk_ids,
+        .tail_size = tail_size,
+        .tail_values = tail_values,
+        .tail_keys = compact_tail_keys,
+    };
+
+    for (size_t i = 0; i < tail_size; ++i) {
+      const size_t key = full_tail_keys[i];
+      dual_table_value v = get_frozen_hash_value(&fht, key);
+      assert(v.plain.low == tail_values[i].plain.low);
+      assert(v.plain.high == tail_values[i].plain.high);
+      assert(v.forcing.low == tail_values[i].forcing.low);
+      assert(v.forcing.high == tail_values[i].forcing.high);
+    }
+
+    free(compact_tail_keys);
+    free(full_tail_keys);
+    free(tail_values);
+    free(bulk_ids);
+  }
+}
+
 int main() {
   test_bulky_five();
   test_external_liberties();
   test_frozen_hash_table();
+  test_frozen_hash_table_compact_tail_sizes();
   return 0;
 }
