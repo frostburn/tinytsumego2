@@ -615,6 +615,8 @@ symmetry compute_symmetry(const state *s) {
     result.horizontal = s->wide ? stones_mirror_h_w5 : stones_mirror_h_5;
     if (!s->wide) {
       result.core_shift += (h & 1) ? 0 : 1;
+    } else if (h == 4) {
+      result.core_shift = 1;
     }
     break;
   case 6:
