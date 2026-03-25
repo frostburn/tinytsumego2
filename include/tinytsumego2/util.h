@@ -43,6 +43,14 @@ typedef unsigned short int value_id_t;
     (map) += sizeof(*(field)) * __count;     \
   } while (0)
 
+/** @brief Copy an array field from a mmap cursor and advance the cursor. */
+#define READ_ARRAY_FIELD(map, field, count)                         \
+  do {                                                              \
+    const size_t __count = (count);                                \
+    memcpy((field), (map), sizeof(*(field)) * __count);            \
+    (map) += sizeof(*(field)) * __count;                           \
+  } while (0)
+
 /** @brief Return the ceiling of `x / y` for signed integers. */
 int ceil_div(int x, int y);
 

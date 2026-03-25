@@ -63,13 +63,12 @@ static void unbuffer_complete_graph_reader(complete_graph_reader *cgr) {
   READ_FIELD(map, cgr->num_moves);
 
   cgr->moves = xmalloc(cgr->num_moves * sizeof(stones_t));
-  memcpy(cgr->moves, map, cgr->num_moves * sizeof(stones_t));
-  map += cgr->num_moves * sizeof(stones_t);
+  READ_ARRAY_FIELD(map, cgr->moves, cgr->num_moves);
 
   MAP_ARRAY_FIELD(map, cgr->value_ids, cgr->keyspace.size);
 
   cgr->value_map = xmalloc(VALUE_MAP_SIZE * sizeof(value));
-  memcpy(cgr->value_map, map, VALUE_MAP_SIZE * sizeof(value));
+  READ_ARRAY_FIELD(map, cgr->value_map, VALUE_MAP_SIZE);
 }
 
 complete_graph_reader load_complete_graph_reader(const char *filename) {

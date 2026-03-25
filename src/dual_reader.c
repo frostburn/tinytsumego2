@@ -113,16 +113,14 @@ void unbuffer_dual_graph_reader(dual_graph_reader *dgr) {
   READ_FIELD(map, dgr->num_moves);
 
   dgr->moves = xmalloc(dgr->num_moves * sizeof(stones_t));
-  memcpy(dgr->moves, map, dgr->num_moves * sizeof(stones_t));
-  map += dgr->num_moves * sizeof(stones_t);
+  READ_ARRAY_FIELD(map, dgr->moves, dgr->num_moves);
 
   MAP_ARRAY_FIELD(map, dgr->value_table.bulk_ids, dgr->keyspace._.size);
 
   READ_FIELD(map, dgr->value_table.bulk_map_size);
 
   dgr->value_table.bulk_map = xmalloc(dgr->value_table.bulk_map_size * sizeof(dual_table_value));
-  memcpy(dgr->value_table.bulk_map, map, dgr->value_table.bulk_map_size * sizeof(dual_table_value));
-  map += sizeof(dual_table_value) * dgr->value_table.bulk_map_size;
+  READ_ARRAY_FIELD(map, dgr->value_table.bulk_map, dgr->value_table.bulk_map_size);
 
   READ_FIELD(map, dgr->value_table.tail_size);
 
