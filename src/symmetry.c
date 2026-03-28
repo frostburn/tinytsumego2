@@ -807,6 +807,10 @@ symmetry compute_symmetry(const state *s) {
 size_t to_symmetric_bw_key(const symmetry *sym, stones_t black, stones_t white) {
   size_t idx = sym->core_idx(black >> sym->core_shift, white >> sym->core_shift);
   mirror_op_t op = sym->pulp_ops[idx];
+  if (op == UCHAR_MAX) {
+    // The client can send illegal queries. It's better to give a wrong answer than to crash the server.
+    return 0;
+  }
   if (op & MIRROR_V) {
     black = sym->vertical(black);
     white = sym->vertical(white);

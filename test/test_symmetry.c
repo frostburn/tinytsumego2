@@ -475,6 +475,32 @@ void test_4x4() {
   free_symmetry(&sym);
 }
 
+void test_5x2_wide() {
+  state root = {0};
+  root.wide = true;
+  root.visual_area = rectangle_16(5, 2);
+  root.logical_area = root.visual_area;
+  symmetry sym = compute_symmetry(&root);
+  printf("Core modulus = %zu\n", sym.core_m);
+  assert(sym.core_m == 12857);
+  printf("Keyspace size = %zu\n", sym.size);
+  assert(sym.size == 12857);
+  assert(sym.pulp_count == 0);
+  stones_t pulp_mask = 0ULL;
+  for (int i = 0; i < sym.pulp_count; ++i) {
+    pulp_mask |= sym.pulp_dots[i];
+  }
+  print_stones_16(pulp_mask);
+  printf("%llu\n", pulp_mask);
+  assert(pulp_mask == 0ULL);
+
+  // Test illegal core indexing
+  size_t k = to_symmetric_bw_key(&sym, rectangle_16(5, 2) ^ single_16(1, 0), single_16(1, 0));
+
+  printf("%zu\n", k);
+  assert(k < sym.size);
+}
+
 int main() {
   jkiss_init();
   test_3x4();
@@ -483,6 +509,8 @@ int main() {
   test_3x6();
   test_6x3();
   test_4x4();
+
+  test_5x2_wide();
 
 #ifdef RUN_HEAVY_TESTS
   test_5x4_wide();
