@@ -3,9 +3,9 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,26 +29,26 @@ typedef unsigned short int value_id_t;
 #define WRITE_ARRAY(total, stream, ptr, count) ((total) += fwrite((ptr), sizeof(*(ptr)), (count), (stream)) * sizeof(*(ptr)))
 
 /** @brief Copy one scalar field from a mmap cursor and advance the cursor. */
-#define READ_FIELD(map, field)              \
-  do {                                      \
-    memcpy(&(field), (map), sizeof(field)); \
-    (map) += sizeof(field);                 \
+#define READ_FIELD(map, field)                                                                                                             \
+  do {                                                                                                                                     \
+    memcpy(&(field), (map), sizeof(field));                                                                                                \
+    (map) += sizeof(field);                                                                                                                \
   } while (0)
 
 /** @brief Map an array field to a mmap cursor and advance the cursor. */
-#define MAP_ARRAY_FIELD(map, field, count)   \
-  do {                                       \
-    const size_t __count = (count);          \
-    (field) = (__typeof__(field))(map);      \
-    (map) += sizeof(*(field)) * __count;     \
+#define MAP_ARRAY_FIELD(map, field, count)                                                                                                 \
+  do {                                                                                                                                     \
+    const size_t __count = (count);                                                                                                        \
+    (field) = (__typeof__(field))(map);                                                                                                    \
+    (map) += sizeof(*(field)) * __count;                                                                                                   \
   } while (0)
 
 /** @brief Copy an array field from a mmap cursor and advance the cursor. */
-#define READ_ARRAY_FIELD(map, field, count)                         \
-  do {                                                              \
-    const size_t __count = (count);                                \
-    memcpy((field), (map), sizeof(*(field)) * __count);            \
-    (map) += sizeof(*(field)) * __count;                           \
+#define READ_ARRAY_FIELD(map, field, count)                                                                                                \
+  do {                                                                                                                                     \
+    const size_t __count = (count);                                                                                                        \
+    memcpy((field), (map), sizeof(*(field)) * __count);                                                                                    \
+    (map) += sizeof(*(field)) * __count;                                                                                                   \
   } while (0)
 
 /** @brief Return the ceiling of `x / y` for signed integers. */

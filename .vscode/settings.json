@@ -6,6 +6,7 @@
     "clzll",
     "ctzll",
     "decomino",
+    "divz",
     "dotenv",
     "ENDFOREACH",
     "eyespace",
@@ -40,6 +41,8 @@
     "Tsumego",
     "tsumegos",
     "Walkie",
-    "Wextra"
+    "Wextra",
+    "xcalloc",
+    "xrealloc"
   ]
 }
