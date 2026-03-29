@@ -27,6 +27,7 @@ lib.dual_graph_reader_python_stuff.restype = ctypes.POINTER(stones_t)
 lib.dual_graph_reader_move_infos.restype = ctypes.POINTER(MoveInfo)
 lib.dual_graph_reader_low_terminal.restype = State
 lib.dual_graph_reader_high_terminal.restype = State
+lib.strip_aesthetics.restype = State
 # scoring.h
 lib.score_terminal.restype = Value
 lib.apply_tactics.restype = Value

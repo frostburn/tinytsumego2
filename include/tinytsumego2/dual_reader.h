@@ -208,3 +208,12 @@ frozen_hash_table prepare_frozen_hash(const dual_graph *dg, size_t *num_unique);
  * @return Stored dual-table value for `key`.
  */
 dual_table_value get_frozen_hash_value(const frozen_hash_table *fht, size_t key);
+
+/**
+ * @brief Normalize client state for internal consumption.
+ *
+ * @param dgr Loaded dual-graph reader.
+ * @param s Game state provided by the client.
+ * @return State stripped of superfluous features that still results in the same delta signature as far as optimal gameplay is concerned.
+ */
+state strip_aesthetics(const dual_graph_reader *dgr, const state *s);

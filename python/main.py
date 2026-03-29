@@ -117,8 +117,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             )
         libc.free(move_infos)
         if dev_mode:
-            v = lib.get_dual_graph_reader_value(reader, pointer(state))
             lib.print_state(pointer(state))
+            normalized = lib.strip_aesthetics(reader, pointer(state))
+            v = lib.get_dual_graph_reader_value(reader, pointer(normalized))
             print(f"Plain: {v.plain.low}, {v.plain.high}")
             print(f"Forcing: {v.forcing.low}, {v.forcing.high}")
         self.json_response(response_data)
