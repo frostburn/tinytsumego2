@@ -49,10 +49,10 @@ collection rectangle_six() {
   float two_libs_score = 30 + BUTTON_BONUS + KO_THREAT_BONUS;
 
   tsumego tsumegos[] = {
-      {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
-      {"one-liberty", "One Outside Liberty", one_lib, false, {one_lib_score, one_lib_score}},
-      {"one-liberty-defense", "One Outside Liberty (Defense)", one_lib_def, true, {one_lib_def_score, one_lib_def_score}},
-      {"two-liberties", "Two Outside Liberties", two_libs, true, {two_libs_score, two_libs_score}},
+      {"no-liberties", "No Outside Liberties (Attack)", no_libs, false, {no_libs_score, no_libs_score}},
+      {"one-liberty", "One Outside Liberty (Attack)", one_lib, false, {one_lib_score, one_lib_score}},
+      {"one-liberty-defense", "One Outside Liberty (Komaster's Defense)", one_lib_def, true, {one_lib_def_score, one_lib_def_score}},
+      {"two-liberties", "Two Outside Liberties (Threat Defense)", two_libs, true, {two_libs_score, two_libs_score}},
   };
 
   tsumego *ts = xmalloc(sizeof(tsumegos));
@@ -92,9 +92,9 @@ collection rectangle_eight() {
   float one_lib_score = 24 + BUTTON_BONUS + KO_THREAT_BONUS;
 
   tsumego tsumegos[] = {
-      {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
-      {"no-liberties-defense", "No Outside Liberties (Defense)", no_libs_def, true, {no_libs_def_score, no_libs_def_score}},
-      {"one-liberty", "One Outside Liberty", one_lib, true, {one_lib_score, one_lib_score}},
+      {"no-liberties", "No Outside Liberties (Attack)", no_libs, false, {no_libs_score, no_libs_score}},
+      {"no-liberties-defense", "No Outside Liberties (Komaster's Defense)", no_libs_def, true, {no_libs_def_score, no_libs_def_score}},
+      {"one-liberty", "One Outside Liberty (Threat Defense)", one_lib, true, {one_lib_score, one_lib_score}},
   };
 
   tsumego *ts = xmalloc(sizeof(tsumegos));
@@ -196,9 +196,11 @@ collection l_j_groups() {
                       B B , , , , , , , \
                       , , , , , , , , , \
   ");
+  small_hovercraft.ko_threats = -1;
+  float small_hovercraft_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS;
 
   tsumego tsumegos[] = {
-      {"l-group", "L Group", l_group, true, {l_group_score, l_group_score}},
+      {"l-group", "L Group (Life Refutation)", l_group, true, {l_group_score, l_group_score}},
       {"2nd-l-1-group-attack", "Second L+1 Group (Attack)", second_l_1_att, false, {second_l_1_att_score, second_l_1_att_score}},
       {"2nd-l-1-group-defense", "Second L+1 Group (Defense)", second_l_1_def, false, {second_l_1_def_score, second_l_1_def_score}},
       {"j-group-defense", "J Group (Defense)", j_group_def, false, {j_group_def_score, j_group_def_score}},
@@ -218,8 +220,12 @@ collection l_j_groups() {
        straight_j_group_sac,
        true,
        {straight_j_group_sac_score, straight_j_group_sac_score}},
-      {"straight-j-group-ko", "Straight J Group (Ko)", straight_j_group_ko, true, {straight_j_group_ko_score, straight_j_group_ko_score}},
-      {"small-hovercraft", "Small Hovercraft", small_hovercraft, false, {NAN, NAN}},
+      {"straight-j-group-ko",
+       "Straight J Group (Komaster's Defense)",
+       straight_j_group_ko,
+       true,
+       {straight_j_group_ko_score, straight_j_group_ko_score}},
+      {"small-hovercraft", "Small Hovercraft (Attack)", small_hovercraft, false, {small_hovercraft_score, small_hovercraft_score}},
   };
 
   tsumego *ts = xmalloc(sizeof(tsumegos));
@@ -362,10 +368,10 @@ collection carpenters_square() {
   float one_lib_def_score = -37 + BUTTON_BONUS;
 
   tsumego tsumegos[] = {
-      {"no-liberties", "No Outside Liberties", no_libs, false, {no_libs_score, no_libs_score}},
+      {"no-liberties", "No Outside Liberties (Attack)", no_libs, false, {no_libs_score, no_libs_score}},
       {"seki", "No Outside Liberties (Seki)", seki, false, {seki_score, seki_score}},
       {"one-liberty-attack", "One Outside Liberty (Attack)", one_lib_att, false, {one_lib_att_score, one_lib_att_score}},
-      {"one-liberty-defense", "One Outside Liberty (Defense)", one_lib_def, false, {one_lib_def_score, one_lib_def_score}},
+      {"one-liberty-refutation", "One Outside Liberty (Mistake Refutation)", one_lib_def, false, {one_lib_def_score, one_lib_def_score}},
   };
 
   tsumego *ts = xmalloc(sizeof(tsumegos));
@@ -470,11 +476,11 @@ collection long_l_group() {
        false,
        {no_libs_hane_seki_score, no_libs_hane_seki_score}},
       {"no-liberties-hane-ko", "No Outside Liberties w/ Hane (Ko)", no_libs_hane_ko, false, {no_libs_hane_ko_score, no_libs_hane_ko_score}},
-      {"one-liberty-seki", "One Outside Liberty (Seki)", one_lib, true, {one_lib_score, one_lib_score}},
-      {"one-liberty-life", "One Outside Liberty (Life)", one_lib_life, false, {one_lib_life_score, one_lib_life_score}},
-      {"hane-outside", "Hane Outside", hane_outside, true, {hane_outside_score, hane_outside_score}},
-      {"1st-descent", "First Descent", descent_1, false, {descent_1_score, descent_1_score}},
-      {"2nd-descent", "Second Descent", descent_2, false, {descent_2_score, descent_2_score}},
+      {"one-liberty-seki", "One Outside Liberty (Komaster's Defense)", one_lib, true, {one_lib_score, one_lib_score}},
+      {"one-liberty-life", "One Outside Liberty (Mistake Refutation)", one_lib_life, false, {one_lib_life_score, one_lib_life_score}},
+      {"hane-outside", "Hane Outside (Threat Defense)", hane_outside, true, {hane_outside_score, hane_outside_score}},
+      {"1st-descent", "First Descent (Attack)", descent_1, false, {descent_1_score, descent_1_score}},
+      {"2nd-descent", "Second Descent (Attack)", descent_2, false, {descent_2_score, descent_2_score}},
   };
 
   tsumego *ts = xmalloc(sizeof(tsumegos));
@@ -494,6 +500,16 @@ collection five_on_3rd() {
   ");
   root.ko_threats = 2;
   float root_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state ko_def = parse_state("\
+            . . @ . . . . . B \
+            . . . w @ . . . B \
+            w w w w w B B B B \
+            B B B B B B , , , \
+  ");
+  swap_players(&ko_def);
+  ko_def.ko_threats = -1;
+  float ko_def_score = -12 + BUTTON_BONUS - KO_THREAT_BONUS;
 
   state endgame = root;
   endgame.ko_threats = 0;
@@ -520,7 +536,8 @@ collection five_on_3rd() {
   swap_players(&eternal_life);
 
   tsumego tsumegos[] = {
-      {"ko", "Ko", root, false, {root_score, root_score}},
+      {"ko", "Ko (Attack)", root, false, {root_score, root_score}},
+      {"ko-refutation", "Ko Refutation (Defense)", ko_def, false, {ko_def_score, ko_def_score}},
       {"endgame-attack", "Endgame (Attack)", endgame, false, {12 + BUTTON_BONUS, 14 - BUTTON_BONUS}},
       {"lesser-endgame-attack", "Lesser Endgame (Attack)", lesser_endgame, false, {lesser_endgame_score, lesser_endgame_score}},
       {"endgame-defense", "Endgame (Defense)", endgame_def, false, {endgame_def_score, endgame_def_score}},
