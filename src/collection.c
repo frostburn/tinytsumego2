@@ -491,6 +491,112 @@ collection long_l_group() {
   };
 }
 
+collection hovercraft() {
+  state root = parse_state("\
+          . . . . . . . + B \
+          . . . . . . B B , \
+          . w w w B B B , B \
+          . w B B , , , , , \
+          . B , , B , , , , \
+          + B , , , , , , , \
+          B B , , , , , , , \
+  ");
+  root.ko_threats = 1;
+
+  state hovercraft = parse_state("\
+                . . . . . . . + B \
+                . . . . 0 0 B B , \
+                . w w w B B , , B \
+                . w B B , , B , , \
+                . B , , , , , , , \
+                + B , , , , , , , \
+                B B , , , , , , , \
+  ");
+  hovercraft.ko_threats = 1;
+  float hovercraft_score = 33 - BUTTON_BONUS + KO_THREAT_BONUS;
+
+  state hovercraft_descent = parse_state("\
+                        . . . . . . B , , \
+                        . . . . 0 0 B , , \
+                        . w w w B B B , , \
+                        . w B B , , , , , \
+                        . B , , B , , , , \
+                        + B , , , , , , , \
+                        B B , , , , , , , \
+  ");
+  hovercraft_descent.ko_threats = 0;
+  float hovercraft_descent_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  state hovercraft_descent_def = hovercraft_descent;
+  swap_players(&hovercraft_descent_def);
+
+  state first_l_1 = parse_state(" \
+                . . . . . . B , , \
+                . . . w B B B , , \
+                . w w w B , , , , \
+                . w B B , , , , , \
+                . B , , B , , , , \
+                + B , , , , , , , \
+                B B , , , , , , , \
+  ");
+  first_l_1.ko_threats = -1;
+  float first_l_1_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state first_l_1_def = first_l_1;
+  swap_players(&first_l_1_def);
+  first_l_1_def.ko_threats = -1;
+  float first_l_1_def_score = -37 + BUTTON_BONUS - KO_THREAT_BONUS;
+
+  state l_2 = parse_state(" \
+          . . . . . . . B , \
+          . . . w w B B B , \
+          . w w w B B , , , \
+          . w B B , , , , , \
+          . B , , , , , , , \
+          + B , , , , , , , \
+          B B , , , , , , , \
+  ");
+  l_2.ko_threats = 1;
+  float l_2_score = 35 - BUTTON_BONUS + KO_THREAT_BONUS;
+
+  state l_2_descent = parse_state(" \
+                  . . . . . . . B , \
+                  . . . w w B B B , \
+                  . w w w B B , , , \
+                  . w B B , , , , , \
+                  B B , , , , , , , \
+                  , , B , , , , , , \
+                  , , , , , , , , , \
+  ");
+  l_2_descent.ko_threats = 1;
+  float l_2_descent_score = TARGET_CAPTURED_SCORE - BUTTON_BONUS;
+
+  tsumego tsumegos[] = {
+      {"hovercraft", "Hovercraft (Threat Defense)", hovercraft, true, {hovercraft_score, hovercraft_score}},
+      {"hovercraft-descent-attack",
+       "Hovercraft w/ Descent (Attack)",
+       hovercraft_descent,
+       false,
+       {hovercraft_descent_score, hovercraft_descent_score}},
+      {"hovercraft-descent-defense",
+       "Hovercraft w/ Descent (Defense)",
+       hovercraft_descent_def,
+       false,
+       {-31 - BUTTON_BONUS, -31 + BUTTON_BONUS}},
+      {"1st-l-1-group-attack", "First L+1 Group (Attack)", first_l_1, false, {first_l_1_score, first_l_1_score}},
+      {"1st-l-1-group-defense", "First L+1 Group (Defense)", first_l_1_def, false, {first_l_1_def_score, first_l_1_def_score}},
+      {"l-2-group", "L+2 Group (Threat Defense)", l_2, true, {l_2_score, l_2_score}},
+      {"l-2-group-descent", "L+2 Group w/ Descent (Attack)", l_2_descent, false, {l_2_descent_score, l_2_descent_score}},
+  };
+
+  tsumego *ts = xmalloc(sizeof(tsumegos));
+  memcpy(ts, tsumegos, sizeof(tsumegos));
+
+  return (collection){
+      "hovercraft", "Hovercraft", root, true, sizeof(tsumegos) / sizeof(tsumego), ts, COMPRESSED_KEYSPACE,
+  };
+}
+
 collection five_on_3rd() {
   state root = parse_state("\
           . . . . . . . . B \
@@ -558,7 +664,7 @@ collection five_on_3rd() {
 }
 
 collection *get_collections(size_t *num_collections) {
-  *num_collections = 20;
+  *num_collections = 21;
   collection *result = xmalloc(*num_collections * sizeof(collection));
   result[0] = rectangle_six();
   result[1] = rectangle_eight();
@@ -567,8 +673,9 @@ collection *get_collections(size_t *num_collections) {
   result[4] = carpenters_square();
   result[5] = five_on_3rd();
   result[6] = long_l_group();
+  result[7] = hovercraft();
 
-  size_t i = 7;
+  size_t i = 8;
   result[i + 0] = rectangular_goban(3, 2, false, COMPRESSED_KEYSPACE);
   result[i + 1] = rectangular_goban(3, 3, false, SYMMETRIC_KEYSPACE);
   result[i + 2] = rectangular_goban(4, 2, true, SYMMETRIC_KEYSPACE);
